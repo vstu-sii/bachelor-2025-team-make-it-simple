@@ -1,5 +1,4 @@
 # D2 - Use-case Narrative
-## Happy Path
 
 ### UC1 - Регистрация
 
