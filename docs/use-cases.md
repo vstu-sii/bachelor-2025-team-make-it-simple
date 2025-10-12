@@ -51,46 +51,46 @@ Flow:
 
 ## UML Диаграммы
 
-1. Use Case Diagram:
-![Use Case Diagram](assets/UC-diag.png)\
+1. Use Case Diagram: \
+![Use Case Diagram](assets/UC-diag.png) \
 Рисунок 1 - Use Case Diagram
 
-2. Activity Diagram #1:
-![Activity Diagram](assets/register.png)\
+2. Activity Diagram #1: \
+![Activity Diagram](assets/register.png) \
 Рисунок 2 - Activity Diagram #1
 
-3. Activity Diagram #2:
-![Activity Diagram](assets/auth.png)\
+3. Activity Diagram #2: \
+![Activity Diagram](assets/auth.png) \
 Рисунок 3 - Activity Diagram #2
 
-4. Activity Diagram #3:
-![Activity Diagram](assets/change_info_about_interests.png)\
+4. Activity Diagram #3: \
+![Activity Diagram](assets/change_info_about_interests.png) \
 Рисунок 3 - Activity Diagram #3
 
-5. Activity Diagram #4:
-![Activity Diagram](assets/progress_report.png)\
+5. Activity Diagram #4: \
+![Activity Diagram](assets/progress_report.png) \
 Рисунок 4 - Activity Diagram #4
 
-6. Activity Diagram #5:
-![Activity Diagram](assets/test_walkthrough.png)\
+6. Activity Diagram #5: \
+![Activity Diagram](assets/test_walkthrough.png) \
 Рисунок 5 - Activity Diagram #5
 
-7. Activity Diagram #6:
-![Activity Diagram](assets/personal_educ_traectory_formation.png)\
+7. Activity Diagram #6: \
+![Activity Diagram](assets/personal_educ_traectory_formation.png) \
 Рисунок 6 - Activity Diagram #6
 
-8. Activity Diagram #7:
-![Activity Diagram](assets/lessons_plan_generation.png)\
+8. Activity Diagram #7: \
+![Activity Diagram](assets/lessons_plan_generation.png) \
 Рисунок 7 - Activity Diagram #7
 
-9. Activity Diagram #8:
-![Activity Diagram](assets/lesson_results_rate.png)\
+9. Activity Diagram #8: \
+![Activity Diagram](assets/lesson_results_rate.png) \
 Рисунок 8 - Activity Diagram #8
 
-10. Activity Diagram #9:
-![Activity Diagram](assets/course_making.png)\
+10. Activity Diagram #9: \
+![Activity Diagram](assets/course_making.png) \
 Рисунок 9 - Activity Diagram #9
 
-11. Activity Diagram #10:
-![Activity Diagram](assets/add_student_to_course.png)\
+11. Activity Diagram #10: \
+![Activity Diagram](assets/add_student_to_course.png) \
 Рисунок 10 - Activity Diagram #10
