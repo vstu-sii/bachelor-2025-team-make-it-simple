@@ -565,7 +565,7 @@
 ## UML Диаграммы
 
 1. Use Case Diagram: \
-![Use Case Diagram](assets/UC-diag.png) \
+![Use Case Diagram](assets/UC_diag.png) \
 Рисунок 1 - Use Case Diagram
 
 2. Activity Diagram #1: \
