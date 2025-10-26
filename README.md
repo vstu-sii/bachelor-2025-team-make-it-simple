@@ -20,9 +20,18 @@
 
 # Документация
 
+## Lab1
+
+- [Product Requirements Document](#product-requirements-document-d1)
+- [Use Case Narrative](docs/use-cases.md)
+- [Stakeholder Map](docs/stakeholders.md)
+- [RACI matrix](docs/raci.md)
+
 ## Lab2
 
 - [Технические требования](docs/requirements.md);
+- [DoR/DoD критерии](docs/definitions.md);
+- [Roadmap проекта](docs/roadmap.md);
 
 # Product Requirements Document (D1)
 
