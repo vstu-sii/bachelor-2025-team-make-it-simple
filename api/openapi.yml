@@ -6,8 +6,10 @@ info:
     generating personalized assignments, lesson plans, progress reports, and adaptive learning trajectories using AI.
   version: 1.0.0
 servers:
-  - url: https://api.my-personal-learning-platform.com/v1
+  - url: https://api.personal-learning-platform.com/v1
     description: Production server
+  - url: https://staging-api.personal-learning-platform.com/v1
+    description: Staging server
 
 tags:
   - name: Auth
