@@ -146,7 +146,7 @@
 
 ## 5. Технологический стек
 
-- **frontend** - NextJS+React - TypeScript
+- **frontend** - VueJS - TypeScript
 - **backend** - FastAPI - Python
 - **database** - PostgreSQL
 - **vector database** - LanceDB
