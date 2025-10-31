@@ -18,6 +18,21 @@
 4. Возможность составлять отчёты по прогрессу ученика;
 5. Возможность корректировать учебный план на основе успехов или ошибок ученика, возникших в ходе изучения предыдущих тем.
 
+# Документация
+
+## Lab1
+
+- [Product Requirements Document](#product-requirements-document-d1)
+- [Use Case Narrative](docs/use-cases.md)
+- [Stakeholder Map](docs/stakeholders.md)
+- [RACI matrix](docs/raci.md)
+
+## Lab2
+
+- [Технические требования](docs/requirements.md);
+- [DoR/DoD критерии](docs/definitions.md);
+- [Roadmap проекта](docs/roadmap.md);
+
 # Product Requirements Document (D1)
 
 ## 1. Какую проблему мы решаем?
