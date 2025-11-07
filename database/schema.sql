@@ -1,4 +1,4 @@
-CREATE TYPE USERROLE AS ENUM ('Ученик', 'Репетитор');
+CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
 
 CREATE TABLE IF NOT EXISTS user (
     user_id SERIAL PRIMARY KEY,
