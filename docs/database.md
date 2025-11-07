@@ -1,5 +1,5 @@
-### **Enum USERROLE**
-CREATE TYPE userrole AS ENUM ('Ученик', 'Репетитор');
+### **Enum UserRole**
+CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
 
 ### **Таблица user**
 
