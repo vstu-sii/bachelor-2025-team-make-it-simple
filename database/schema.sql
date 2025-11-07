@@ -1,3 +1,5 @@
+CREATE TYPE USERROLE AS ENUM ('Ученик', 'Репетитор');
+
 CREATE TABLE IF NOT EXISTS user (
     user_id SERIAL PRIMARY KEY,
     last_name VARCHAR(50) NOT NULL,
@@ -9,7 +11,7 @@ CREATE TABLE IF NOT EXISTS user (
     vk VARCHAR(100),
     avatar_path VARCHAR(1000),
     interests TEXT,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('Ученик', 'Репетитор')),
+    role USERROLE NOT NULL,
     email VARCHAR(250) NOT NULL UNIQUE,
     password VARCHAR(500) NOT NULL
 );
@@ -98,6 +100,6 @@ CREATE TABLE IF NOT EXISTS lesson (
     lesson_test_results_json JSON,
     lesson_notes TEXT,
     results_json JSON,
-    is_access BOOLEAN NOT NULL DEFAULT false,
-    is_ended BOOLEAN NOT NULL DEFAULT false
+    is_access BOOL NOT NULL DEFAULT false,
+    is_ended BOOL NOT NULL DEFAULT false
 );
