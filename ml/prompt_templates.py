@@ -188,76 +188,51 @@ class PromptTemplates:
             2. 5-8 вопросов разных типов
             3. Вопросы должны проверять понимание теории
             4. Учти интересы ученика в формулировках
-            """ + r"""
+            
             ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
             {
                 "test_section": {
                     "title": "Название теста",
                     "questions": [
-                    {
+                    {{
                         "question_id": "1",
-                        "type": "short_answer",
-                        "question": "What is your name and how old are you?",
+                        "type": "short_answer", 
+                        "question": "текст вопроса",
                         "max_length": 50,
-                        "correct_answer": "My name is Slava, I am 20"
-                    },
-                    {
-                        "question_id": "2", 
+                        "correct_answer": "правильный ответ"
+                    }},
+                    {{
+                        "question_id": "2",
                         "type": "single_choice",
-                        "question": "Choose the correct sentence in Present Simple:",
-                        "options": [
-                            "I playing football every day",
-                            "I plays football every day",
-                            "I play football every day", 
-                            "I am play football every day"
-                        ],
-                        "correct_answer": 2
-                    },
-                    {
-                        "question_id": "3",
+                        "question": "текст вопроса", 
+                        "options": ["вариант1", "вариант2", "вариант3", "вариант4"],
+                        "correct_answer": 1
+                    }},
+                    {{
+                        "question_id": "3", 
                         "type": "multiple_choice",
-                        "question": "Which words are articles in English?",
-                        "options": ["the", "a", "an", "is", "and"],
-                        "correct_answers": [0, 1, 2]
-                    },
-                    {
+                        "question": "текст вопроса",
+                        "options": ["вариант1", "вариант2", "вариант3", "вариант4"],
+                        "correct_answers": [0, 2]
+                    }},
+                    {{
                         "question_id": "4",
-                        "type": "gaps_choice",
-                        "question": "If I [1] enough money, I [2] travel around the world. I [3] to visit Japan for a long time because I [4] fascinated by its culture. When I [5] there, I want to try traditional food and [6] historical temples.",
+                        "type": "gaps_choice", 
+                        "question": "текст с [1] пропусками [2]",
                         "gaps": [
-                        {
-                            "gap_id": 1,
-                            "options": ["have", "had", "will have", "would have"],
-                            "correct_answer": 1
-                        },
-                        {
-                            "gap_id": 2,
-                            "options": ["would", "will", "can", "could"],
-                            "correct_answer": 0
-                        },
-                        {
-                            "gap_id": 3,
-                            "options": ["have wanted", "want", "wanted", "wanting"],
-                            "correct_answer": 0
-                        },
-                        {
-                            "gap_id": 4,
-                            "options": ["am", "was", "have been", "had been"],
-                            "correct_answer": 0
-                        },
-                        {
-                            "gap_id": 5,
-                            "options": ["go", "will go", "went", "have gone"],
-                            "correct_answer": 0
-                        },
-                        {
-                            "gap_id": 6,
-                            "options": ["visit", "visiting", "visited", "to visit"],
-                            "correct_answer": 0
-                        }
+                            {{
+                                "gap_id": 1,
+                                "options": ["вариант1", "вариант2", "вариант3"],
+                                "correct_answer": 0
+                            }},
+                            {{
+                                "gap_id": 2, 
+                                "options": ["вариант1", "вариант2", "вариант3"],
+                                "correct_answer": 1
+                            }}
                         ]
-                    }
-                ]
+                    }}
+                    ]
                 }
             }
             """
