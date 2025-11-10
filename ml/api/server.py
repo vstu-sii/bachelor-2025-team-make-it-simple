@@ -1,64 +1,85 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-import json
-from datetime import datetime
+from flask import Flask, request, jsonify
+import os
+import sys
 
-from ml.models.baseline import BaselineLLM
-from ml.api.routes import router
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-app = FastAPI(
-    title="Tutor AI API",
-    description="API для генерации учебных материалов с использованием LLM",
-    version="1.0.0"
-)
+from ml.models.baseline import BaselineModel
+from ml.api.vector_db.vector_store import VectorStore
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = Flask(__name__)
+model = BaselineModel()
+vector_stores = {}
 
-# Подключение роутов
-app.include_router(router, prefix="/api/v1")
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "model": model.model_name})
 
-# Глобальная модель
-llm_model = None
+@app.route('/generate/entry-test', methods=['POST'])
+def generate_entry_test():
+    try:
+        data = request.json
+        result = model.generate_entry_test(data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.on_event("startup")
-async def startup_event():
-    """Инициализация модели при запуске"""
-    global llm_model
-    llm_model = BaselineLLM()
-    print("API сервер запущен")
+@app.route('/generate/course-graph', methods=['POST'])
+def generate_course_graph():
+    try:
+        data = request.json
+        result = model.generate_course_graph(data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.get("/")
-async def root():
-    """Корневой endpoint"""
-    return {
-        "message": "Tutor AI API",
-        "status": "running",
-        "timestamp": datetime.now().isoformat()
-    }
+@app.route('/generate/lesson-plan', methods=['POST'])
+def generate_lesson_plan():
+    try:
+        data = request.json
+        lesson_type = data.get('type', 'theory')
+        result = model.generate_lesson_plan(data, lesson_type)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.get("/health")
-async def health_check():
-    """Проверка здоровья сервера"""
-    model_status = "available" if llm_model and llm_model.model_available else "unavailable"
-    
-    return {
-        "status": "healthy",
-        "model_status": model_status,
-        "timestamp": datetime.now().isoformat()
-    }
+@app.route('/evaluate/lesson-results', methods=['POST'])
+def evaluate_lesson_results():
+    try:
+        data = request.json
+        result = model.evaluate_lesson_results(data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "ml.api.server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+@app.route('/vector-db/upload', methods=['POST'])
+def upload_to_vector_db():
+    try:
+        course_id = request.json.get('course_id')
+        text = request.json.get('text')
+        
+        if course_id not in vector_stores:
+            vector_stores[course_id] = VectorStore(course_id)
+        
+        vector_stores[course_id].add_document(text)
+        return jsonify({"status": "success", "course_id": course_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/vector-db/search', methods=['POST'])
+def search_vector_db():
+    try:
+        course_id = request.json.get('course_id')
+        query = request.json.get('query')
+        k = request.json.get('k', 3)
+        
+        if course_id not in vector_stores:
+            return jsonify({"error": "Vector store not found"}), 404
+        
+        results = vector_stores[course_id].search(query, k)
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

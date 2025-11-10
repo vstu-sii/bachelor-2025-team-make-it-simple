@@ -1,253 +1,291 @@
 import json
-import re
 
 class PromptTemplates:
-    """Шаблоны промптов для различных задач системы"""
     
     @staticmethod
-    def generate_placement_test(course_topics, student_interests=None):
-        """Генерация входного тестирования"""
-        interests_context = ""
-        if student_interests:
-            interests_context = f"Учти интересы ученика: {student_interests}. "
-            
-        prompt = f"""
-        Ты - опытный преподаватель. Создай входной тест для оценки начальных знаний ученика.
+    def entry_test_prompt(course_title, topics, materials_context):
+        return f"""
+        Ты - эксперт по созданию образовательных тестов. Создай входной тест для курса "{course_title}".
         
-        Курс охватывает темы: {course_topics}
-        {interests_context}
+        ТЕМЫ КУРСА:
+        {json.dumps(topics, ensure_ascii=False, indent=2)}
         
-        Создай тест в формате JSON со следующими типами вопросов:
-        1. Вопросы с коротким ответом (2-3 вопроса)
-        2. Вопросы с однозначным выбором (3-4 вопроса) 
-        3. Вопросы с множественным выбором (2-3 вопроса)
-        4. Вопросы на соответствие (1-2 вопроса)
-        5. Задание с развёрнутым ответом (1 задание)
+        МАТЕРИАЛЫ КУРСА:
+        {materials_context}
         
-        Требования:
-        - Вопросы должны охватывать разные темы курса
-        - Уровень сложности - от простого к сложному
-        - Включи интересы ученика в формулировки где это уместно
-        - Для вопросов с выбором предоставь 3-4 варианта ответа
-        - Укажи правильные ответы
-        - Для развёрнутого задания опиши критерии оценки
+        ТРЕБОВАНИЯ:
+        1. Создай 10-15 вопросов разных типов:
+           - short_answer (короткий ответ)
+           - single_choice (одиночный выбор) 
+           - multiple_choice (множественный выбор)
+           - gaps_choice (заполнение пропусков)
         
-        Верни ответ ТОЛЬКО в формате JSON без дополнительного текста.
+        2. Вопросы должны охватывать все темы курса
+        3. Время выполнения: 30 минут
         
-        Пример структуры:
+        ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
         {{
-            "test_title": "Название теста",
             "questions": [
                 {{
-                    "type": "short_answer",
-                    "question": "Текст вопроса",
+                    "question_id": "1",
+                    "type": "short_answer", 
+                    "question": "текст вопроса",
+                    "max_length": 50,
                     "correct_answer": "правильный ответ"
                 }},
                 {{
-                    "type": "single_choice", 
-                    "question": "Текст вопроса",
-                    "options": ["вариант1", "вариант2", "вариант3"],
-                    "correct_answer": 0
+                    "question_id": "2",
+                    "type": "single_choice",
+                    "question": "текст вопроса", 
+                    "options": ["вариант1", "вариант2", "вариант3", "вариант4"],
+                    "correct_answer": 1
                 }},
                 {{
+                    "question_id": "3", 
                     "type": "multiple_choice",
-                    "question": "Текст вопроса", 
+                    "question": "текст вопроса",
                     "options": ["вариант1", "вариант2", "вариант3", "вариант4"],
                     "correct_answers": [0, 2]
                 }},
                 {{
-                    "type": "matching",
-                    "question": "Сопоставьте понятия",
-                    "pairs": [
-                        {{"left": "понятие1", "right": "определение1"}},
-                        {{"left": "понятие2", "right": "определение2"}}
+                    "question_id": "4",
+                    "type": "gaps_choice", 
+                    "question": "текст с [1] пропусками [2]",
+                    "gaps": [
+                        {{
+                            "gap_id": 1,
+                            "options": ["вариант1", "вариант2", "вариант3"],
+                            "correct_answer": 0
+                        }},
+                        {{
+                            "gap_id": 2, 
+                            "options": ["вариант1", "вариант2", "вариант3"],
+                            "correct_answer": 1
+                        }}
                     ]
-                }},
-                {{
-                    "type": "essay",
-                    "question": "Текст задания",
-                    "evaluation_criteria": ["критерий1", "критерий2", "критерий3"]
                 }}
             ]
         }}
         """
-        return prompt
     
     @staticmethod
-    def generate_learning_graph(course_topics, student_knowledge_gaps, student_interests):
-        """Генерация графа обучения"""
-        prompt = f"""
-        Ты - эксперт по образовательным технологиям. Создай персонализированный граф обучения.
+    def course_graph_prompt(student_profile, course_title, topics):
+        return f"""
+        Ты - эксперт по образовательным траекториям. Создай персонализированный граф обучения.
         
-        Темы курса: {course_topics}
-        Пробелы в знаниях ученика: {student_knowledge_gaps}
-        Интересы ученика: {student_interests}
+        ПРОФИЛЬ УЧЕНИКА:
+        Интересы: {student_profile['interests']}
+        Пробелы в знаниях: {student_profile['knowledge_gaps']}
         
-        Создай граф в формате JSON для визуализации в vis.js. Граф должен показывать:
-        - Узлы (темы для изучения)
-        - Связи между темами (зависимости)
-        - Рекомендуемую последовательность изучения
-        - Приоритетные темы на основе пробелов
+        КУРС: {course_title}
+        ТЕМЫ: {topics}
         
-        Структура графа:
-        - nodes: список тем с атрибутами (id, label, level, priority, estimated_time)
-        - edges: связи между темами (from, to, type)
+        ТРЕБОВАНИЯ:
+        1. Создай граф зависимостей между темами
+        2. Учти пробелы в знаниях ученика
+        3. Определи порядок изучения тем
         
-        Учти:
-        - Начинай с базовых тем, которые закрывают пробелы
-        - Свяжи темы с интересами ученика
-        - Оцени время изучения каждой темы (в часах)
-        - Определи приоритеты (high, medium, low)
-        
-        Верни ответ ТОЛЬКО в формате JSON.
-        
-        Пример:
+        ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
         {{
             "nodes": [
-                {{"id": 1, "label": "Базовые понятия", "level": "beginner", "priority": "high", "estimated_time": 2}},
-                {{"id": 2, "label": "Продвинутые темы", "level": "intermediate", "priority": "medium", "estimated_time": 3}}
+                {{
+                    "id": "1",
+                    "label": "Название темы"
+                }}
             ],
             "edges": [
-                {{"from": 1, "to": 2, "type": "prerequisite"}}
+                {{
+                    "from": "1", 
+                    "to": "2"
+                }}
             ]
         }}
         """
-        return prompt
     
     @staticmethod
-    def generate_lesson_plan(lesson_topic, course_materials, student_interests, student_level):
-        """Генерация плана урока"""
-        prompt = f"""
-        Ты - творческий преподаватель. Создай персонализированный план урока.
+    def lesson_plan_prompt(lesson_parameters, lesson_type, theory_context=""):
+        student_profile = lesson_parameters['student_profile']
         
-        Тема урока: {lesson_topic}
-        Материалы курса: {course_materials}
-        Интересы ученика: {student_interests}
-        Уровень ученика: {student_level}
+        base_prompt = f"""
+        Ты - опытный преподаватель. Создай персонализированный план урока.
         
-        Создай план урока в формате JSON включающий:
-        1. Цели урока
-        2. План занятия (временные отрезки)
-        3. Теоретическую часть с примерами из интересов ученика
-        4. Практические задания
-        5. Тестовые вопросы разных типов
-        6. Домашнее задание
+        ТЕМА УРОКА: {lesson_parameters['topic']}
+        ИНТЕРЕСЫ УЧЕНИКА: {student_profile['interests']}
+        ПРОБЕЛЫ В ЗНАНИЯХ: {student_profile['knowledge_gaps']}
+        """
         
-        Формат вопросов должен быть разнообразным:
-        - Короткие ответы
-        - Выбор вариантов
-        - Соответствия
-        - Вопросы с развёрнутым ответом
-        
-        Верни ответ ТОЛЬКО в формате JSON.
-        
-        Пример структуры:
-        {{
-            "lesson_title": "Название урока",
-            "objectives": ["цель1", "цель2"],
-            "timeline": [
-                {{"time": "0-10min", "activity": "Введение", "description": "..."}},
-                {{"time": "10-30min", "activity": "Теория", "description": "..."}}
-            ],
-            "theory_content": "Теоретический материал с примерами...",
-            "practice_questions": [
-                {{
-                    "type": "short_answer",
-                    "question": "Вопрос...",
-                    "correct_answer": "ответ"
+        if lesson_type == "theory":
+            return base_prompt + f"""
+            ТИП УРОКА: Теоретическое занятие
+            
+            ТРЕБОВАНИЯ:
+            1. Объясни тему простым языком
+            2. Используй примеры из интересов ученика
+            3. Учти пробелы в знаниях
+            4. Структурируй материал логически
+            
+            ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+            {{
+                "theory_section": {{
+                    "title": "Название раздела",
+                    "content": "Текст теории с примерами..."
                 }}
-            ],
-            "test_questions": [
-                {{
-                    "type": "multiple_choice",
-                    "question": "Тестовый вопрос...",
-                    "options": ["вариант1", "вариант2", "вариант3"],
-                    "correct_answers": [0],
-                    "explanation": "Объяснение правильного ответа"
-                }}
-            ],
-            "homework": {{
-                "tasks": ["задание1", "задание2"],
-                "deadline": "1 неделя"
             }}
-        }}
+            """
+        
+        elif lesson_type == "reading":
+            return base_prompt + f"""
+            ТИП УРОКА: Чтение и понимание
+            
+            ТРЕБОВАНИЯ:
+            1. Напиши интересный текст на тему урока
+            2. Используй vocabulary из интересов ученика  
+            3. Добавь 3-5 вопросов на понимание
+            4. Уровень сложности - соответствующий теме
+            
+            ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+            {{
+                "reading_section": {{
+                    "title": "Название текста",
+                    "text": "Текст для чтения...",
+                    "comprehension_questions": [
+                        "Вопрос 1?",
+                        "Вопрос 2?",
+                        "Вопрос 3?"
+                    ]
+                }}
+            }}
+            """
+        
+        elif lesson_type == "speaking":
+            return base_prompt + """
+            ТИП УРОКА: Разговорная практика
+            
+            ТРЕБОВАНИЯ:
+            1. Создай задание для устной практики
+            2. Тема должна быть связана с интересами ученика
+            3. Учти пробелы в знаниях
+            4. Дай четкие инструкции
+            
+            ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+            {
+                "speaking_section": {
+                    "title": "Название задания",
+                    "instructions": "Подробные инструкции..."
+                }
+            }
+            """
+        
+        elif lesson_type == "test":
+            return base_prompt + f"""
+            ТИП УРОКА: Тестирование
+            
+            ТЕОРЕТИЧЕСКАЯ ЧАСТЬ (для справки):
+            {theory_context}
+            
+            ТРЕБОВАНИЯ:
+            1. Создай тест на 15-20 минут
+            2. 5-8 вопросов разных типов
+            3. Вопросы должны проверять понимание теории
+            4. Учти интересы ученика в формулировках
+            """ + r"""
+            ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+            {
+                "test_section": {
+                    "title": "Название теста",
+                    "questions": [
+                    {
+                        "question_id": "1",
+                        "type": "short_answer",
+                        "question": "What is your name and how old are you?",
+                        "max_length": 50,
+                        "correct_answer": "My name is Slava, I am 20"
+                    },
+                    {
+                        "question_id": "2", 
+                        "type": "single_choice",
+                        "question": "Choose the correct sentence in Present Simple:",
+                        "options": [
+                            "I playing football every day",
+                            "I plays football every day",
+                            "I play football every day", 
+                            "I am play football every day"
+                        ],
+                        "correct_answer": 2
+                    },
+                    {
+                        "question_id": "3",
+                        "type": "multiple_choice",
+                        "question": "Which words are articles in English?",
+                        "options": ["the", "a", "an", "is", "and"],
+                        "correct_answers": [0, 1, 2]
+                    },
+                    {
+                        "question_id": "4",
+                        "type": "gaps_choice",
+                        "question": "If I [1] enough money, I [2] travel around the world. I [3] to visit Japan for a long time because I [4] fascinated by its culture. When I [5] there, I want to try traditional food and [6] historical temples.",
+                        "gaps": [
+                        {
+                            "gap_id": 1,
+                            "options": ["have", "had", "will have", "would have"],
+                            "correct_answer": 1
+                        },
+                        {
+                            "gap_id": 2,
+                            "options": ["would", "will", "can", "could"],
+                            "correct_answer": 0
+                        },
+                        {
+                            "gap_id": 3,
+                            "options": ["have wanted", "want", "wanted", "wanting"],
+                            "correct_answer": 0
+                        },
+                        {
+                            "gap_id": 4,
+                            "options": ["am", "was", "have been", "had been"],
+                            "correct_answer": 0
+                        },
+                        {
+                            "gap_id": 5,
+                            "options": ["go", "will go", "went", "have gone"],
+                            "correct_answer": 0
+                        },
+                        {
+                            "gap_id": 6,
+                            "options": ["visit", "visiting", "visited", "to visit"],
+                            "correct_answer": 0
+                        }
+                        ]
+                    }
+                ]
+                }
+            }
+            """
+    
+    @staticmethod
+    def lesson_evaluation_prompt(teachers_notes, test_results):
+        return f"""
+        Ты - опытный преподаватель-эксперт. Проанализируй результаты урока и дай оценку.
+        
+        ЗАМЕТКИ ПРЕПОДАВАТЕЛЯ:
+        Говорение: {teachers_notes.get('teachers_notes_about_speaking', 'Нет заметок')}
+        Чтение: {teachers_notes.get('teachers_notes_about_reading', 'Нет заметок')}
+        
+        РЕЗУЛЬТАТЫ ТЕСТА:
+        {json.dumps(test_results, ensure_ascii=False, indent=2)}
+        
+        ТРЕБОВАНИЯ:
+        1. Проанализируй ошибки в тесте
+        2. Учти заметки преподавателя
+        3. Поставь итоговую оценку от 1 до 10
+        4. Определи пробелы в знаниях
+        5. Рекомендуй нужен ли ещё дополнительный урок
+        
+        ВЕРНИ ОТВЕТ В ФОРМАТЕ JSON:
+        {
+            "lesson_score": "8",
+            "knowledge_gaps": ["список пробелов"],
+            "automated_feedback": "текст обратной связи", 
+            "additional_lesson": "True/False"
+        }
         """
-        return prompt
-    
-    @staticmethod
-    def generate_progress_report(student_performance, lesson_feedback, test_results):
-        """Генерация отчёта о прогрессе"""
-        prompt = f"""
-        Ты - внимательный педагог. Проанализируй результаты урока и создай отчёт.
-        
-        Результаты тестирования: {test_results}
-        Комментарии преподавателя: {lesson_feedback}
-        Общая успеваемость: {student_performance}
-        
-        Создай детальный отчёт в формате JSON включающий:
-        1. Общую оценку прогресса
-        2. Анализ ошибок и пробелов
-        3. Рекомендации по улучшению
-        4. План работы над ошибками
-        5. Оценку мотивации и вовлечённости
-        
-        Будь конкретным в рекомендациях. Укажи конкретные темы для повторения.
-        
-        Верни ответ ТОЛЬКО в формате JSON.
-        
-        Пример:
-        {{
-            "overall_progress": "хороший",
-            "strengths": ["сильная сторона1", "сильная сторона2"],
-            "weaknesses": ["слабая сторона1", "слабая сторона2"],
-            "error_analysis": [
-                {{"topic": "тема1", "error_type": "тип ошибки", "recommendation": "рекомендация"}}
-            ],
-            "improvement_plan": [
-                {{"action": "повторить тему X", "priority": "high", "time_estimate": "1 час"}}
-            ],
-            "motivation_level": "high",
-            "next_steps": "рекомендации для следующего урока"
-        }}
-        """
-        return prompt
-
-class ResponseValidator:
-    """Валидация ответов LLM"""
-    
-    @staticmethod
-    def validate_json_response(response_text):
-        """Проверка и исправление JSON ответа"""
-        try:
-            # Пытаемся распарсить JSON
-            data = json.loads(response_text)
-            return data, True
-        except json.JSONDecodeError:
-            # Пытаемся извлечь JSON из текста
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                try:
-                    data = json.loads(json_match.group())
-                    return data, True
-                except:
-                    pass
-            return None, False
-    
-    @staticmethod
-    def validate_test_structure(test_data):
-        """Проверка структуры теста"""
-        required_fields = ['test_title', 'questions']
-        if not all(field in test_data for field in required_fields):
-            return False
-        
-        for question in test_data['questions']:
-            if 'type' not in question or 'question' not in question:
-                return False
-        return True
-    
-    @staticmethod
-    def validate_graph_structure(graph_data):
-        """Проверка структуры графа"""
-        if 'nodes' not in graph_data or 'edges' not in graph_data:
-            return False
-        return True
