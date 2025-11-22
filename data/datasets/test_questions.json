@@ -1,0 +1,98 @@
+{
+    "test_cases": [
+        {
+            "id": "english_entry_test_1",
+            "description": "Входное тестирование для курса английского языка начального уровня",
+            "input": {
+                "course_title": "Английский язык для начинающих",
+                "topics": [
+                    "Present Simple",
+                    "Артикли a/an/the", 
+                    "Базовая лексика: семья, работа, хобби",
+                    "Предлоги места и времени",
+                    "Вопросы с do/does",
+                    "Глагол to be",
+                    "Притяжательные местоимения",
+                    "Единственное и множественное число"
+                ],
+                "materials": [
+                    "Present Simple используется для описания регулярных действий, привычек и общих истин.",
+                    "Артикль 'a' используется перед словами, начинающимися с согласного звука, 'an' - с гласного.",
+                    "Базовая лексика включает слова для описания повседневной жизни: семья, работа, увлечения.",
+                    "Предлоги места: in, on, at, under, next to, between, behind.",
+                    "Вопросы в Present Simple образуются с помощью вспомогательных глаголов do/does.",
+                    "Глагол to be: am, is, are в зависимости от лица.",
+                    "Притяжательные местоимения: my, your, his, her, our, their.",
+                    "Множественное число образуется добавлением -s к существительным."
+                ]
+            },
+            "expected_output_structure": {
+                "questions": [
+                    {
+                        "question_id": "string",
+                        "type": "string",
+                        "question": "string",
+                        "max_length": "number|optional",
+                        "correct_answer": "string|number|array|optional",
+                        "options": "array|optional",
+                        "correct_answers": "array|optional",
+                        "gaps": "array|optional"
+                    }
+                ]
+            },
+            "validation_rules": {
+                "min_questions": 10,
+                "max_questions": 15,
+                "required_types": ["short_answer", "single_choice", "multiple_choice", "gaps_choice"],
+                "time_limit": 30,
+                "must_cover_topics": ["Present Simple", "Артикли", "to be"]
+            }
+        },
+        {
+            "id": "english_entry_test_2", 
+            "description": "Входное тестирование для курса английского среднего уровня",
+            "input": {
+                "course_title": "Английский язык средний уровень",
+                "topics": [
+                    "Present Continuous",
+                    "Past Simple",
+                    "Future Simple",
+                    "Модальные глаголы",
+                    "Сравнительная степень прилагательных",
+                    "Наречия частоты",
+                    "Условные предложения",
+                    "Фразовые глаголы"
+                ],
+                "materials": [
+                    "Present Continuous используется для действий, происходящих в момент речи.",
+                    "Past Simple описывает завершенные действия в прошлом.",
+                    "Future Simple используется для будущих действий и предсказаний.",
+                    "Модальные глаголы: can, could, may, might, must, should выражают возможность, необходимость, совет.",
+                    "Сравнительная степень: прилагательные + -er или more + прилагательное.",
+                    "Наречия частоты: always, usually, often, sometimes, never.",
+                    "Условные предложения первого типа: If + Present Simple, Future Simple.",
+                    "Фразовые глаголы: глагол + предлог/наречие с измененным значением."
+                ]
+            },
+            "expected_output_structure": {
+                "questions": [
+                    {
+                        "question_id": "string",
+                        "type": "string", 
+                        "question": "string",
+                        "correct_answer": "string|number|array|optional",
+                        "options": "array|optional",
+                        "gaps": "array|optional"
+                    }
+                ]
+            },
+            "validation_rules": {
+                "min_questions": 12,
+                "max_questions": 18,
+                "required_types": ["single_choice", "multiple_choice", "gaps_choice"],
+                "time_limit": 35,
+                "must_cover_topics": ["Past Simple", "Модальные глаголы", "Условные предложения"]
+            }
+        }
+    ]
+}
