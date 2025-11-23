@@ -1,7 +1,7 @@
 import json
 import time
-from ml.models.baseline import BaselineModel
-from ml.evaluation.evaluator import ModelEvaluator
+from models.baseline import BaselineModel
+from evaluation.evaluator import ModelEvaluator
 
 def demo_entry_test_generation():
     print("=== ДЕМО: Генерация входного тестирования ===")

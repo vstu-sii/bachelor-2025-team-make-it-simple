@@ -4,11 +4,12 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from ml.models.baseline import BaselineModel
-from ml.api.vector_db.vector_store import VectorStore
+from utils import env, ollama
+from models.baseline import BaselineModel
+from api.vector_db.vector_store import VectorStore
 
 app = Flask(__name__)
-model = BaselineModel()
+model = BaselineModel(env.GENERATING_MODEL)
 vector_stores = {}
 
 @app.route('/health', methods=['GET'])
@@ -82,4 +83,7 @@ def search_vector_db():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    if ollama.pull_model(env.GENERATING_MODEL):
+        quit(1)
+
+    app.run(host='0.0.0.0', port=env.PORT, debug=True)
