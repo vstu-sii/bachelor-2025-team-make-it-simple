@@ -12,6 +12,7 @@ services:
       debug: "true"
       static_dir: "static"
       images_dir: "static/images"
+      cors_origins: '["*"]'
     volumes:
       - ./.backend_data:/app/static
     depends_on:
