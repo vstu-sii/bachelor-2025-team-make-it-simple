@@ -1,5 +1,32 @@
-# Vue 3 + Vite
+# Frontend service
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Переменные окружающей среды
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Использует следующие environment variables **на этапе сборки**:
+- VITE_API_URL - адрес backend сервиса
+
+## Заготовленные compose файлы
+
+> Команды выполняются из папки **frontend**
+
+Запустить фронтенд сервис:
+
+```
+docker compose up -d
+```
+
+> В этом же compose.yml можно поменять переменные, передаваемые в докерфайл во время сборки
+
+## Разработка
+
+Установить зависимости:
+```
+npm install
+```
+
+Запустить сервер для разработки:
+```
+npm run dev
+```
+
+> Если контейнер не обновляется, к `compose up` можно добавить флаги `--build --force-recreate`
