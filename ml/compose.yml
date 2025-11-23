@@ -1,7 +1,6 @@
 services:
   aiserver:
     build: .
-    #image: aiserver:latest
     container_name: "aiserver"
     restart: unless-stopped
     ports:
