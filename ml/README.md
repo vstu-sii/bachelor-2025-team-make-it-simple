@@ -17,6 +17,8 @@
 docker compose up -f ./ml/compose.yml -d
 ```
 
+> В этом же compose.yml можно поменять переменные окружающей среды
+
 ### Для разработки ИИ сервиса
 
 Запустить только олламу для разработки ИИ сервиса:
@@ -24,6 +26,8 @@ docker compose up -f ./ml/compose.yml -d
 ```
 docker compose up -f ./ml/compose.ollama_only.yml -d
 ```
+
+> В этом же compose.ollama_only.yml можно поменять переменные окружающей среды
 
 Создать локальное окружение:
 ```
@@ -40,3 +44,5 @@ pip install -r ./ml/requirements.txt
 ```
 python ./ml/api/server.py
 ```
+
+> Если контейнер не обновляется, к `compose up` можно добавить флаги `--build --force-recreate`
