@@ -1,7 +1,8 @@
 import axios from "axios";
+import { config } from "../config.js";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: config.apiUrl,
 });
 
 const token = localStorage.getItem("token");
