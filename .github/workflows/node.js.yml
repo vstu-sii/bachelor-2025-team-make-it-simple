@@ -25,7 +25,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: ./bachelor-2025-team-make-it-simple/frontend
 
     # Используем стратегию "matrix", чтобы запустить задачу несколько раз с разными параметрами.
     # Здесь мы указываем, что нужно запустить тесты для нескольких версий Node.js.
