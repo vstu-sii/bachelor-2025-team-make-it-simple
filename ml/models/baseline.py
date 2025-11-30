@@ -2,12 +2,13 @@ import ollama
 import json
 import time
 import re
+from utils import env
 
 class BaselineModel:
     def __init__(self, model_name="deepseek-r1:8b"):
         self.model_name = model_name
-        self.client = ollama.Client()
-        
+        self.client = ollama.Client(host=env.OLLAMA_URL)
+
     def generate_response(self, prompt, max_retries=3):
         for attempt in range(max_retries):
             try:
