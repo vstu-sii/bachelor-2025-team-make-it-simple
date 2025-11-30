@@ -45,11 +45,14 @@ jobs:
 
     # Шаг 3: Устанавливаем зависимости из package-lock.json (или npm-shrinkwrap.json).
     # `npm ci` используется вместо `npm install`, так как он быстрее и надежнее.
-    - run: npm ci
+    - working-directory: ./frontend
+      run: npm ci
 
     # Шаг 4: Запускаем скрипт `build`, если он определён в package.json.
     # `--if-present` означает, что ошибка не возникнет, если скрипт `build` не найден.
-    - run: npm run build --if-present
+    - working-directory: ./frontend
+      run: npm run build --if-present
 
     # Шаг 5: Запускаем тесты.
-    - run: npm test
+    - working-directory: ./frontend
+      run: npm test
