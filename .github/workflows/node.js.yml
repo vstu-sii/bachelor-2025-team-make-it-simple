@@ -31,7 +31,7 @@ jobs:
     # Здесь мы указываем, что нужно запустить тесты для нескольких версий Node.js.
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
         # Комментарий: см. поддерживаемый график релизов Node.js: https://nodejs.org/en/about/releases/
 
     # Определяем шаги (steps), которые нужно выполнить.
