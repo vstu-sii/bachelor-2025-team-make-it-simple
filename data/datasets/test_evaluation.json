@@ -1,0 +1,241 @@
+{
+    "test_cases": [
+        {
+            "id": "english_evaluation_1",
+            "description": "Оценка урока Present Simple с типичными ошибками русского студента",
+            "input": {
+                "teachers_notes_about_speaking": "Студент хорошо описывал свой игровой распорядок, но постоянно забывал окончание. При построении вопросов путал do/does. Произношение в целом хорошее, но нужна работа над интонацией в вопросах.",
+                "teachers_notes_about_reading": "Текст про видеоигры прочитал уверенно, показал хорошее понимание содержания. С базовой лексикой проблем нет, но сложные предложения вызывают затруднения.",
+                "test": {
+                    "wrong_answer_questions": [
+                        {
+                            "question_id": "1",
+                            "type": "single_choice",
+                            "question": "Choose the correct sentence:",
+                            "options": [
+                                "He play video games every day",
+                                "He plays video games every day", 
+                                "He playing video games every day"
+                            ],
+                            "correct_answer": 1,
+                            "student_answer": 0
+                        },
+                        {
+                            "question_id": "2",
+                            "type": "multiple_choice", 
+                            "question": "Which sentences are correct in Present Simple?",
+                            "options": [
+                                "She work in an office",
+                                "They play football on weekends",
+                                "My brother watches movies",
+                                "I goes to school"
+                            ],
+                            "correct_answers": [1, 2],
+                            "student_answer": [1, 2, 3]
+                        },
+                        {
+                            "question_id": "3",
+                            "type": "gaps_choice", 
+                            "question": "My friend [1] programming. He [2] not [3] sports.",
+                            "gaps": [
+                                {
+                                    "gap_id": 1,
+                                    "options": ["like", "likes", "liking", "to like"],
+                                    "correct_answer": 1,
+                                    "student_answer": 0
+                                },
+                                {
+                                    "gap_id": 2,
+                                    "options": ["do", "does", "is", "are"],
+                                    "correct_answer": 1,
+                                    "student_answer": 0
+                                },
+                                {
+                                    "gap_id": 3,
+                                    "options": ["play", "plays", "playing", "to play"],
+                                    "correct_answer": 0,
+                                    "student_answer": 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "expected_structure": {
+                "lesson_score": "string",
+                "knowledge_gaps": ["string"],
+                "automated_feedback": "string",
+                "additional_lesson": "boolean"
+            },
+            "validation_criteria": {
+                "score_range": [1, 10],
+                "should_identify_third_person_issue": true,
+                "should_mention_question_formation": true,
+                "feedback_should_be_constructive": true,
+                "should_recommend_practice": true
+            },
+            "expected_gaps": [
+                "third_person_s",
+                "question_formation",
+                "negative_sentences"
+            ]
+        },
+        {
+            "id": "english_evaluation_2",
+            "description": "Оценка успешного урока по лексике и говорению",
+            "input": {
+                "teachers_notes_about_speaking": "Отличная работа! Студент уверенно использовал новую лексику по теме технологий, правильно строил предложения в Present Simple. Активно участвовал в диалоге, задавал уточняющие вопросы.",
+                "teachers_notes_about_reading": "Быстро прочитал текст о новых технологиях, правильно ответил на все вопросы по содержанию. Показал понимание как основной идеи, так и деталей.",
+                "test": {
+                    "wrong_answer_questions": []
+                }
+            },
+            "expected_structure": {
+                "lesson_score": "string", 
+                "knowledge_gaps": ["string"],
+                "automated_feedback": "string",
+                "additional_lesson": "boolean"
+            },
+            "validation_criteria": {
+                "score_should_be_high": true,
+                "gaps_should_be_minimal": true,
+                "additional_lesson_should_be_false": true,
+                "feedback_should_be_positive": true
+            }
+        },
+        {
+            "id": "english_evaluation_3",
+            "description": "Оценка урока с серьезными пробелами в базовой грамматике",
+            "input": {
+                "teachers_notes_about_speaking": "Студент испытывал значительные трудности с базовой грамматикой. Путал порядок слов в предложениях, не использовал артикли, делал ошибки в формах глаголов. Словарный запас ограничен.",
+                "teachers_notes_about_reading": "Очень медленное чтение, частые паузы. Не понимал значения многих базовых слов. На вопросы отвечал с большими затруднениями, часто не по теме.",
+                "test": {
+                    "wrong_answer_questions": [
+                        {
+                            "question_id": "1",
+                            "type": "single_choice",
+                            "question": "Choose the correct sentence:",
+                            "options": [
+                                "I am student",
+                                "I is student", 
+                                "I are student",
+                                "I am a student"
+                            ],
+                            "correct_answer": 3,
+                            "student_answer": 0
+                        },
+                        {
+                            "question_id": "2",
+                            "type": "gaps_choice",
+                            "question": "She [1] from Russia. She [2] English.",
+                            "gaps": [
+                                {
+                                    "gap_id": 1,
+                                    "options": ["is", "are", "am", "be"],
+                                    "correct_answer": 0,
+                                    "student_answer": 1
+                                },
+                                {
+                                    "gap_id": 2,
+                                    "options": ["study", "studies", "studying", "to study"],
+                                    "correct_answer": 1,
+                                    "student_answer": 0
+                                }
+                            ]
+                        },
+                        {
+                            "question_id": "3",
+                            "type": "short_answer",
+                            "question": "What is your favorite hobby?",
+                            "correct_answer": "My favorite hobby is playing games",
+                            "student_answer": "I hobby games"
+                        },
+                        {
+                            "question_id": "4",
+                            "type": "multiple_choice",
+                            "question": "Which words are articles?",
+                            "options": ["the", "a", "an", "is", "and"],
+                            "correct_answers": [0, 1, 2],
+                            "student_answer": [0, 3]
+                        }
+                    ]
+                }
+            },
+            "expected_structure": {
+                "lesson_score": "string",
+                "knowledge_gaps": ["string"], 
+                "automated_feedback": "string",
+                "additional_lesson": "boolean"
+            },
+            "validation_criteria": {
+                "score_should_be_low": true,
+                "should_identify_multiple_gaps": true,
+                "additional_lesson_should_be_true": true,
+                "should_recommend_basics_review": true
+            },
+            "expected_gaps": [
+                "verb_to_be",
+                "articles",
+                "word_order", 
+                "basic_vocabulary",
+                "sentence_structure"
+            ]
+        },
+        {
+            "id": "english_evaluation_4",
+            "description": "Оценка урока по предлогам времени с смешанными результатами",
+            "input": {
+                "teachers_notes_about_speaking": "Студент хорошо усвоил правила использования предлогов, но на практике иногда путал in/on. В монологе использовал разнообразные временные выражения, но с небольшими ошибками.",
+                "teachers_notes_about_reading": "Хорошо понимал текст с временными выражениями, правильно отвечал на вопросы о последовательности событий.",
+                "test": {
+                    "wrong_answer_questions": [
+                        {
+                            "question_id": "1",
+                            "type": "gaps_choice",
+                            "question": "I usually play games [1] the evening. My birthday is [2] March.",
+                            "gaps": [
+                                {
+                                    "gap_id": 1,
+                                    "options": ["in", "on", "at", "to"],
+                                    "correct_answer": 0,
+                                    "student_answer": 2
+                                },
+                                {
+                                    "gap_id": 2,
+                                    "options": ["in", "on", "at", "by"],
+                                    "correct_answer": 0,
+                                    "student_answer": 0
+                                }
+                            ]
+                        },
+                        {
+                            "question_id": "2",
+                            "type": "single_choice",
+                            "question": "Choose the correct sentence:",
+                            "options": [
+                                "We meet on 3 o'clock",
+                                "We meet at 3 o'clock",
+                                "We meet in 3 o'clock",
+                                "We meet by 3 o'clock"
+                            ],
+                            "correct_answer": 1,
+                            "student_answer": 1
+                        }
+                    ]
+                }
+            },
+            "expected_structure": {
+                "lesson_score": "string",
+                "knowledge_gaps": ["string"],
+                "automated_feedback": "string", 
+                "additional_lesson": "boolean"
+            },
+            "validation_criteria": {
+                "score_should_be_medium": true,
+                "should_identify_specific_preposition_issues": true,
+                "feedback_should_focus_on_practice": true,
+                "additional_lesson_optional": true
+            }
+        }
+    ]
+}

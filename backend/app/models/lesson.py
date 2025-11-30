@@ -1,0 +1,21 @@
+from sqlalchemy import Column, Integer, Text, Boolean
+from sqlalchemy.dialects.postgresql import JSON
+from app.database import Base
+
+
+class Lesson(Base):
+    __tablename__ = "lesson"
+
+    lesson_id = Column(Integer, primary_key=True)
+    theory_text = Column(Text)
+    reading_text = Column(Text)
+    speaking_text = Column(Text)
+    lesson_test_json = Column(JSON)
+    lesson_test_results_json = Column(JSON)
+    lesson_notes = Column(Text)
+    results_json = Column(JSON)
+    is_access = Column(Boolean, nullable=False, default=False)
+    is_ended = Column(Boolean, nullable=False, default=False)
+
+    def __repr__(self):
+        return f'<Lesson(id={self.lesson_id}, is_ended{self.is_ended}, is_access={self.is_access})>'
