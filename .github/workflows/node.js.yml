@@ -25,7 +25,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./bachelor-2025-team-make-it-simple/frontend
+        working-directory: ./frontend
 
     # Используем стратегию "matrix", чтобы запустить задачу несколько раз с разными параметрами.
     # Здесь мы указываем, что нужно запустить тесты для нескольких версий Node.js.
@@ -45,6 +45,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+        cache-dependency-path: ./frontend
         cache: 'npm'
 
     # Шаг 3: Устанавливаем зависимости из package-lock.json (или npm-shrinkwrap.json).
