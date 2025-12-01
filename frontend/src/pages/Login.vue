@@ -80,7 +80,6 @@ export default {
 </script>
 
 <style>
-/* Глобальные стили (без scoped) */
 html, body {
   margin: 0;
   padding: 0;
@@ -90,7 +89,6 @@ html, body {
   background: #071446;
 }
 
-/* Сброс отступов для всех элементов */
 * {
   margin: 0;
   padding: 0;
@@ -102,7 +100,6 @@ html, body {
 @import url('https://fonts.cdnfonts.com/css/kyivtype-titling');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 
-/* Контейнер страницы */
 .auth-page {
   display: flex;
   width: 100vw;
@@ -113,7 +110,6 @@ html, body {
   position: relative;
 }
 
-/* ЛЕВАЯ ЧАСТЬ */
 .left-side {
   position: relative;
   width: 50%;
@@ -122,7 +118,6 @@ html, body {
   background: #071446; /* Запасной фон на случай проблем с изображением */
 }
 
-/* Картинка гарантированно заполняет блок */
 .left-bg {
   position: absolute;
   top: 0;
@@ -132,11 +127,10 @@ html, body {
   object-fit: cover;
   object-position: left center;
   display: block;
-  min-width: 100%; /* Гарантирует минимальную ширину */
-  min-height: 100%; /* Гарантирует минимальную высоту */
+  min-width: 100%;
+  min-height: 100%;
 }
 
-/* Текст */
 .welcome-text {
   position: absolute;
   top: 8%;
@@ -144,7 +138,7 @@ html, body {
   width: 72%;
   font-family: 'KyivType Titling', serif;
   color: white;
-  z-index: 2; /* Чтобы текст был поверх изображения */
+  z-index: 2;
 }
 
 .welcome-text h1 {
@@ -172,7 +166,6 @@ html, body {
   opacity: 0.92;
 }
 
-/* Логотип */
 .logo {
   position: absolute;
   bottom: 40px;
@@ -182,7 +175,6 @@ html, body {
   z-index: 2;
 }
 
-/* ПРАВАЯ ЧАСТЬ */
 .right-side {
   width: 50%;
   height: 100%;
@@ -194,7 +186,6 @@ html, body {
   position: relative;
 }
 
-/* Форма */
 .auth-card {
   background: rgb(6, 15, 48);
   padding: 50px 60px;
@@ -206,7 +197,6 @@ html, body {
   z-index: 1;
 }
 
-/* Заголовок с JetBrains Mono */
 .auth-title {
   font-family: "JetBrains Mono", monospace;
   font-optical-sizing: auto;
@@ -217,7 +207,6 @@ html, body {
   margin-bottom: 10px;
 }
 
-/* Подзаголовок с KyivType Titling 15px */
 .subtitle {
   font-family: 'KyivType Titling', serif;
   font-size: 15px;
@@ -236,7 +225,6 @@ html, body {
   text-align: left;
 }
 
-/* Метки полей ввода с KyivType Titling 15px */
 .auth-form label {
   font-family: 'KyivType Titling', serif;
   font-size: 15px;
@@ -257,7 +245,6 @@ html, body {
   font-family: 'KyivType Titling', serif;
 }
 
-/* Кнопки с JetBrains Mono */
 .buttons {
   display: flex;
   justify-content: space-between;

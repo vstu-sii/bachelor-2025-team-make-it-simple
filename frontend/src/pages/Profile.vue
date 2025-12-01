@@ -119,103 +119,137 @@ function cancelEdit() {
 
       <div class="profile-content">
 
-        <!-- Основная информация -->
-        <div class="main-info-container">
+        <!-- Основной контейнер с основной информацией -->
+        <div class="main-info-outer-container">
+          <!-- Основная информация -->
+          <div class="main-info-container">
 
-          <!-- Левая часть -->
-          <div class="left-info">
-            <div class="inner-box">
-              <h2>Основная информация</h2>
-              <img :src="form.avatar_path || defaultAvatar" class="avatar" alt="avatar" />
-              <p class="role-text">{{ form.role }}</p>
+            <!-- Левая часть -->
+            <div class="left-info">
+              <div class="inner-box">
+                <h2>Основная информация</h2>
+                <img :src="form.avatar_path || defaultAvatar" class="avatar" alt="avatar" />
+                <p class="role-text">{{ form.role }}</p>
 
-              <div class="action-buttons">
-                <button v-if="!editing" class="btn-edit" @click="editing = true">Редактировать</button>
+                <div class="action-buttons">
+                  <button v-if="!editing" class="btn-edit" @click="editing = true">Редактировать</button>
 
-                <div v-else class="edit-buttons">
-                  <button class="btn-save" @click="save">Сохранить</button>
-                  <button class="btn-cancel" @click="cancelEdit">Отмена</button>
+                  <div v-else class="edit-buttons">
+                    <button class="btn-save" @click="save">Сохранить</button>
+                    <button class="btn-cancel" @click="cancelEdit">Отмена</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Правая часть -->
+            <div class="right-info">
+              <!-- ФИО и дата рождения -->
+              <div class="right-top inner-box">
+                <div class="field-column-group">
+                  <div class="field-row">
+                    <label>Фамилия</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.last_name" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.last_name }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>Имя</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.first_name" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.first_name }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>Отчество</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.middle_name" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.middle_name }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>Дата рождения</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input type="date" v-model="form.birth_date" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.birth_date }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Контакты -->
+              <div class="right-bottom inner-box">
+                <div class="field-column-group">
+                  <div class="field-row">
+                    <label>Электронная почта</label>
+                    <div class="field-value-box disabled">{{ form.email }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>Телефон</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.phone" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.phone }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>ВКонтакте</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.vk" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.vk }}</div>
+                  </div>
+
+                  <div class="field-row">
+                    <label>Telegram</label>
+                    <div v-if="editing" class="field-input-container">
+                      <input v-model="form.telegram" class="field-input" />
+                    </div>
+                    <div v-else class="field-value-box">{{ form.telegram }}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Правая часть -->
-          <div class="right-info">
-            <!-- Первый контейнер -->
-            <div class="right-top inner-box">
-              <div class="field-group">
-                <label>Фамилия</label>
-                <input v-if="editing" v-model="form.last_name" class="field-input" />
-                <span v-else>{{ form.last_name }}</span>
+          <!-- Контейнер интересов -->
+          <div class="extra-box inner-box">
+            <div class="interests-column-box">
+              <label>Интересы</label>
+              <div v-if="editing" class="field-input-container">
+                <textarea v-model="form.interests" class="interests-textarea"></textarea>
               </div>
-
-              <div class="field-group">
-                <label>Имя</label>
-                <input v-if="editing" v-model="form.first_name" class="field-input" />
-                <span v-else>{{ form.first_name }}</span>
-              </div>
-
-              <div class="field-group">
-                <label>Отчество</label>
-                <input v-if="editing" v-model="form.middle_name" class="field-input" />
-                <span v-else>{{ form.middle_name }}</span>
-              </div>
-
-              <div class="field-group">
-                <label>День рождения</label>
-                <input v-if="editing" type="date" v-model="form.birth_date" class="field-input" />
-                <span v-else>{{ form.birth_date }}</span>
-              </div>
-            </div>
-
-            <!-- Второй контейнер -->
-            <div class="right-bottom inner-box">
-              <div class="field-group">
-                <label>Почта</label>
-                <span class="disabled">{{ form.email }}</span>
-              </div>
-
-              <div class="field-group">
-                <label>Телефон</label>
-                <input v-if="editing" v-model="form.phone" class="field-input" />
-                <span v-else>{{ form.phone }}</span>
-              </div>
-
-              <div class="field-group">
-                <label>ВКонтакте</label>
-                <input v-if="editing" v-model="form.vk" class="field-input" />
-                <span v-else>{{ form.vk }}</span>
-              </div>
-
-              <div class="field-group">
-                <label>Телеграм</label>
-                <input v-if="editing" v-model="form.telegram" class="field-input" />
-                <span v-else>{{ form.telegram }}</span>
-              </div>
+              <div v-else class="interests-value">{{ form.interests }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Контейнер интересов -->
-        <div class="extra-box inner-box">
-          <label>Интересы</label>
-          <textarea v-if="editing" v-model="form.interests" class="interests-textarea"></textarea>
-          <p v-else>{{ form.interests }}</p>
-        </div>
-
-        <!-- Информация о курсе -->
-        <div class="course-card inner-box">
-          <h2>Информация о курсе</h2>
-          <div class="course-row">
-            <label>Твой репетитор</label>
-            <p>{{ auth.user?.tutor_full_name || "Не назначен" }}</p>
+        <!-- Внешний контейнер для информации о курсе -->
+        <div class="course-outer-container">
+          <!-- Информация о курсе -->
+          <div class="course-card">
+            <h2>Информация о курсе</h2>
+            <div class="course-divider"></div>
+            
+            <div class="course-info-grid">
+              <div class="course-info-item">
+                <div class="course-label">Твой репетитор</div>
+                <div class="course-value">{{ auth.user?.tutor_full_name || "Не назначен" }}</div>
+              </div>
+              
+              <div class="course-info-item">
+                <div class="course-label">Название курса</div>
+                <div class="course-value">{{ auth.user?.course_name || "—" }}</div>
+              </div>
+            </div>
+            
+            <button class="course-details-btn">Подробности курса</button>
           </div>
-          <div class="course-row">
-            <label>Название курса</label>
-            <p>{{ auth.user?.course_name || "—" }}</p>
-          </div>
-          <button class="btn-details">Подробности курса</button>
         </div>
 
       </div>
@@ -223,11 +257,8 @@ function cancelEdit() {
   </div>
 </template>
 
-
-
 <style scoped>
 /* ====== Общие настройки ====== */
-/* Новый контейнер для страницы с фоном */
 .profile-page-container {
   background-color: #F4886D;
   border-radius: 14%;
@@ -238,18 +269,32 @@ function cancelEdit() {
   gap: 40px;
   width: 100%;
   height: 100%;
-  max-width: 1100px; /* Ограничиваем ширину, чтобы фон не растягивался слишком сильно */
-  margin: 0 auto; /* Центрируем */
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* Обновим внешний контейнер profile-page */
 .profile-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: 'KyivType Titling', serif;
-  width: 100%; /* Это позволяет контейнеру быть гибким */
+  width: 100%;
+}
+
+/* ====== ЦВЕТ ТЕКСТА ====== */
+.profile-content {
+  color: #592012;
+}
+
+.profile-content label,
+.profile-content h2,
+.profile-content p,
+.profile-content span,
+.profile-content .role-text,
+.profile-content .course-label,
+.profile-content .course-value {
+  color: #592012;
 }
 
 /* ====== Хедер ====== */
@@ -268,8 +313,20 @@ function cancelEdit() {
   z-index: 999;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
 .header-logo {
   height: 38px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 100%;
 }
 
 .user-name {
@@ -277,14 +334,19 @@ function cancelEdit() {
   color: #ff0044;
   font-weight: 700;
   font-size: 20px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: 2px solid #ff0044;
   object-fit: cover;
+  display: flex;
+  align-items: center;
 }
 
 .menu-icon {
@@ -292,6 +354,8 @@ function cancelEdit() {
   height: 32px;
   cursor: pointer;
   transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
 }
 
 .menu-icon:hover {
@@ -309,262 +373,44 @@ function cancelEdit() {
   gap: 40px;
 }
 
-/* ====== Основная карточка профиля ====== */
-.profile-card {
-  display: flex;
-  justify-content: center;
+/* ====== НОВЫЕ КОНТЕЙНЕРЫ ====== */
+
+/* Внешний контейнер для основной информации */
+.main-info-outer-container {
   background: #fbb599;
-  border-radius: 28px;
-  padding: 40px 50px;
-  width: 950px;
-  gap: 30px;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
-}
-
-/* Левая колонка */
-.left-column {
+  border-radius: 25px;
+  padding: 30px;
+  width: 1000px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.25);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 230px;
+  gap: 25px;
 }
 
-.avatar-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar {
-  width: 180px;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 20px;
-  border: 3px solid #fff;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-}
-
-.role-text {
-  font-size: 18px;
-  color: #3b1d10;
-  margin: 10px 0;
-}
-
-.btn-change-avatar {
-  background: #8a3f30;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-.btn-change-avatar:hover {
-  background: #703428;
-}
-
-/* Кнопки */
-.action-buttons {
-  margin-top: 20px;
-  width: 100%;
-}
-
-.btn-edit,
-.btn-save,
-.btn-cancel {
-  width: 100%;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 12px;
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.25s;
-  margin-bottom: 10px;
-}
-
-.btn-edit,
-.btn-save {
-  background: #b24c3e;
-}
-
-.btn-edit:hover,
-.btn-save:hover {
-  background: #983e32;
-}
-
-.btn-cancel {
-  background: #6d718b;
-}
-
-.btn-cancel:hover {
-  background: #585c74;
-}
-
-/* ====== Правая колонка ====== */
-.right-column {
-  flex: 1;
+/* Внешний контейнер для информации о курсе */
+.course-outer-container {
   background: #fbb599;
+  border-radius: 25px;
+  padding: 30px;
+  width: 1000px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.25);
+}
+
+.course-outer-container .course-card {
+  background: #fedac4;
   border-radius: 20px;
-  padding: 25px 30px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.fields-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 30px;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.field-label {
-  font-weight: bold;
-  font-size: 16px;
-  color: #2f1b10;
-}
-
-.field-input,
-.interests-textarea {
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: #ffe8d5;
-  padding: 8px 10px;
-  font-size: 15px;
-  font-family: 'KyivType Titling', serif;
-  transition: background 0.25s;
-}
-
-.field-input:focus,
-.interests-textarea:focus {
-  outline: none;
-  background: #fff9de;
-}
-
-.field-text {
-  font-size: 15px;
-  color: #2a2420;
-}
-
-.field-text.disabled {
-  opacity: 0.6;
-}
-
-.interests-group {
-  grid-column: 1 / -1;
-}
-
-.interests-textarea {
-  min-height: 70px;
-  resize: vertical;
-}
-
-/* ====== Карточка курса ====== */
-.course-card {
-  width: 850px;
-  background: #fbc4a4;
-  border-radius: 22px;
   padding: 30px 40px;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
   text-align: center;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  width: 100%;
+  margin: 0;
 }
 
-.course-card h2 {
-  font-size: 26px;
-  color: #361a10;
-  margin-bottom: 15px;
-}
-
-.course-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 40px;
-  font-size: 16px;
-}
-
-.course-row label {
-  font-weight: bold;
-  color: #2f1b10;
-}
-
-.course-row p {
-  color: #50392f;
-}
-
-.btn-details {
-  background: #b24c3e;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-size: 15px;
-  padding: 10px 20px;
-  margin-top: 20px;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-.btn-details:hover {
-  background: #983e32;
-}
-
-/* ====== Адаптив ====== */
-@media (max-width: 1024px) {
-  .profile-card {
-    flex-direction: column;
-    align-items: center;
-    width: 95%;
-  }
-
-  .right-column {
-    width: 100%;
-  }
-
-  .fields-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .course-card {
-    width: 95%;
-  }
-}
-
-@media (max-width: 768px) {
-  .main-header {
-    padding: 0 20px;
-  }
-
-  .user-name {
-    font-size: 16px;
-  }
-
-  .profile-card,
-  .course-card {
-    padding: 20px;
-  }
-
-  .course-row {
-    flex-direction: column;
-    text-align: left;
-    gap: 5px;
-  }
-}
-
+/* ====== Основная карточка профиля ====== */
 .main-info-container {
   display: flex;
   gap: 30px;
-  width: 950px;
+  width: 100%;
 }
 
 .inner-box {
@@ -603,7 +449,6 @@ function cancelEdit() {
 
 .role-text {
   font-size: 16px;
-  color: #3b1d10;
 }
 
 /* Правая часть */
@@ -614,50 +459,46 @@ function cancelEdit() {
   gap: 20px;
 }
 
-.right-info .inner-box {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ===== КНОПКИ ===== */
+.btn-edit {
+  background: #f4886d !important;
+  color: #411616 !important;
 }
 
-.field-group {
-  display: flex;
-  justify-content: space-between;
-  font-size: 15px;
+.btn-save {
+  background: #b24c3e !important;
 }
 
-/* Контейнер под основной частью */
-.extra-box {
-  width: 950px;
+.btn-edit:hover {
+  background: #cf7058 !important;
+}
+
+.btn-save:hover {
+  background: #983e32 !important;
+}
+
+.action-buttons {
   margin-top: 20px;
+  width: 100%;
 }
 
-/* Курс */
-.course-card {
-  width: 950px;
-  text-align: center;
-  margin-top: 20px;
-}
-
-/* Кнопки */
 .btn-edit,
 .btn-save,
-.btn-cancel,
-.btn-details {
+.btn-cancel {
+  width: 100%;
   border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
-  background: #b24c3e;
-  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
   font-weight: bold;
   cursor: pointer;
   transition: 0.25s;
+  margin-bottom: 10px;
+  font-family: 'KyivType Titling', serif;
 }
 
-.btn-edit:hover,
-.btn-save:hover,
-.btn-details:hover {
-  background: #983e32;
+.btn-save,
+.btn-cancel {
+  color: #fff;
 }
 
 .btn-cancel {
@@ -674,5 +515,213 @@ function cancelEdit() {
   gap: 10px;
 }
 
+/* ===== КОЛОНОЧНЫЕ ПОЛЯ (ФИО / Контакты) ===== */
+.field-column-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ЖИРНЫЙ ШРИФТ ДЛЯ ЗНАЧЕНИЙ */
+.field-value-box {
+  background: #d8b9a7;
+  padding: 6px 12px;
+  border-radius: 8px;
+  min-width: 180px;
+  text-align: left;
+  font-weight: bold !important; /* Жирный шрифт */
+}
+
+.field-value-box.disabled {
+  opacity: 0.7;
+}
+
+.field-input-container {
+  min-width: 180px;
+}
+
+.field-input {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #ffe8d5;
+  padding: 6px 12px;
+  font-size: 15px;
+  font-family: 'KyivType Titling', serif;
+  transition: background 0.25s;
+  color: #592012;
+  font-weight: bold; /* Жирный шрифт для полей ввода */
+}
+
+.field-input:focus {
+  outline: none;
+  background: #fff9de;
+}
+
+/* ===== ИНТЕРЕСЫ ===== */
+.interests-column-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.interests-value {
+  background: #d8b9a7;
+  padding: 10px 14px;
+  border-radius: 8px;
+  min-height: 60px;
+  font-weight: normal; /* Интересы остаются обычным шрифтом */
+}
+
+.interests-textarea {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #ffe8d5;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: 'KyivType Titling', serif;
+  min-height: 60px;
+  resize: vertical;
+  transition: background 0.25s;
+  color: #592012;
+  font-weight: normal; /* Интересы остаются обычным шрифтом */
+}
+
+.interests-textarea:focus {
+  outline: none;
+  background: #fff9de;
+}
+
+/* Контейнер под основной частью */
+.extra-box {
+  width: 100%;
+  margin-top: 0;
+}
+
+/* ===== ИНФОРМАЦИЯ О КУРСЕ ===== */
+.course-card h2 {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.course-divider {
+  width: 100%;
+  height: 2px;
+  background: #000;
+  opacity: 0.25;
+  margin-bottom: 25px;
+}
+
+/* НОВЫЙ ФОРМАТ ДЛЯ ИНФОРМАЦИИ О КУРСЕ */
+.course-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.course-info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-label {
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 0;
+}
+
+.course-value {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: bold;
+  min-width: 180px;
+  text-align: center;
+}
+
+/* Подробности курса - КНОПКА */
+.course-details-btn {
+  background: #f4886d !important;
+  color: #592012 !important; /* Цвет текста #592012 */
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: bold;
+  margin-top: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  font-family: 'KyivType Titling', serif;
+}
+
+.course-details-btn:hover {
+  background: #cf7058 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* ====== Адаптив ====== */
+@media (max-width: 1024px) {
+  .main-info-outer-container,
+  .course-outer-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .main-info-container {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .right-info {
+    width: 100%;
+  }
+
+  .extra-box {
+    width: 100%;
+  }
+
+  .course-info-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    padding: 0 20px;
+  }
+
+  .user-name {
+    font-size: 16px;
+  }
+
+  .profile-page-container {
+    padding: 20px;
+  }
+
+  .field-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .field-value-box,
+  .field-input-container {
+    min-width: 100%;
+    width: 100%;
+  }
+}
 </style>
