@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, computed } from "vue";
 import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
 import { useRouter } from "vue-router";
+import StudentProfileComponents from "./StudentProfileComponents.vue";
+import TutorProfileComponents from "./TutorProfileComponents.vue";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -25,6 +27,11 @@ const form = reactive({
 
 // Аватарка по умолчанию
 const defaultAvatar = "/src/assets/avatars/default_avatar.svg";
+
+// Определяем роль пользователя
+const userRole = computed(() => auth.user?.role || "");
+const isStudent = computed(() => userRole.value === "Ученик");
+const isTutor = computed(() => userRole.value === "Репетитор");
 
 onMounted(async () => {
   if (!auth.token) {
@@ -229,29 +236,10 @@ function cancelEdit() {
           </div>
         </div>
 
-        <!-- Внешний контейнер для информации о курсе -->
-        <div class="course-outer-container">
-          <!-- Информация о курсе -->
-          <div class="course-card">
-            <h2>Информация о курсе</h2>
-            <div class="course-divider"></div>
-            
-            <div class="course-info-grid">
-              <div class="course-info-item">
-                <div class="course-label">Твой репетитор</div>
-                <div class="course-value">{{ auth.user?.tutor_full_name || "Не назначен" }}</div>
-              </div>
-              
-              <div class="course-info-item">
-                <div class="course-label">Название курса</div>
-                <div class="course-value">{{ auth.user?.course_name || "—" }}</div>
-              </div>
-            </div>
-            
-            <button class="course-details-btn">Подробности курса</button>
-          </div>
-        </div>
-
+        <!-- Динамическая часть в зависимости от роли -->
+        <component :is="isStudent ? StudentProfileComponents : TutorProfileComponents" 
+                   :user="auth.user" 
+                   v-if="userRole" />
       </div>
     </div>
   </div>
@@ -268,7 +256,8 @@ function cancelEdit() {
   align-items: center;
   gap: 40px;
   width: 100%;
-  height: 100%;
+  /* ИЗМЕНИТЬ: убрать height: 100% */
+  min-height: 100vh; /* ВМЕСТО height: 100% */
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -280,6 +269,21 @@ function cancelEdit() {
   align-items: center;
   font-family: 'KyivType Titling', serif;
   width: 100%;
+  /* ДОБАВИТЬ: разрешить рост */
+  flex-grow: 1;
+}
+
+/* ====== Контейнер контента ====== */
+.profile-content {
+  margin-top: 120px;
+  width: 100%;
+  max-width: 1050px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  /* ДОБАВИТЬ: разрешить прокрутку если нужно */
+  overflow-y: visible;
 }
 
 /* ====== ЦВЕТ ТЕКСТА ====== */
@@ -535,7 +539,7 @@ function cancelEdit() {
   border-radius: 8px;
   min-width: 180px;
   text-align: left;
-  font-weight: bold !important; /* Жирный шрифт */
+  font-weight: bold !important;
 }
 
 .field-value-box.disabled {
@@ -556,7 +560,7 @@ function cancelEdit() {
   font-family: 'KyivType Titling', serif;
   transition: background 0.25s;
   color: #592012;
-  font-weight: bold; /* Жирный шрифт для полей ввода */
+  font-weight: bold;
 }
 
 .field-input:focus {
@@ -576,7 +580,7 @@ function cancelEdit() {
   padding: 10px 14px;
   border-radius: 8px;
   min-height: 60px;
-  font-weight: normal; /* Интересы остаются обычным шрифтом */
+  font-weight: normal;
 }
 
 .interests-textarea {
@@ -591,7 +595,7 @@ function cancelEdit() {
   resize: vertical;
   transition: background 0.25s;
   color: #592012;
-  font-weight: normal; /* Интересы остаются обычным шрифтом */
+  font-weight: normal;
 }
 
 .interests-textarea:focus {
@@ -605,76 +609,9 @@ function cancelEdit() {
   margin-top: 0;
 }
 
-/* ===== ИНФОРМАЦИЯ О КУРСЕ ===== */
-.course-card h2 {
-  font-size: 26px;
-  margin-bottom: 8px;
-}
-
-.course-divider {
-  width: 100%;
-  height: 2px;
-  background: #000;
-  opacity: 0.25;
-  margin-bottom: 25px;
-}
-
-/* НОВЫЙ ФОРМАТ ДЛЯ ИНФОРМАЦИИ О КУРСЕ */
-.course-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.course-info-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.course-label {
-  font-weight: bold;
-  font-size: 18px;
-  margin-bottom: 0;
-}
-
-.course-value {
-  background: white;
-  padding: 8px 16px;
-  border-radius: 10px;
-  display: inline-block;
-  font-weight: bold;
-  min-width: 180px;
-  text-align: center;
-}
-
-/* Подробности курса - КНОПКА */
-.course-details-btn {
-  background: #f4886d !important;
-  color: #592012 !important; /* Цвет текста #592012 */
-  border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
-  font-weight: bold;
-  margin-top: 25px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  font-family: 'KyivType Titling', serif;
-}
-
-.course-details-btn:hover {
-  background: #cf7058 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-/* ====== Адаптив ====== */
+/* ===== Адаптив ====== */
 @media (max-width: 1024px) {
-  .main-info-outer-container,
-  .course-outer-container {
+  .main-info-outer-container {
     width: 95%;
     padding: 20px;
   }
@@ -691,11 +628,6 @@ function cancelEdit() {
 
   .extra-box {
     width: 100%;
-  }
-
-  .course-info-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
   }
 }
 
