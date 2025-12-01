@@ -62,6 +62,15 @@ export default {
     };
   },
 
+  mounted() {
+    document.body.classList.add('auth-page');
+    document.body.style.overflowY = 'auto';
+  },
+
+  beforeUnmount() {
+    document.body.classList.remove('auth-page');
+  },
+
   methods: {
     async onLogin() {
       const auth = useAuthStore();
@@ -78,23 +87,6 @@ export default {
   }
 };
 </script>
-
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #071446;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-</style>
 
 <style scoped>
 @import url('https://fonts.cdnfonts.com/css/kyivtype-titling');
@@ -278,6 +270,11 @@ html, body {
 .btn-register:hover {
   transform: translateY(-2px);
   opacity: 0.9;
+}
+
+:deep(body) {
+  background-color: #071446 !important;
+  overflow: auto !important;
 }
 
 </style>

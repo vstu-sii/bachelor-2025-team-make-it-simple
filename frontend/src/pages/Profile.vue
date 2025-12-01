@@ -1,10 +1,21 @@
 <script setup>
-import { onMounted, reactive, ref, computed } from "vue";
+import { onMounted, onUnmounted, reactive, ref, computed } from "vue";
 import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
 import { useRouter } from "vue-router";
 import StudentProfileComponents from "./StudentProfileComponents.vue";
 import TutorProfileComponents from "./TutorProfileComponents.vue";
+
+onMounted(() => {
+  // Добавляем класс к body при входе на страницу профиля
+  document.body.classList.add('profile-page')
+})
+
+onUnmounted(() => {
+  // Убираем класс при выходе со страницы профиля
+  document.body.classList.remove('profile-page')
+})
+
 
 const router = useRouter();
 const auth = useAuthStore();

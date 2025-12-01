@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import api from "../api/axios";
 import { useRouter } from "vue-router";
 
@@ -19,6 +19,15 @@ const form = ref({
   role: "Ученик",
   password: "",
   password_repeat: "",
+});
+
+onMounted(() => {
+  document.body.classList.add('auth-page');
+  document.body.style.overflowY = 'auto'; // Разрешить прокрутку
+});
+
+onUnmounted(() => {
+  document.body.classList.remove('auth-page');
 });
 
 function nextStep() {
@@ -404,5 +413,10 @@ async function submit() {
 .role-item input[type="radio"] {
   width: auto;
   margin: 0;
+}
+
+:deep(body) {
+  background-color: #071446 !important;
+  overflow: auto !important;
 }
 </style>

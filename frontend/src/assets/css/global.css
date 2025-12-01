@@ -1,0 +1,37 @@
+/* global.css - глобальные стили для всего приложения */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  /* Фон по умолчанию для всех страниц */
+  body {
+    background-color: #071446; /* Темно-синий фон как в логине */
+    overflow-y: auto; /* Разрешить вертикальную прокрутку */
+  }
+  
+  /* Для страницы профиля - оранжевый фон */
+  .profile-page body {
+    background-color: #F4886D !important; /* Оранжевый фон профиля */
+  }
+  
+  /* Для страниц авторизации - темно-синий фон */
+  .auth-page body {
+    background-color: #071446 !important;
+  }
+  
+  /* Убираем лишние отступы и центрирование */
+  #app {
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  /* Убираем стандартные отступы */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
