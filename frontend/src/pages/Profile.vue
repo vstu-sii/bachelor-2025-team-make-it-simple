@@ -3,8 +3,9 @@ import { onMounted, onUnmounted, reactive, ref, computed, watch } from "vue";
 import { useAuthStore } from "../stores/auth";
 import { useRoute, useRouter } from "vue-router";
 import api from "../api/axios";
-import StudentProfileComponents from "./StudentProfileComponents.vue";
-import TutorProfileComponents from "./TutorProfileComponents.vue";
+import StudentProfileComponents from "../components/StudentProfileComponents.vue";
+import TutorProfileComponents from "../components/TutorProfileComponents.vue";
+import AppHeader from "../components/Header.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -204,28 +205,9 @@ function cancelEdit() {
   <div class="profile-page-container">
     <div class="profile-page">
       
-      <!-- Хедер (всегда показываем) -->
-      <header class="main-header fixed-header">
-        <div class="header-left">
-          <img src="/src/assets/logo.svg" alt="Make It Simple" class="header-logo" @click="router.push('/profile')" style="cursor: pointer;" />
-          <!-- Кнопка "Вернуться" в хедере для чужих профилей -->
-          <button v-if="!isOwnProfile && auth.user" @click="router.push('/profile')" class="back-to-profile-header-btn">
-            ← Мой профиль
-          </button>
-        </div>
-        
-        <!-- Правая часть хедера - всегда показываем данные авторизованного пользователя или ничего -->
-        <div class="header-right" v-if="auth.user">
-          <span class="user-name" @click="router.push('/profile')" style="cursor: pointer;">
-            {{ auth.user.first_name }} {{ auth.user.last_name?.charAt(0) }}.
-          </span>
-          <img :src="auth.user.avatar_path || defaultAvatar" alt="avatar" class="user-avatar" @click="router.push('/profile')" style="cursor: pointer;" />
-        </div>
-        
-        <!-- Если пользователь не авторизован, ничего не показываем в правой части -->
-        <!-- Убираем кнопку "Войти" -->
-      </header>
-
+      <!-- Используем компонент Header -->
+      <AppHeader :show-back-button="!isOwnProfile && auth.user" />
+      
       <!-- Показываем индикатор загрузки аутентификации -->
       <div v-if="authLoading" class="auth-loading">
         <p>Проверка авторизации...</p>
@@ -442,81 +424,6 @@ function cancelEdit() {
 .profile-content .course-label,
 .profile-content .course-value {
   color: #592012;
-}
-
-/* ====== Хедер ====== */
-.main-header.fixed-header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 80px;
-  background: #01072c;
-  border-bottom: 2px solid #ff0044;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
-  z-index: 999;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.header-logo {
-  height: 38px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  height: 100%;
-}
-
-.user-name {
-  font-family: 'JetBrains Mono', monospace;
-  color: #ff0044;
-  font-weight: 700;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.user-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 2px solid #ff0044;
-  object-fit: cover;
-  display: flex;
-  align-items: center;
-}
-
-/* Кнопка "Вернуться" в хедере */
-.back-to-profile-header-btn {
-  background: #6d718b;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'KyivType Titling', serif;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.back-to-profile-header-btn:hover {
-  background: #585c74;
-}
-
-/* Убираем стили для кнопки "Войти" */
-.login-btn {
-  display: none;
 }
 
 /* Статистика репетитора */
@@ -832,17 +739,9 @@ function cancelEdit() {
   .extra-box {
     width: 100%;
   }
-  
-  .main-header.fixed-header {
-    padding: 0 20px;
-  }
 }
 
 @media (max-width: 768px) {
-  .main-header.fixed-header {
-    padding: 0 15px;
-  }
-
   .user-name {
     font-size: 16px;
   }

@@ -18,7 +18,7 @@
         </div>
 
         <div v-if="courseInfo.created_at" class="course-info-item">
-          <div class="course-label">Дата начала</div>
+          <div class="course-label">Дата создания курса</div>
           <div class="course-value">{{ formatDate(courseInfo.created_at) }}</div>
         </div>
 

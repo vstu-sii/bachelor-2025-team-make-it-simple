@@ -23,9 +23,11 @@ class CourseWithStudentsResponse(CourseResponse):
 class TutorCourseResponse(BaseModel):
     course_id: int
     course_name: str
-    student_id: int
+    student_id: Optional[int] = None
     student_name: str
     created_at: Optional[date] = None
+    knowledge_gaps: Optional[str] = None
+    has_student: bool = True
 
 # Схема для отображения курсов ученика
 class StudentCourseResponse(BaseModel):

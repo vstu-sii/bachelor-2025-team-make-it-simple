@@ -144,28 +144,40 @@
             <div class="table-header">
               <div class="table-cell student-col">Ученик</div>
               <div class="table-cell course-col">Курс</div>
-              <div class="table-cell date-col">Дата начала</div>
+              <div class="table-cell date-col">Дата создания</div>
               <div class="table-cell actions-col">Действия</div>
             </div>
             
             <!-- Строки таблицы -->
             <div 
               v-for="course in filteredCourses" 
-              :key="`${course.course_id}-${course.student_id}`" 
+              :key="course.has_student ? `${course.course_id}-${course.student_id}` : `empty-${course.course_id}`" 
               class="table-row"
             >
               <div class="table-cell student-col">
                 <div class="student-info">
-                  <div class="student-name">{{ course.student_name }}</div>
-                  <div v-if="course.knowledge_gaps" class="knowledge-gaps-badge">
-                    Есть пробелы
-                  </div>
+                  <!-- Для курсов без учеников показываем прочерк -->
+                  <span 
+                    v-if="!course.has_student" 
+                    class="no-student"
+                  >
+                    -
+                  </span>
+                  
+                  <!-- Для курсов с учениками - кликабельная ссылка -->
+                  <a 
+                    v-else
+                    @click="viewStudentProfile(course.student_id)" 
+                    class="student-name-link"
+                    :title="`Перейти к профилю ${course.student_name}`"
+                  >
+                    {{ course.student_name }}
+                  </a>
                 </div>
               </div>
               <div class="table-cell course-col">
                 <div class="course-info">
                   <div class="course-title">{{ course.course_name }}</div>
-                  <div class="course-id">ID: {{ course.course_id }}</div>
                 </div>
               </div>
               <div class="table-cell date-col">
@@ -178,21 +190,14 @@
                   <button 
                     @click="goToCourse(course.course_id)" 
                     class="course-details-btn"
-                    title="Перейти к курсу"
+                    :title="course.has_student ? 'Перейти к курсу' : 'Перейти к пустому курсу'"
                   >
                     К курсу
-                  </button>
-                  <button 
-                    @click="viewStudentProfile(course.student_id)" 
-                    class="student-profile-btn"
-                    title="Профиль ученика"
-                  >
-                    Профиль
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          </div> <!-- Закрывающий тег для .courses-table -->
           
           <div class="table-footer">
             <div class="pagination-info">
@@ -237,10 +242,16 @@ const filteredCourses = computed(() => {
   }
   
   const query = searchQuery.value.toLowerCase();
-  return courses.value.filter(course => 
-    course.student_name.toLowerCase().includes(query) ||
-    course.course_name.toLowerCase().includes(query)
-  );
+  return courses.value.filter(course => {
+    // Проверяем название курса
+    const courseMatches = course.course_name.toLowerCase().includes(query);
+    
+    // Проверяем имя ученика (только для курсов с учениками)
+    const studentMatches = course.has_student && 
+                          course.student_name.toLowerCase().includes(query);
+    
+    return courseMatches || studentMatches;
+  });
 });
 
 // Загружаем курсы репетитора
@@ -356,7 +367,10 @@ const totalCourses = computed(() => {
 });
 
 const totalStudents = computed(() => {
-  const uniqueStudents = new Set(courses.value.map(c => c.student_id));
+  const uniqueStudents = new Set(courses.value
+    .filter(c => c.has_student && c.student_id)
+    .map(c => c.student_id)
+  );
   return uniqueStudents.size;
 });
 </script>
@@ -876,6 +890,28 @@ const totalStudents = computed(() => {
   color: #592012;
 }
 
+/* Стиль для курсов без учеников */
+.no-student {
+  color: #888;
+  font-style: italic;
+  font-size: 15px;
+}
+
+/* Подсветка строк с курсами без учеников */
+.table-row:has(.no-student) {
+  background-color: #f9f9f9;
+  opacity: 0.9;
+}
+
+.table-row:has(.no-student):hover {
+  background-color: #f0f0f0;
+}
+
+/* Заголовок курса без учеников */
+.table-row:has(.no-student) .course-title {
+  color: #666;
+}
+
 /* Колонки таблицы */
 .student-col {
   justify-content: flex-start;
@@ -900,26 +936,36 @@ const totalStudents = computed(() => {
   gap: 5px;
 }
 
-.student-name {
+/* Стиль для кликабельного ФИО ученика */
+.student-name-link {
   font-weight: bold;
   font-size: 15px;
+  color: #592012;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-.knowledge-gaps-badge {
-  background: #ffeb3b;
-  color: #333;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 10px;
-  display: inline-block;
-  font-weight: bold;
+.student-name-link:hover {
+  color: #f4886d;
+  text-decoration: underline;
+  background-color: rgba(244, 136, 109, 0.1);
+  transform: translateY(-1px);
 }
+
+.student-name-link:active {
+  transform: translateY(0);
+}
+
+/* Удалены стили для knowledge-gaps-badge */
 
 /* Информация о курсе */
 .course-info {
   display: flex;
   flex-direction: column;
-  gap: 5px;
 }
 
 .course-title {
@@ -964,25 +1010,6 @@ const totalStudents = computed(() => {
 
 .course-details-btn:hover {
   background: #cf7058;
-  transform: translateY(-2px);
-}
-
-.student-profile-btn {
-  padding: 8px 15px;
-  background: #6d718b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.student-profile-btn:hover {
-  background: #585c74;
   transform: translateY(-2px);
 }
 
