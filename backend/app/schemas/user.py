@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr, model_validator
-from datetime import date
-from typing import Optional
-
+from datetime import date, datetime
+from typing import Optional, Dict, Any
 
 class UserBase(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=50)
@@ -50,7 +49,7 @@ class UserLogin(BaseModel):
     password: str
     
 
-class UserResponse(UserBase): # это ответ API
+class UserResponse(UserBase):
     user_id: int
 
     model_config = {
@@ -68,3 +67,29 @@ class UserUpdate(BaseModel):
     vk: Optional[str] = Field(None, max_length=100)
     avatar_path: Optional[str] = Field(None, max_length=1000)
     interests: Optional[str] = None
+
+
+class CourseInfoResponse(BaseModel):
+    course_id: int
+    course_name: str
+    created_at: Optional[str]
+    knowledge_gaps: Optional[str]
+
+
+class UserWithCourseResponse(BaseModel):
+    user_id: int
+    email: EmailStr
+    last_name: Optional[str]
+    first_name: str
+    middle_name: Optional[str]
+    birth_date: Optional[str]
+    phone: Optional[str]
+    telegram: Optional[str]
+    vk: Optional[str]
+    interests: Optional[str]
+    avatar_path: Optional[str]
+    role: str
+    course_info: Optional[CourseInfoResponse] = None
+    tutor_full_name: Optional[str] = None
+    courses_count: Optional[int] = None
+    students_count: Optional[int] = None

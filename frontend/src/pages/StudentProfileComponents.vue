@@ -5,10 +5,16 @@ const props = defineProps({
   user: {
     type: Object,
     required: true
+  },
+  isOwnProfile: {
+    type: Boolean,
+    default: true
   }
 });
 
-// Можно добавить логику для ученика при необходимости
+// Вычисляем данные курса
+const courseInfo = computed(() => props.user.course_info || {});
+const tutorName = computed(() => props.user.tutor_full_name || "Не назначен");
 </script>
 
 <template>
@@ -22,16 +28,29 @@ const props = defineProps({
       <div class="course-info-grid">
         <div class="course-info-item">
           <div class="course-label">Твой репетитор</div>
-          <div class="course-value">{{ user?.tutor_full_name || "Не назначен" }}</div>
+          <div class="course-value">{{ tutorName }}</div>
         </div>
         
-        <div class="course-info-item">
+        <div v-if="courseInfo.course_name" class="course-info-item">
           <div class="course-label">Название курса</div>
-          <div class="course-value">{{ user?.course_name || "—" }}</div>
+          <div class="course-value">{{ courseInfo.course_name }}</div>
+        </div>
+
+        <div v-if="courseInfo.created_at" class="course-info-item">
+          <div class="course-label">Дата начала</div>
+          <div class="course-value">{{ courseInfo.created_at }}</div>
+        </div>
+
+        <div v-if="courseInfo.knowledge_gaps" class="course-info-item">
+          <div class="course-label">Пробелы в знаниях</div>
+          <div class="course-value knowledge-gaps">{{ courseInfo.knowledge_gaps }}</div>
         </div>
       </div>
       
-      <button class="course-details-btn">Подробности курса</button>
+      <button class="course-details-btn" v-if="isOwnProfile">Подробности курса</button>
+      <div v-else class="not-owner-note">
+        Подробности курса доступны только владельцу профиля
+      </div>
     </div>
   </div>
 </template>
@@ -72,7 +91,7 @@ const props = defineProps({
 
 .course-info-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -102,6 +121,17 @@ const props = defineProps({
   color: #592012;
 }
 
+.knowledge-gaps {
+  font-size: 14px;
+  font-weight: normal;
+  text-align: justify;
+  line-height: 1.4;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .course-details-btn {
   background: #f4886d !important;
   color: #592012 !important;
@@ -120,6 +150,13 @@ const props = defineProps({
   background: #cf7058 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.not-owner-note {
+  margin-top: 25px;
+  color: #777;
+  font-style: italic;
+  font-size: 14px;
 }
 
 /* Адаптивность */

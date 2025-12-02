@@ -1,26 +1,31 @@
 <script setup>
-import { onMounted, onUnmounted, reactive, ref, computed } from "vue";
+import { onMounted, onUnmounted, reactive, ref, computed, watch } from "vue";
 import { useAuthStore } from "../stores/auth";
+import { useRoute, useRouter } from "vue-router";
 import api from "../api/axios";
-import { useRouter } from "vue-router";
 import StudentProfileComponents from "./StudentProfileComponents.vue";
 import TutorProfileComponents from "./TutorProfileComponents.vue";
 
-onMounted(() => {
-  // Добавляем класс к body при входе на страницу профиля
-  document.body.classList.add('profile-page')
-})
-
-onUnmounted(() => {
-  // Убираем класс при выходе со страницы профиля
-  document.body.classList.remove('profile-page')
-})
-
-
+const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+
+// Добавляем состояние загрузки аутентификации
+const authLoading = ref(true);
+
+// Определяем, чей профиль загружать
+const profileUserId = computed(() => {
+  return route.params.id ? parseInt(route.params.id) : auth.user?.user_id;
+});
+
+const isOwnProfile = computed(() => {
+  return !route.params.id || parseInt(route.params.id) === auth.user?.user_id;
+});
+
 const editing = ref(false);
 const fileInput = ref(null);
+const loading = ref(true);
+const error = ref(null);
 
 const form = reactive({
   last_name: "",
@@ -34,39 +39,101 @@ const form = reactive({
   avatar_path: "",
   role: "",
   email: "",
+  course_info: null,
+  tutor_full_name: null,
+  courses_count: null,
+  students_count: null
 });
 
 // Аватарка по умолчанию
 const defaultAvatar = "/src/assets/avatars/default_avatar.svg";
 
 // Определяем роль пользователя
-const userRole = computed(() => auth.user?.role || "");
+const userRole = computed(() => form.role || "");
 const isStudent = computed(() => userRole.value === "Ученик");
 const isTutor = computed(() => userRole.value === "Репетитор");
 
 onMounted(async () => {
-  if (!auth.token) {
-    router.push("/login");
-    return;
+  document.body.classList.add('profile-page');
+  
+  // Загружаем данные пользователя если есть токен
+  const token = localStorage.getItem("token");
+  if (token && !auth.user) {
+    try {
+      await auth.fetchMe();
+    } catch (err) {
+      console.error("Ошибка загрузки данных пользователя:", err);
+    }
   }
+  authLoading.value = false;
+});
 
-  await auth.fetchMe();
+onUnmounted(() => {
+  document.body.classList.remove('profile-page');
+});
 
-  if (!auth.user) {
-    router.push("/login");
-    return;
+// Функция загрузки профиля
+async function loadProfile(userId) {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const response = await api.get(`/auth/${userId}/with_course`);
+    Object.assign(form, response.data);
+    loading.value = false;
+  } catch (err) {
+    console.error("Ошибка загрузки профиля:", err);
+    error.value = "Не удалось загрузить профиль пользователя";
+    loading.value = false;
+    
+    if (!isOwnProfile.value && err.response?.status === 404) {
+      router.push("/profile");
+    }
   }
+}
 
-  Object.assign(form, auth.user);
+// Следим за изменением параметра маршрута
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    loadProfile(parseInt(newId));
+  } else if (auth.user) {
+    loadProfile(auth.user.user_id);
+  }
+}, { immediate: true });
+
+// Следим за изменением текущего пользователя
+watch(() => auth.user, (newUser) => {
+  if (newUser && !route.params.id) {
+    loadProfile(newUser.user_id);
+  }
 });
 
 async function save() {
+  if (!isOwnProfile.value) {
+    alert("Вы не можете редактировать чужой профиль");
+    return;
+  }
+
   if (!auth.user) return;
 
   try {
-    const res = await api.put(`/auth/${auth.user.user_id}`, form);
-    auth.user = res.data;
-
+    const res = await api.put(`/auth/${auth.user.user_id}`, {
+      last_name: form.last_name,
+      first_name: form.first_name,
+      middle_name: form.middle_name,
+      birth_date: form.birth_date,
+      phone: form.phone,
+      telegram: form.telegram,
+      vk: form.vk,
+      interests: form.interests
+    });
+    
+    // Обновляем данные текущего пользователя
+    auth.user = { ...auth.user, ...res.data };
+    
+    // Перезагружаем профиль
+    await loadProfile(auth.user.user_id);
+    
     editing.value = false;
     alert("Профиль обновлён");
   } catch (err) {
@@ -76,10 +143,19 @@ async function save() {
 }
 
 function triggerFileInput() {
+  if (!isOwnProfile.value) {
+    alert("Вы не можете менять аватар чужого профиля");
+    return;
+  }
   fileInput.value?.click();
 }
 
 async function handleAvatarUpload(event) {
+  if (!isOwnProfile.value) {
+    alert("Вы не можете менять аватар чужого профиля");
+    return;
+  }
+  
   const file = event.target.files[0];
   if (!file) return;
 
@@ -104,6 +180,12 @@ async function handleAvatarUpload(event) {
     });
 
     form.avatar_path = response.data.avatar_path;
+    
+    // Обновляем аватар в store текущего пользователя
+    if (isOwnProfile.value && auth.user) {
+      auth.user.avatar_path = response.data.avatar_path;
+    }
+    
     alert('Аватар успешно обновлен!');
 
   } catch (err) {
@@ -114,29 +196,43 @@ async function handleAvatarUpload(event) {
 
 function cancelEdit() {
   editing.value = false;
-  Object.assign(form, auth.user);
+  loadProfile(profileUserId.value);
 }
 </script>
 
 <template>
   <div class="profile-page-container">
     <div class="profile-page">
-
+      
+      <!-- Хедер (всегда показываем) -->
       <header class="main-header fixed-header">
         <div class="header-left">
-          <img src="/src/assets/logo.svg" alt="Make It Simple" class="header-logo" />
+          <img src="/src/assets/logo.svg" alt="Make It Simple" class="header-logo" @click="router.push('/profile')" style="cursor: pointer;" />
+          <!-- Кнопка "Вернуться" в хедере для чужих профилей -->
+          <button v-if="!isOwnProfile && auth.user" @click="router.push('/profile')" class="back-to-profile-header-btn">
+            ← Мой профиль
+          </button>
         </div>
-        <div class="header-right">
-          <span class="user-name">
-            {{ form.first_name }} {{ form.last_name?.charAt(0) }}.
+        
+        <!-- Правая часть хедера - всегда показываем данные авторизованного пользователя или ничего -->
+        <div class="header-right" v-if="auth.user">
+          <span class="user-name" @click="router.push('/profile')" style="cursor: pointer;">
+            {{ auth.user.first_name }} {{ auth.user.last_name?.charAt(0) }}.
           </span>
-          <img :src="form.avatar_path || defaultAvatar" alt="avatar" class="user-avatar" />
-          <img src="/src/assets/menu.svg" alt="menu" class="menu-icon" />
+          <img :src="auth.user.avatar_path || defaultAvatar" alt="avatar" class="user-avatar" @click="router.push('/profile')" style="cursor: pointer;" />
         </div>
+        
+        <!-- Если пользователь не авторизован, ничего не показываем в правой части -->
+        <!-- Убираем кнопку "Войти" -->
       </header>
 
-      <div class="profile-content">
+      <!-- Показываем индикатор загрузки аутентификации -->
+      <div v-if="authLoading" class="auth-loading">
+        <p>Проверка авторизации...</p>
+      </div>
 
+      <div v-else class="profile-content" v-if="!loading && !error">
+        
         <!-- Основной контейнер с основной информацией -->
         <div class="main-info-outer-container">
           <!-- Основная информация -->
@@ -149,7 +245,20 @@ function cancelEdit() {
                 <img :src="form.avatar_path || defaultAvatar" class="avatar" alt="avatar" />
                 <p class="role-text">{{ form.role }}</p>
 
-                <div class="action-buttons">
+                <!-- Для репетитора показываем статистику -->
+                <div v-if="isTutor && form.courses_count !== null" class="tutor-stats">
+                  <div class="stat-item">
+                    <span class="stat-value">{{ form.courses_count }}</span>
+                    <span class="stat-label">курсов</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-value">{{ form.students_count }}</span>
+                    <span class="stat-label">учеников</span>
+                  </div>
+                </div>
+
+                <!-- Кнопки редактирования только для своего профиля -->
+                <div class="action-buttons" v-if="isOwnProfile && auth.user">
                   <button v-if="!editing" class="btn-edit" @click="editing = true">Редактировать</button>
 
                   <div v-else class="edit-buttons">
@@ -160,14 +269,14 @@ function cancelEdit() {
               </div>
             </div>
 
-            <!-- Правая часть -->
+            <!-- Правая часть с данными -->
             <div class="right-info">
               <!-- ФИО и дата рождения -->
               <div class="right-top inner-box">
                 <div class="field-column-group">
                   <div class="field-row">
                     <label>Фамилия</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.last_name" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.last_name }}</div>
@@ -175,7 +284,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>Имя</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.first_name" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.first_name }}</div>
@@ -183,7 +292,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>Отчество</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.middle_name" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.middle_name }}</div>
@@ -191,7 +300,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>Дата рождения</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input type="date" v-model="form.birth_date" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.birth_date }}</div>
@@ -209,7 +318,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>Телефон</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.phone" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.phone }}</div>
@@ -217,7 +326,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>ВКонтакте</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.vk" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.vk }}</div>
@@ -225,7 +334,7 @@ function cancelEdit() {
 
                   <div class="field-row">
                     <label>Telegram</label>
-                    <div v-if="editing" class="field-input-container">
+                    <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                       <input v-model="form.telegram" class="field-input" />
                     </div>
                     <div v-else class="field-value-box">{{ form.telegram }}</div>
@@ -239,18 +348,34 @@ function cancelEdit() {
           <div class="extra-box inner-box">
             <div class="interests-column-box">
               <label>Интересы</label>
-              <div v-if="editing" class="field-input-container">
+              <div v-if="editing && isOwnProfile && auth.user" class="field-input-container">
                 <textarea v-model="form.interests" class="interests-textarea"></textarea>
               </div>
-              <div v-else class="interests-value">{{ form.interests }}</div>
+              <div v-else class="interests-value">{{ form.interests || "Интересы не указаны" }}</div>
             </div>
           </div>
         </div>
 
         <!-- Динамическая часть в зависимости от роли -->
-        <component :is="isStudent ? StudentProfileComponents : TutorProfileComponents" 
-                   :user="auth.user" 
-                   v-if="userRole" />
+        <component 
+          v-if="userRole" 
+          :is="isStudent ? StudentProfileComponents : TutorProfileComponents" 
+          :user="form"
+          :is-own-profile="isOwnProfile"
+        />
+
+      </div>
+
+      <!-- Индикатор загрузки профиля -->
+      <div v-if="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Загрузка профиля...</p>
+      </div>
+
+      <!-- Сообщение об ошибке -->
+      <div v-if="error" class="error-container">
+        <p>{{ error }}</p>
+        <button v-if="auth.user" @click="router.push('/profile')" class="btn-back">Вернуться в свой профиль</button>
       </div>
     </div>
   </div>
@@ -267,8 +392,7 @@ function cancelEdit() {
   align-items: center;
   gap: 40px;
   width: 100%;
-  /* ИЗМЕНИТЬ: убрать height: 100% */
-  min-height: 100vh; /* ВМЕСТО height: 100% */
+  min-height: 100vh;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -280,8 +404,17 @@ function cancelEdit() {
   align-items: center;
   font-family: 'KyivType Titling', serif;
   width: 100%;
-  /* ДОБАВИТЬ: разрешить рост */
   flex-grow: 1;
+}
+
+/* Индикатор загрузки аутентификации */
+.auth-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #592012;
+  font-size: 18px;
 }
 
 /* ====== Контейнер контента ====== */
@@ -293,7 +426,6 @@ function cancelEdit() {
   flex-direction: column;
   align-items: center;
   gap: 40px;
-  /* ДОБАВИТЬ: разрешить прокрутку если нужно */
   overflow-y: visible;
 }
 
@@ -331,6 +463,7 @@ function cancelEdit() {
 .header-left {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
 .header-logo {
@@ -364,31 +497,56 @@ function cancelEdit() {
   align-items: center;
 }
 
-.menu-icon {
-  width: 32px;
-  height: 32px;
+/* Кнопка "Вернуться" в хедере */
+.back-to-profile-header-btn {
+  background: #6d718b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: opacity 0.3s;
+  font-family: 'KyivType Titling', serif;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.back-to-profile-header-btn:hover {
+  background: #585c74;
+}
+
+/* Убираем стили для кнопки "Войти" */
+.login-btn {
+  display: none;
+}
+
+/* Статистика репетитора */
+.tutor-stats {
   display: flex;
-  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
 }
 
-.menu-icon:hover {
-  opacity: 0.7;
-}
-
-/* ====== Контейнер контента ====== */
-.profile-content {
-  margin-top: 120px;
-  width: 100%;
-  max-width: 1050px;
+.stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
 }
 
-/* ====== НОВЫЕ КОНТЕЙНЕРЫ ====== */
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #592012;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #592012;
+  opacity: 0.8;
+}
 
 /* Внешний контейнер для основной информации */
 .main-info-outer-container {
@@ -400,25 +558,6 @@ function cancelEdit() {
   display: flex;
   flex-direction: column;
   gap: 25px;
-}
-
-/* Внешний контейнер для информации о курсе */
-.course-outer-container {
-  background: #fbb599;
-  border-radius: 25px;
-  padding: 30px;
-  width: 1000px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.25);
-}
-
-.course-outer-container .course-card {
-  background: #fedac4;
-  border-radius: 20px;
-  padding: 30px 40px;
-  text-align: center;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  width: 100%;
-  margin: 0;
 }
 
 /* ====== Основная карточка профиля ====== */
@@ -620,9 +759,62 @@ function cancelEdit() {
   margin-top: 0;
 }
 
+/* Индикатор загрузки */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: #592012;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #f4886d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Сообщение об ошибке */
+.error-container {
+  text-align: center;
+  padding: 40px;
+  color: #592012;
+  background: #ffe8d5;
+  border-radius: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.error-container p {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.btn-back {
+  background: #f4886d;
+  color: #592012;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'KyivType Titling', serif;
+}
+
 /* ===== Адаптив ====== */
 @media (max-width: 1024px) {
-  .main-info-outer-container {
+  .main-info-outer-container,
+  .course-outer-container {
     width: 95%;
     padding: 20px;
   }
@@ -640,11 +832,15 @@ function cancelEdit() {
   .extra-box {
     width: 100%;
   }
+  
+  .main-header.fixed-header {
+    padding: 0 20px;
+  }
 }
 
 @media (max-width: 768px) {
-  .main-header {
-    padding: 0 20px;
+  .main-header.fixed-header {
+    padding: 0 15px;
   }
 
   .user-name {
@@ -665,6 +861,20 @@ function cancelEdit() {
   .field-input-container {
     min-width: 100%;
     width: 100%;
+  }
+  
+  .tutor-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .header-left {
+    gap: 10px;
+  }
+  
+  .back-to-profile-header-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>
