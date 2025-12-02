@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Login from "../pages/Login.vue";
 import Register from "../pages/Register.vue";
 import Profile from "../pages/Profile.vue";
+import CoursePage from "../pages/CoursePage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -20,6 +21,13 @@ const routes = [
     component: Profile,
     meta: { requiresAuth: true },
     props: true  // передаем параметр как props
+  },
+  { 
+    path: "/course/:id(\\d+)", 
+    name: "course", 
+    component: CoursePage,
+    meta: { requiresAuth: true },
+    props: true
   }
 ];
 

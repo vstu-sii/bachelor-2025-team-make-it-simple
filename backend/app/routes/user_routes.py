@@ -136,33 +136,57 @@ def get_user_with_course_info(
                     if tutor:
                         tutor_info = f"{tutor.last_name} {tutor.first_name} {tutor.middle_name}"
     
-    # Для репетитора: информация о его курсах
+    # Для репетитора: информация о его курсах и учениках
     elif user.role == "Репетитор":
         from app.models.user_course import UserCourse
         from app.models.course import Course
+        from app.models.user import User
         
-        # Количество курсов репетитора
-        courses_count = db.query(UserCourse).filter(
-            UserCourse.user_id == user_id
-        ).count()
-        
-        # Количество учеников репетитора
-        courses = db.query(UserCourse.course_id).filter(
+        # Получаем все курсы репетитора с информацией об учениках
+        tutor_courses = db.query(UserCourse.course_id).filter(
             UserCourse.user_id == user_id
         ).all()
         
-        course_ids = [c[0] for c in courses]
+        course_ids = [c[0] for c in tutor_courses]
         
-        students_count = 0
+        courses_count = len(course_ids)
+        
+        # Собираем информацию о курсах и учениках
+        courses_info = []
         if course_ids:
-            from app.models.user import User
-            # Находим всех учеников на курсах репетитора
-            students_count = db.query(UserCourse).filter(
-                UserCourse.course_id.in_(course_ids),
-                UserCourse.user_id != user_id
-            ).join(User, UserCourse.user_id == User.user_id).filter(
-                User.role == "Ученик"
-            ).count()
+            # Получаем всех учеников на курсах репетитора
+            for course_id in course_ids:
+                course = db.query(Course).filter(
+                    Course.course_id == course_id
+                ).first()
+                
+                if course:
+                    # Находим всех учеников на этом курсе
+                    student_courses = db.query(UserCourse).filter(
+                        UserCourse.course_id == course_id,
+                        UserCourse.user_id != user_id
+                    ).all()
+                    
+                    for sc in student_courses:
+                        student = db.query(User).filter(
+                            User.user_id == sc.user_id,
+                            User.role == "Ученик"
+                        ).first()
+                        
+                        if student:
+                            courses_info.append({
+                                "course_id": course.course_id,
+                                "course_name": course.title,
+                                "student_id": student.user_id,
+                                "student_name": f"{student.last_name} {student.first_name} {student.middle_name}",
+                                "created_at": course.created_at.isoformat() if hasattr(course, 'created_at') and course.created_at else None,
+                                "knowledge_gaps": sc.knowledge_gaps
+                            })
+        
+        # Сохраняем информацию о курсах для ответа
+        # (нужно будет расширить схему ответа)
+        user_dict["courses_info"] = courses_info
+        students_count = len(courses_info)
     
     return {
         **user_dict,

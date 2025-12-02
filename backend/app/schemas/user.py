@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr, model_validator
 from datetime import date, datetime
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 
 class UserBase(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=50)
@@ -75,6 +75,13 @@ class CourseInfoResponse(BaseModel):
     created_at: Optional[str]
     knowledge_gaps: Optional[str]
 
+class TutorCourseInfo(BaseModel):
+    course_id: int
+    course_name: str
+    student_id: int
+    student_name: str
+    created_at: Optional[str] = None
+    knowledge_gaps: Optional[str] = None
 
 class UserWithCourseResponse(BaseModel):
     user_id: int
@@ -90,6 +97,7 @@ class UserWithCourseResponse(BaseModel):
     avatar_path: Optional[str]
     role: str
     course_info: Optional[CourseInfoResponse] = None
+    courses_info: List[TutorCourseInfo] = []  # Добавили информацию о курсах репетитора
     tutor_full_name: Optional[str] = None
     courses_count: Optional[int] = None
     students_count: Optional[int] = None
