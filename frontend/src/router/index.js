@@ -4,6 +4,7 @@ import Login from "../pages/Login.vue";
 import Register from "../pages/Register.vue";
 import Profile from "../pages/Profile.vue";
 import CoursePage from "../pages/CoursePage.vue";
+import AddCoursePage from "../pages/AddCoursePage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -16,11 +17,11 @@ const routes = [
     meta: { requiresAuth: true }
   },
   { 
-    path: "/profile/:id(\\d+)", // только цифры
+    path: "/profile/:id(\\d+)",
     name: "profile", 
     component: Profile,
     meta: { requiresAuth: true },
-    props: true  // передаем параметр как props
+    props: true
   },
   { 
     path: "/course/:id(\\d+)", 
@@ -28,6 +29,12 @@ const routes = [
     component: CoursePage,
     meta: { requiresAuth: true },
     props: true
+  },
+  { 
+    path: "/courses/create", 
+    name: "add-course", 
+    component: AddCoursePage,
+    meta: { requiresAuth: true }
   }
 ];
 

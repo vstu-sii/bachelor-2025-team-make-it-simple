@@ -46,62 +46,19 @@
             </div>
           </div>
           
-          <!-- Кнопка "Добавить новый курс" с иконкой -->
+          <!-- Кнопка "Добавить новый курс" с иконкой - ПРОСТОЙ ПЕРЕХОД -->
           <button 
-            @click="toggleAddForm" 
+            @click="goToAddCoursePage" 
             class="add-course-btn"
-            :class="{ 'active': showAddForm }"
           >
-            {{ showAddForm ? 'Отмена' : 'Добавить курс' }}
+            Добавить курс
             <img 
               src="/src/assets/vector.svg" 
               alt="добавить" 
               class="add-course-icon"
-              v-if="!showAddForm"
             />
           </button>
           
-        </div>
-        
-        <!-- Форма добавления нового курса -->
-        <div v-if="showAddForm" class="add-course-form">
-          <h4>Создание нового курса</h4>
-          <div class="form-group">
-            <label for="courseTitle">Название курса *</label>
-            <input 
-              id="courseTitle"
-              v-model="newCourse.title" 
-              class="form-input" 
-              placeholder="Например: Математика для начинающих"
-              @keyup.enter="addNewCourse"
-            />
-            <div class="form-hint">Обязательное поле</div>
-          </div>
-          
-          <div class="form-group">
-            <label for="courseDescription">Описание курса</label>
-            <textarea 
-              id="courseDescription"
-              v-model="newCourse.description" 
-              class="form-textarea" 
-              placeholder="Краткое описание целей и содержания курса..."
-              rows="3"
-            ></textarea>
-          </div>
-          
-          <div class="form-note">
-            <p><strong>Примечание:</strong> После создания курса вы сможете добавить учеников через поиск.</p>
-          </div>
-          
-          <div class="form-actions">
-            <button @click="addNewCourse" class="submit-course-btn" :disabled="!newCourse.title.trim()">
-              <span v-if="creatingCourse">Создание...</span>
-              <span v-else>Создать курс</span>
-            </button>
-            <button @click="resetForm" class="cancel-form-btn">
-              Очистить форму
-            </button>
-          </div>
         </div>
       </div>
       
@@ -126,7 +83,7 @@
           <div class="no-courses-icon">📚</div>
           <p class="no-courses-title">У вас пока нет курсов</p>
           <p class="no-courses-subtitle">Создайте первый курс, чтобы начать работу с учениками</p>
-          <button @click="toggleAddForm" class="create-first-course-btn">
+          <button @click="goToAddCoursePage" class="create-first-course-btn">
             Создать первый курс
           </button>
         </div>
@@ -212,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useAuthStore } from "../stores/auth";
 import { useRouter } from "vue-router";
 import api from "../api/axios";
@@ -224,16 +181,6 @@ const router = useRouter();
 const searchQuery = ref("");
 const courses = ref([]);
 const loading = ref(false);
-const creatingCourse = ref(false);
-
-// Состояние для нового курса
-const newCourse = reactive({
-  title: "",
-  description: ""
-});
-
-// Флаг для показа формы добавления курса
-const showAddForm = ref(false);
 
 // Вычисляем отфильтрованные курсы
 const filteredCourses = computed(() => {
@@ -296,42 +243,9 @@ function clearSearch() {
   loadCourses();
 }
 
-function toggleAddForm() {
-  showAddForm.value = !showAddForm.value;
-  if (!showAddForm.value) {
-    resetForm();
-  }
-}
-
-async function addNewCourse() {
-  if (!newCourse.title.trim()) {
-    alert("Пожалуйста, введите название курса");
-    return;
-  }
-
-  try {
-    creatingCourse.value = true;
-    const response = await api.post(`/courses/tutors/${auth.user.user_id}/courses`, {
-      title: newCourse.title,
-      ...(newCourse.description && { description: newCourse.description })
-    });
-    
-    resetForm();
-    showAddForm.value = false;
-    
-    await loadCourses();
-    alert(`Курс "${response.data.title}" успешно создан!`);
-  } catch (error) {
-    console.error("Ошибка создания курса:", error);
-    alert("Ошибка при создании курса: " + (error.response?.data?.detail || error.message));
-  } finally {
-    creatingCourse.value = false;
-  }
-}
-
-function resetForm() {
-  newCourse.title = "";
-  newCourse.description = "";
+// ПРОСТОЙ ПЕРЕХОД НА СТРАНИЦУ СОЗДАНИЯ КУРСА
+function goToAddCoursePage() {
+  router.push('/courses/create');
 }
 
 function goToCourse(courseId) {
@@ -561,135 +475,13 @@ const totalStudents = computed(() => {
 .add-course-btn:hover {
   background: #cf7058;
   transform: translateY(-2px);
-}
-
-.add-course-btn.active {
-  background: #6d718b;
-  color: white;
+  box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
 }
 
 .add-course-icon {
   width: 16px;
   height: 16px;
   filter: brightness(0) saturate(100%) invert(14%) sepia(43%) saturate(1000%) hue-rotate(340deg) brightness(90%) contrast(90%);
-}
-
-/* Форма добавления курса */
-.add-course-form {
-  background: #ffe8d5;
-  border-radius: 15px;
-  padding: 25px;
-  margin-top: 25px;
-  border: 2px solid #f4886d;
-}
-
-.add-course-form h4 {
-  margin: 0 0 20px 0;
-  color: #592012;
-  font-size: 18px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  font-weight: bold;
-  color: #592012;
-  font-size: 15px;
-}
-
-.form-input, .form-textarea {
-  padding: 12px 15px;
-  border: 2px solid #d8b9a7;
-  border-radius: 8px;
-  background: #fff;
-  font-family: 'KyivType Titling', serif;
-  color: #592012;
-  font-size: 15px;
-  transition: all 0.3s;
-}
-
-.form-input:focus, .form-textarea:focus {
-  outline: none;
-  border-color: #f4886d;
-  box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.1);
-}
-
-.form-textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.form-hint {
-  font-size: 12px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.form-note {
-  padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  border-left: 4px solid #f4886d;
-  margin-bottom: 20px;
-}
-
-.form-note p {
-  margin: 0;
-  font-size: 14px;
-  color: #592012;
-  line-height: 1.5;
-}
-
-.form-actions {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.submit-course-btn {
-  padding: 12px 24px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
-  font-size: 15px;
-  min-width: 140px;
-}
-
-.submit-course-btn:hover:not(:disabled) {
-  background: #45a049;
-  transform: translateY(-2px);
-}
-
-.submit-course-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.cancel-form-btn {
-  padding: 12px 20px;
-  background: #6d718b;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
-  font-size: 14px;
-}
-
-.cancel-form-btn:hover {
-  background: #585c74;
 }
 
 /* Контейнер 2: Таблица курсов */
@@ -960,8 +752,6 @@ const totalStudents = computed(() => {
   transform: translateY(0);
 }
 
-/* Удалены стили для knowledge-gaps-badge */
-
 /* Информация о курсе */
 .course-info {
   display: flex;
@@ -1046,11 +836,6 @@ const totalStudents = computed(() => {
   .add-course-btn {
     width: 100%;
     justify-content: center;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-    align-items: stretch;
   }
   
   .table-header,
