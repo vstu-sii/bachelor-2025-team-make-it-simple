@@ -1,9 +1,50 @@
 import psycopg2
 import json
-from datetime import date
+import bcrypt
+from datetime import date, datetime
+
+def create_users(cursor):
+    """Создает пользователей с правильными паролями и русскими ролями"""
+    print("\n1. Создание пользователей...")
+    
+    # Пароль для всех пользователей (хешированный)
+    password = "12345678"
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    # Список пользователей с русскими ролями
+    users = [
+        # (user_id, last_name, first_name, middle_name, birth_date, phone, telegram, vk, interests, role, email)
+        (1, 'Matokhin', 'Ilya', 'Georgievich', date(2004, 10, 2), '+79876461635', 'ilya_tg', 'ilya_vk', 'programming, football', 'Ученик', 'matokhin.ilya@yandex.ru', password_hash),
+        (2, 'Molchanova', 'Liana', 'Evgenievna', date(2001, 1, 1), '+79998887755', 'lianaaaaa', 'lianavk', '', 'Ученик', 'liana@bk.ru', password_hash),
+        (3, 'Zenin', 'Maxim', 'Aleksandrovich', date(2002, 2, 2), '+79995553535', 'tgzenina', 'vk??novk', '', 'Репетитор', 'yazenin@gmail.com', password_hash),
+        (4, 'Bokov', 'Svyatoslav', 'Dmitrievich', date(1955, 4, 4), '+79875553432', 'tgb', 'vkb', '', 'Ученик', 'bokov@yandex.ru', password_hash),
+        (5, 'Z', 'Z', 'Z', date(2011, 11, 11), '+79995553333', 'z', 'z', '', 'Ученик', 'z@z.ru', password_hash)
+    ]
+    
+    for user_data in users:
+        cursor.execute("""
+            INSERT INTO "user" (user_id, last_name, first_name, middle_name, birth_date, phone, 
+                               telegram, vk, interests, role, email, password) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE SET
+                last_name = EXCLUDED.last_name,
+                first_name = EXCLUDED.first_name,
+                middle_name = EXCLUDED.middle_name,
+                birth_date = EXCLUDED.birth_date,
+                phone = EXCLUDED.phone,
+                telegram = EXCLUDED.telegram,
+                vk = EXCLUDED.vk,
+                interests = EXCLUDED.interests,
+                role = EXCLUDED.role,
+                email = EXCLUDED.email,
+                password = EXCLUDED.password
+        """, user_data)
+        print(f"  ✓ Пользователь ID={user_data[0]}: {user_data[10]} ({user_data[9]})")
+    
+    print(f"  Все пароли установлены: {password}")
 
 def fill_database():
-    """Проверяет существование пользователей 1-4 и заполняет остальные таблицы"""
+    """Полностью заполняет базу данных тестовыми данными"""
     
     conn = psycopg2.connect(
         host="localhost",
@@ -15,38 +56,16 @@ def fill_database():
     
     try:
         print("=" * 60)
-        print("ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ")
+        print("ПОЛНОЕ ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ")
         print("=" * 60)
         
-        # 1. Проверяем существование пользователей 1-4
-        print("\n1. Проверка существования пользователей...")
+        # 1. Создаем пользователей
+        create_users(cursor)
+        conn.commit()
         
-        cursor.execute("SELECT user_id, email, role FROM \"user\" WHERE user_id IN (1, 2, 3, 4) ORDER BY user_id")
-        existing_users = cursor.fetchall()
+        # 2. Очистка остальных таблиц
+        print("\n2. Очистка таблиц (кроме пользователей)...")
         
-        if len(existing_users) < 4:
-            print(f"  ⚠ Найдено только {len(existing_users)} из 4 пользователей!")
-            print("  Создайте пользователей с ID 1, 2, 3, 4 перед запуском этого скрипта.")
-            print("  ID=3 должен быть репетитором, остальные - учениками.")
-            return
-        
-        users_data = {}
-        for user_id, email, role in existing_users:
-            users_data[user_id] = {'email': email, 'role': role}
-            print(f"  ✓ Пользователь ID={user_id}: {email} ({role})")
-        
-        # Проверяем, что ID=3 - репетитор, остальные - ученики
-        if users_data[3]['role'] != 'Репетитор':
-            print(f"\n  ❌ ОШИБКА: Пользователь ID=3 должен быть репетитором, а он {users_data[3]['role']}!")
-            return
-        
-        for user_id in [1, 2, 4]:
-            if users_data[user_id]['role'] != 'Ученик':
-                print(f"  ⚠ Предупреждение: Пользователь ID={user_id} должен быть учеником, а он {users_data[user_id]['role']}")
-        
-        print("\n2. Очистка старых данных (кроме пользователей)...")
-        
-        # Очищаем все таблицы кроме user
         tables_to_clear = [
             "course_material",
             "course_topic", 
@@ -78,7 +97,7 @@ def fill_database():
                 cursor.execute(f"ALTER SEQUENCE {seq} RESTART WITH 1")
                 print(f"  ✓ Sequence {seq} сброшен")
             except:
-                pass  # Игнорируем ошибки если sequence не существует
+                pass
         
         conn.commit()
         
@@ -120,6 +139,7 @@ def fill_database():
         # Ученик 2 (ID=2) -> Курс 3 (Business English)  
         # Ученик 4 (ID=4) -> Курс 4 (IELTS Preparation)
         # Репетитор 3 (ID=3) -> ВСЕ курсы (1-6)
+        # Ученик 5 (ID=5) -> НИКАКИХ КУРСОВ
         
         user_courses = [
             # Ученики
@@ -145,14 +165,19 @@ def fill_database():
                 (user_id, course_id, knowledge_gaps, graph_json)
             )
             
-            user_email = users_data[user_id]['email']
-            user_role = users_data[user_id]['role']
+            # Получаем информацию о пользователе из базы
+            cursor.execute("SELECT email, role FROM \"user\" WHERE user_id = %s", (user_id,))
+            user_info = cursor.fetchone()
+            user_email, user_role = user_info if user_info else (f"user_{user_id}", "Unknown")
+            
             course_name = course_map.get(course_id, f"Course {course_id}")
             
             if user_role == 'Репетитор':
                 print(f"  ✓ Репетитор {user_email} -> {course_name}")
             else:
                 print(f"  ✓ Ученик {user_email} -> {course_name}: {knowledge_gaps[:30]}...")
+        
+        print(f"  ✓ Ученик z@z.ru (ID=5) не имеет курсов")
         
         conn.commit()
         
@@ -301,6 +326,7 @@ def fill_database():
         print("=" * 60)
         
         check_queries = [
+            ("SELECT COUNT(*) FROM \"user\"", "Пользователи"),
             ("SELECT COUNT(*) FROM course", "Курсы"),
             ("SELECT COUNT(*) FROM user_course", "Связи пользователь-курс"),
             ("SELECT COUNT(*) FROM material", "Материалы"),
@@ -315,50 +341,39 @@ def fill_database():
             count = cursor.fetchone()[0]
             print(f"  {name}: {count}")
         
-        # Проверка связей для API
-        print("\nДанные для тестирования API:")
+        # Проверка пользователей
+        print("\nИнформация о пользователях:")
         print("=" * 50)
         
-        # Для ученика ID=1
-        cursor.execute("""
-            SELECT u.user_id, u.email, u.role, c.title, uc.knowledge_gaps
-            FROM "user" u
-            LEFT JOIN user_course uc ON u.user_id = uc.user_id
-            LEFT JOIN course c ON uc.course_id = c.course_id
-            WHERE u.user_id = 1
-        """)
+        cursor.execute("SELECT user_id, email, role FROM \"user\" ORDER BY user_id")
+        users = cursor.fetchall()
         
-        row = cursor.fetchone()
-        if row and row[3]:
-            print(f"✓ Ученик ID=1 ({row[1]}) имеет курс: {row[3]}")
-        else:
-            print(f"✗ Ученик ID=1 НЕ ИМЕЕТ КУРСА!")
+        for user_id, email, role in users:
+            cursor.execute("SELECT COUNT(*) FROM user_course WHERE user_id = %s", (user_id,))
+            course_count = cursor.fetchone()[0]
+            has_courses = "Есть курсы" if course_count > 0 else "Нет курсов"
+            print(f"  ID={user_id}: {email} ({role}) - {has_courses} ({course_count})")
         
-        # Для репетитора ID=3
-        cursor.execute("""
-            SELECT u.user_id, u.email, u.role, COUNT(DISTINCT uc.course_id) as course_count
-            FROM "user" u
-            LEFT JOIN user_course uc ON u.user_id = uc.user_id
-            WHERE u.user_id = 3
-            GROUP BY u.user_id, u.email, u.role
-        """)
-        
-        row = cursor.fetchone()
-        if row:
-            print(f"✓ Репетитор ID=3 ({row[1]}) ведет {row[3]} курсов")
-        
+        # Информация для тестирования
         print("\n" + "=" * 60)
         print("БАЗА ДАННЫХ УСПЕШНО ЗАПОЛНЕНА!")
         print("=" * 60)
-        print("\nТеперь можно тестировать API:")
-        print("  - Ученик ID=1: GET /auth/1/with_course")
-        print("  - Ученик ID=2: GET /auth/2/with_course")
-        print("  - Репетитор ID=3: GET /auth/3/with_course")
-        print("  - Ученик ID=4: GET /auth/4/with_course")
+        
+        print("\nДанные для тестирования:")
+        print("-" * 40)
+        print("Логины (пароль для всех: 12345678):")
+        print("1. matokhin.ilya@yandex.ru (Ученик, курс: English for Beginners)")
+        print("2. liana@bk.ru (Ученик, курс: Business English)")
+        print("3. yazenin@gmail.com (Репетитор, все курсы)")
+        print("4. bokov@yandex.ru (Ученик, курс: IELTS Preparation)")
+        print("5. z@z.ru (Ученик, без курсов)")
+        print("\nДля входа на сайт используйте email и пароль 12345678")
         
     except Exception as e:
         print(f"\nОШИБКА: {e}")
         conn.rollback()
+        import traceback
+        traceback.print_exc()
     finally:
         cursor.close()
         conn.close()

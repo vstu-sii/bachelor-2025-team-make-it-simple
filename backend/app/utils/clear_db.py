@@ -32,9 +32,9 @@ def clear_all_tables():
         for table in tables:
             try:
                 cursor.execute(f"TRUNCATE TABLE {table} CASCADE")
-                print(f"Таблица {table} очищена")
+                print(f"  ✓ Таблица {table} очищена")
             except Exception as e:
-                print(f"Ошибка при очистке {table}: {e}")
+                print(f"  ⚠ Ошибка при очистке {table}: {e}")
         
         print("\n2. Сброс sequence (автоинкремента)...")
         sequences = [
@@ -49,9 +49,9 @@ def clear_all_tables():
         for seq in sequences:
             try:
                 cursor.execute(f"ALTER SEQUENCE {seq} RESTART WITH 1")
-                print(f"Sequence {seq} сброшен")
+                print(f"  ✓ Sequence {seq} сброшен")
             except Exception as e:
-                print(f"Не удалось сбросить {seq}: {e}")
+                print(f"  ⚠ Не удалось сбросить {seq}: {e}")
         
         conn.commit()
         
