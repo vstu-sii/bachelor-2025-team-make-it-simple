@@ -11,14 +11,16 @@ def create_users(cursor):
     password = "12345678"
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    # Список пользователей с русскими ролями
+    # Список пользователей с русскими ролями (добавили нового пользователя)
     users = [
         # (user_id, last_name, first_name, middle_name, birth_date, phone, telegram, vk, interests, role, email)
         (1, 'Matokhin', 'Ilya', 'Georgievich', date(2004, 10, 2), '+79876461635', 'ilya_tg', 'ilya_vk', 'programming, football', 'Ученик', 'matokhin.ilya@yandex.ru', password_hash),
         (2, 'Molchanova', 'Liana', 'Evgenievna', date(2001, 1, 1), '+79998887755', 'lianaaaaa', 'lianavk', '', 'Ученик', 'liana@bk.ru', password_hash),
         (3, 'Zenin', 'Maxim', 'Aleksandrovich', date(2002, 2, 2), '+79995553535', 'tgzenina', 'vk??novk', '', 'Репетитор', 'yazenin@gmail.com', password_hash),
         (4, 'Bokov', 'Svyatoslav', 'Dmitrievich', date(1955, 4, 4), '+79875553432', 'tgb', 'vkb', '', 'Ученик', 'bokov@yandex.ru', password_hash),
-        (5, 'Z', 'Z', 'Z', date(2011, 11, 11), '+79995553333', 'z', 'z', '', 'Ученик', 'z@z.ru', password_hash)
+        (5, 'Z', 'Z', 'Z', date(2011, 11, 11), '+79995553333', 'z', 'z', '', 'Ученик', 'z@z.ru', password_hash),
+        # НОВЫЙ ПОЛЬЗОВАТЕЛЬ - будет на том же курсе, что и Matokhin
+        (6, 'Ivanov', 'Ivan', 'Ivanovich', date(2000, 5, 15), '+79991234567', 'ivan_tg', 'ivan_vk', 'english, music, travel', 'Ученик', 'ivanov@example.com', password_hash)
     ]
     
     for user_data in users:
@@ -136,6 +138,7 @@ def fill_database():
         
         # Распределение:
         # Ученик 1 (ID=1) -> Курс 1 (English for Beginners)
+        # Ученик 6 (ID=6) -> ТОЖЕ Курс 1 (English for Beginners) - НОВЫЙ УЧЕНИК
         # Ученик 2 (ID=2) -> Курс 3 (Business English)  
         # Ученик 4 (ID=4) -> Курс 4 (IELTS Preparation)
         # Репетитор 3 (ID=3) -> ВСЕ курсы (1-6)
@@ -145,6 +148,8 @@ def fill_database():
             # Ученики
             (1, 1, 'Gaps in Past Simple and articles', 
              '{"nodes": ["Present Simple", "Past Simple"], "edges": [{"from": "Present Simple", "to": "Past Simple"}]}'),
+            (6, 1, 'Difficulty with Present Continuous and vocabulary',  # НОВЫЙ УЧЕНИК на том же курсе
+             '{"nodes": ["Present Continuous", "Basic Vocabulary"], "edges": [{"from": "Present Continuous", "to": "Basic Vocabulary"}]}'),
             (2, 3, 'Need business communication practice',
              '{"nodes": ["Business Vocabulary", "Negotiations"], "edges": [{"from": "Business Vocabulary", "to": "Negotiations"}]}'),
             (4, 4, 'Difficulties with academic writing',
@@ -354,6 +359,29 @@ def fill_database():
             has_courses = "Есть курсы" if course_count > 0 else "Нет курсов"
             print(f"  ID={user_id}: {email} ({role}) - {has_courses} ({course_count})")
         
+        # Проверка сколько учеников на каждом курсе
+        print("\nИнформация по курсам:")
+        print("=" * 50)
+        
+        cursor.execute("""
+            SELECT c.course_id, c.title, 
+                   COUNT(DISTINCT uc.user_id) as total_students,
+                   STRING_AGG(u.email, ', ') as student_emails
+            FROM course c
+            LEFT JOIN user_course uc ON c.course_id = uc.course_id
+            LEFT JOIN "user" u ON uc.user_id = u.user_id AND u.role = 'Ученик'
+            GROUP BY c.course_id, c.title
+            ORDER BY c.course_id
+        """)
+        
+        courses_info = cursor.fetchall()
+        for course_id, title, total_students, student_emails in courses_info:
+            student_emails = student_emails if student_emails else 'нет учеников'
+            print(f"  Курс {course_id}: {title}")
+            print(f"    Учеников: {total_students}")
+            print(f"    Email учеников: {student_emails}")
+            print()
+        
         # Информация для тестирования
         print("\n" + "=" * 60)
         print("БАЗА ДАННЫХ УСПЕШНО ЗАПОЛНЕНА!")
@@ -367,7 +395,9 @@ def fill_database():
         print("3. yazenin@gmail.com (Репетитор, все курсы)")
         print("4. bokov@yandex.ru (Ученик, курс: IELTS Preparation)")
         print("5. z@z.ru (Ученик, без курсов)")
+        print("6. ivanov@example.com (Ученик, курс: English for Beginners) - НОВЫЙ")
         print("\nДля входа на сайт используйте email и пароль 12345678")
+        print("\nПримечание: Теперь на курсе 'English for Beginners' 2 ученика!")
         
     except Exception as e:
         print(f"\nОШИБКА: {e}")

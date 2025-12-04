@@ -59,7 +59,7 @@
                   <div class="dropzone-content">
                     <img class="upload-icon" src="/src/assets/upload-arrow.svg" />
                     <p class="dropzone-text">Перетащите сюда файлы<br />или нажмите для загрузки</p>
-                    <p class="dropzone-hint">Поддерживаются: PDF, DOC, PPT, изображения, видео</p>
+                    <p class="dropzone-hint">Поддерживается: PDF формат документов</p>
                   </div>
                 </div>
                 <button class="add-btn material-btn">
