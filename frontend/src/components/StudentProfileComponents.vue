@@ -189,7 +189,7 @@ function goToCourse() {
   cursor: pointer;
   font-size: 16px;
   transition: all 0.3s ease;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   min-width: 200px;
 }
 

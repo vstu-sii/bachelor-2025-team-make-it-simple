@@ -384,7 +384,7 @@ function cancelEdit() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   width: 100%;
   flex-grow: 1;
 }
@@ -554,7 +554,7 @@ function cancelEdit() {
   cursor: pointer;
   transition: 0.25s;
   margin-bottom: 10px;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 .btn-save,
@@ -614,7 +614,7 @@ function cancelEdit() {
   background: #ffe8d5;
   padding: 6px 12px;
   font-size: 15px;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   transition: background 0.25s;
   color: #592012;
   font-weight: bold;
@@ -647,7 +647,7 @@ function cancelEdit() {
   background: #ffe8d5;
   padding: 10px 14px;
   font-size: 15px;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   min-height: 60px;
   resize: vertical;
   transition: background 0.25s;
@@ -715,7 +715,7 @@ function cancelEdit() {
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 /* ===== Адаптив ====== */

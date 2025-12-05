@@ -183,7 +183,7 @@ onUnmounted(() => {
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 14px;
   transition: background 0.3s;
 }

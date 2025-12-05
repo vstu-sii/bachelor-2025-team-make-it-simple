@@ -136,7 +136,7 @@ onMounted(() => {
 }
 
 .course-title {
-  font-family: 'KyivType Titling', Georgia, serif;
+  font-family: 'Arial', Georgia, serif;
   font-size: 36px;
   font-weight: bold;
   color: #fbb599;

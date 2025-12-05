@@ -203,7 +203,7 @@ function goBack() {
   font-size: 32px;
   font-weight: bold;
   color: #592012;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 .divider {
@@ -226,7 +226,7 @@ function goBack() {
   display: block;
   color: #592012;
   font-weight: bold;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 /* Центрированные поля ввода */
@@ -250,7 +250,7 @@ textarea {
   border: none;
   background: #FFFFFF !important;
   color: #592012 !important;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 15px;
   box-sizing: border-box;
 }
@@ -301,7 +301,7 @@ textarea:focus {
   border: none;
   background: #FFFFFF !important;
   color: #592012 !important;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 15px;
   line-height: 1.5;
   resize: none;
@@ -394,7 +394,7 @@ textarea:focus {
   cursor: pointer;
   font-size: 14px; /* Уменьшаем размер шрифта */
   font-weight: bold;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   transition: all 0.3s;
   width: auto; /* Убираем ширину 100% */
   max-width: 250px; /* Ограничиваем максимальную ширину */
@@ -417,7 +417,7 @@ textarea:focus {
   display: block;
   color: #592012;
   font-weight: bold;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 .list-container ul {
@@ -451,7 +451,7 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 .remove {
@@ -479,7 +479,7 @@ textarea:focus {
   color: #592012;
   border-radius: 12px;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-weight: bold;
   transition: all 0.3s;
 }

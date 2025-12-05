@@ -50,7 +50,7 @@
     display: flex;
     flex-direction: column;
     color: white;
-    font-family: 'KyivType Titling', serif;
+    font-family: 'Arial', serif;
   }
   
   .user-last-name {

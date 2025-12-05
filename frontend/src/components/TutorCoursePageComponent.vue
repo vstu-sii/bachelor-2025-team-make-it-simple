@@ -465,7 +465,7 @@
     font-size: 28px;
     font-weight: bold;
     color: #592012;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .subtitle {
@@ -474,7 +474,7 @@
     font-size: 24px;
     font-weight: bold;
     color: #592012;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .divider {
@@ -492,7 +492,7 @@
     margin-bottom: 8px;
     color: #592012;
     font-weight: bold;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .centered-label {
@@ -538,7 +538,7 @@
     background-size: 12px;
     border: 2px solid #F4886D;
     border-radius: 10px;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     font-size: 15px;
     color: #592012;
     box-sizing: border-box;
@@ -571,7 +571,7 @@
     background: #FFFFFF;
     border: 2px solid #F4886D;
     border-radius: 10px;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     font-size: 15px;
     color: #592012;
     box-sizing: border-box;
@@ -600,7 +600,7 @@
     height: 100px;
     resize: none;
     margin-top: 10px;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   /* Кнопки */
@@ -617,7 +617,7 @@
     padding: 12px 20px;
     cursor: pointer;
     white-space: nowrap;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     font-weight: bold;
     transition: all 0.3s;
     font-size: 15px;
@@ -660,7 +660,7 @@
     padding: 20px;
     text-align: center;
     color: #592012;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .test-btn {
@@ -698,7 +698,7 @@
   .no-graph {
     text-align: center;
     color: #666;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .spinner {
@@ -727,7 +727,7 @@
     padding: 10px;
     border-radius: 8px;
     font-size: 14px;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     text-align: center;
   }
   

@@ -124,7 +124,7 @@
     cursor: pointer;
     transition: background-color 0.3s;
     color: white;
-    font-family: 'KyivType Titling', serif;
+    font-family: 'Arial', serif;
     font-size: 14px;
   }
   

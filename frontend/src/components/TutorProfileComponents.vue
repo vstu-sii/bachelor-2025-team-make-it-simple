@@ -380,7 +380,7 @@ const totalStudents = computed(() => {
   border: 2px solid #d8b9a7;
   border-radius: 10px;
   background: #fff;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 14px;
   color: #592012;
   transition: all 0.3s;
@@ -411,7 +411,7 @@ const totalStudents = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   white-space: nowrap;
   font-size: 14px;
   min-width: 80px;
@@ -436,7 +436,7 @@ const totalStudents = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   white-space: nowrap;
   font-size: 14px;
 }
@@ -462,7 +462,7 @@ const totalStudents = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   white-space: nowrap;
   font-size: 15px;
   display: flex;
@@ -520,7 +520,7 @@ const totalStudents = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -598,7 +598,7 @@ const totalStudents = computed(() => {
   border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 16px;
   transition: all 0.3s;
 }
@@ -628,7 +628,7 @@ const totalStudents = computed(() => {
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 14px;
 }
 
@@ -793,7 +793,7 @@ const totalStudents = computed(() => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 13px;
   white-space: nowrap;
 }

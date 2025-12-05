@@ -144,7 +144,7 @@
     font-size: 28px;
     font-weight: bold;
     color: #592012;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .divider {
@@ -162,7 +162,7 @@
     margin-bottom: 8px;
     color: #592012;
     font-weight: bold;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   textarea {
@@ -171,7 +171,7 @@
     background: #FFFFFF;
     border: 2px solid #F4886D;
     border-radius: 10px;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     font-size: 15px;
     color: #592012;
     box-sizing: border-box;
@@ -195,7 +195,7 @@
     padding: 15px 30px;
     cursor: pointer;
     white-space: nowrap;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
     font-weight: bold;
     transition: all 0.3s;
     font-size: 16px;
@@ -221,7 +221,7 @@
     padding: 20px;
     text-align: center;
     color: #592012;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   /* Граф курса */
@@ -242,7 +242,7 @@
   .no-graph {
     text-align: center;
     color: #666;
-    font-family: 'KyivType Titling', Georgia, serif;
+    font-family: 'Arial', Georgia, serif;
   }
   
   .spinner {

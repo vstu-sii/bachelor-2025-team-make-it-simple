@@ -211,7 +211,7 @@ async function submit() {
 </template>
 
 <style scoped>
-@import url('https://fonts.cdnfonts.com/css/kyivtype-titling');
+@import url('https://fonts.cdnfonts.com/css/Gerhaus');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 
 .auth-page {
@@ -250,13 +250,13 @@ async function submit() {
   top: 8%;
   left: 10%;
   width: 72%;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Gerhaus', serif;
   color: white;
   z-index: 2;
 }
 
 .welcome-text h1 {
-  font-size: 100px;
+  font-size: 80px;
   line-height: 1.05;
   font-weight: 400;
   margin-bottom: 50px;
@@ -267,7 +267,7 @@ async function submit() {
   text-indent: 2em;
   margin-top: 18px;
   max-width: 480px;
-  font-family: Inter, sans-serif;
+  font-family: Arial, sans-serif;
   font-size: 18px;
 }
 
@@ -307,7 +307,7 @@ async function submit() {
   width: 460px;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.40);
   text-align: center;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   z-index: 1;
 }
 
@@ -322,7 +322,7 @@ async function submit() {
 }
 
 .subtitle {
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 15px;
   color: #c7c7c7;
   margin-bottom: 20px;
@@ -340,7 +340,7 @@ async function submit() {
 }
 
 .auth-form label {
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 15px;
   margin-bottom: 6px;
   display: block;
@@ -356,7 +356,7 @@ async function submit() {
   margin-bottom: 16px;
   font-size: 15px;
   outline: none;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
 }
 
 .buttons {
@@ -405,7 +405,7 @@ async function submit() {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-family: 'KyivType Titling', serif;
+  font-family: 'Arial', serif;
   font-size: 15px;
   color: #dcdcdc;
 }
