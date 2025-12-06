@@ -38,8 +38,6 @@
               :marker-end="edgeProps.markerEnd" 
             />
           </template>
-          
-          <!-- Убираем Background и Controls из шаблона -->
         </VueFlow>
       </div>
   
@@ -61,14 +59,6 @@
           <div class="legend-color" style="background-color: #9E9E9E;"></div>
           <span>Недоступен</span>
         </div>
-      </div>
-      
-      <!-- Кнопка пересчета позиций -->
-      <div class="controls">
-        <button @click="recalculatePositions" class="recalculate-btn">
-          <span class="icon">↻</span>
-          Пересчитать позиции
-        </button>
       </div>
     </div>
   </template>
@@ -408,28 +398,50 @@
   }
   
   // Обработка клика на узел
-  function onNodeClick(event, node) {
-    if (!node.data.isClickable) {
-      return
-    }
-  
-    selectedNodeId.value = node.id
+  function onNodeClick(event) {
+    console.log('Клик по узлу (event):', event);
     
-    const lessonId = node.data.lessonId
+    // Vue Flow передает node в event.node
+    const node = event.node;
+    
+    if (!node || !node.data || !node.data.isClickable) {
+        console.log('Узел не кликабельный или отсутствует');
+        return;
+    }
+
+    selectedNodeId.value = node.id;
+    
+    const lessonId = node.data.lessonId;
     
     if (lessonId) {
-      router.push(`/lesson/${lessonId}?courseId=${props.courseId}&studentId=${props.studentId}`)
+        // Формируем query параметры
+        const queryParams = {
+        courseId: props.courseId
+        };
+        
+        // Добавляем studentId только если он есть
+        if (props.studentId) {
+        queryParams.studentId = props.studentId;
+        }
+        
+        console.log('Переход к уроку:', { lessonId, queryParams });
+        
+        // Переходим на страницу урока
+        router.push({
+        path: `/lesson/${lessonId}`,
+        query: queryParams
+        });
     } else {
-      alert(`Узел: ${node.data.label}\nСтатус: ${getStatusLabel(node.data.group)}`)
+        alert(`Узел: ${node.data.label}\nСтатус: ${getStatusLabel(node.data.group)}`);
     }
     
-    emit('node-click', { node, lessonId })
+    emit('node-click', { node, lessonId });
     
     // Сбрасываем выделение через 2 секунды
     setTimeout(() => {
-      selectedNodeId.value = null
-    }, 2000)
-  }
+        selectedNodeId.value = null;
+    }, 2000);
+    }
   
   function getStatusLabel(group) {
     switch(group) {
@@ -438,13 +450,6 @@
       case 2: return 'Доступен для изучения'
       case 3: return 'Недоступен'
       default: return 'Неизвестно'
-    }
-  }
-  
-  // Пересчет позиций
-  function recalculatePositions() {
-    if (props.graphData) {
-      elements.value = prepareGraphElements(props.graphData)
     }
   }
   
@@ -477,7 +482,7 @@
   <style scoped>
   .course-graph-container {
     width: 100%;
-    height: 700px;
+    height: 600px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -521,40 +526,6 @@
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .controls {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-  }
-  
-  .recalculate-btn {
-    background: #F4886D;
-    color: #592012;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 25px;
-    cursor: pointer;
-    font-family: 'Arial', Georgia, serif;
-    font-weight: bold;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    box-shadow: 0 4px 10px rgba(244, 136, 109, 0.2);
-  }
-  
-  .recalculate-btn:hover {
-    background: #E0785D;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(244, 136, 109, 0.3);
-  }
-  
-  .recalculate-btn .icon {
-    font-size: 18px;
-    font-weight: bold;
   }
   
   /* Стили для Vue Flow */
@@ -608,11 +579,6 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-    }
-    
-    .recalculate-btn {
-      padding: 10px 20px;
-      font-size: 14px;
     }
   }
   

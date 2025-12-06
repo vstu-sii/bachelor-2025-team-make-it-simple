@@ -5,6 +5,7 @@ import Register from "../pages/Register.vue";
 import Profile from "../pages/Profile.vue";
 import CoursePage from "../pages/CoursePage.vue";
 import AddCoursePage from "../pages/AddCoursePage.vue";
+import LessonPage from "../pages/LessonPage.vue"; // НОВЫЙ ИМПОРТ
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -35,6 +36,13 @@ const routes = [
     name: "add-course", 
     component: AddCoursePage,
     meta: { requiresAuth: true }
+  },
+  { 
+    path: "/lesson/:id(\\d+)", 
+    name: "lesson", 
+    component: LessonPage,
+    meta: { requiresAuth: true },
+    props: true
   }
 ];
 

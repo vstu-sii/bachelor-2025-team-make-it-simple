@@ -57,13 +57,6 @@
             </select>
             
             <button 
-              class="open-btn" 
-              @click="openStudentCourse"
-              :disabled="!selectedStudentId || loading"
-            >
-              Открыть курс
-            </button>
-            <button 
               class="remove-btn" 
               @click="removeSelectedStudent"
               :disabled="!selectedStudentId || loading"
@@ -252,6 +245,16 @@ async function loadStudentGraph() {
     
     if (response.data && response.data.graph_data) {
       graphData.value = response.data.graph_data;
+      
+      // Убедимся, что у узлов есть group
+      if (graphData.value.nodes) {
+        graphData.value.nodes.forEach(node => {
+          if (node.group === undefined) {
+            // Для репетитора показываем все узлы как доступные (группа 2)
+            node.group = 2;
+          }
+        });
+      }
     } else {
       graphData.value = null;
     }
@@ -261,36 +264,6 @@ async function loadStudentGraph() {
     graphData.value = null;
   } finally {
     loadingGraph.value = false;
-  }
-}
-
-// Создание демо-студентов для тестирования
-function createDemoStudents() {
-  courseStudents.value = [
-    {
-      student_id: 1,
-      student_name: "Matokhin Ilya",
-      email: "matokhin.ilya@yandex.ru",
-      knowledge_gaps: "Gaps in Past Simple and articles"
-    },
-    {
-      student_id: 6,
-      student_name: "Ivanov Ivan",
-      email: "ivanov@example.com",
-      knowledge_gaps: "Difficulty with Present Continuous and vocabulary"
-    },
-    {
-      student_id: 2,
-      student_name: "Molchanova Liana",
-      email: "liana@bk.ru",
-      knowledge_gaps: "Need business communication practice"
-    }
-  ];
-  
-  if (courseStudents.value.length > 0) {
-    selectedStudentId.value = courseStudents.value[0].student_id;
-    currentStudent.value = courseStudents.value[0];
-    knowledgeGaps.value = courseStudents.value[0].knowledge_gaps;
   }
 }
 
@@ -368,20 +341,6 @@ async function removeSelectedStudent() {
     alert("Не удалось удалить ученика из курса");
   } finally {
     loading.value = false;
-  }
-}
-
-// Открытие курса выбранного ученика
-function openStudentCourse() {
-  if (!selectedStudentId.value) {
-    alert("Сначала выберите ученика из списка");
-    return;
-  }
-  
-  const selectedStudent = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
-  if (selectedStudent) {
-    alert(`Открытие курса для ученика: ${selectedStudent.student_name}`);
-    // Здесь можно добавить навигацию к подробному просмотру курса ученика
   }
 }
 
@@ -493,6 +452,16 @@ async function saveGraph() {
 // Обработчик клика по узлу графа
 function onGraphNodeClick({ node, lessonId }) {
   console.log('Клик по узлу графа ученика:', node.data.label, 'lessonId:', lessonId);
+  
+  if (lessonId) {
+    router.push({
+      path: `/lesson/${lessonId}`,
+      query: {
+        courseId: props.courseId,
+        studentId: selectedStudentId.value
+      }
+    });
+  }
 }
 
 // Начало тестирования
@@ -690,7 +659,6 @@ watch(selectedStudentId, (newStudentId) => {
   
   /* Кнопки */
   .send-btn,
-  .open-btn,
   .remove-btn,
   .test-btn,
   .save-btn,
@@ -709,7 +677,6 @@ watch(selectedStudentId, (newStudentId) => {
   }
   
   .send-btn:hover:not(:disabled),
-  .open-btn:hover:not(:disabled),
   .test-btn:hover:not(:disabled),
   .save-btn:hover:not(:disabled),
   .generate-btn:hover:not(:disabled) {
@@ -719,7 +686,6 @@ watch(selectedStudentId, (newStudentId) => {
   }
   
   .send-btn:disabled,
-  .open-btn:disabled,
   .remove-btn:disabled,
   .test-btn:disabled,
   .save-btn:disabled,
@@ -843,7 +809,6 @@ watch(selectedStudentId, (newStudentId) => {
       min-width: 200px;
     }
     
-    .open-btn,
     .remove-btn {
       flex: 1;
     }
@@ -878,13 +843,11 @@ watch(selectedStudentId, (newStudentId) => {
     }
     
     .custom-select,
-    .open-btn,
     .remove-btn {
       width: 100%;
     }
     
     .send-btn,
-    .open-btn,
     .remove-btn,
     .test-btn,
     .save-btn,

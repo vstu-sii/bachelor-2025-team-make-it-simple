@@ -161,13 +161,28 @@ async def get_student_course_graph(
             else:
                 graph_data = user_course.graph_json
             
-            # Для демонстрации добавляем случайные статусы узлов
-            # В реальном приложении это должно быть вычислено на основе прогресса ученика
-            import random
-            for node in graph_data.get("nodes", []):
-                # Генерируем статус в зависимости от student_id для демонстрации уникальности
-                random.seed(f"{student_id}_{node.get('id')}")
-                node["group"] = random.choice([0, 1, 2, 3])
+            # ВАЖНО: НЕ перезаписываем статусы узлов случайными значениями!
+            # Вместо этого используем статусы из БД, которые уже установлены в fill_db.py
+            
+            # Только если у узлов нет статусов, устанавливаем по умолчанию
+            if "nodes" in graph_data:
+                for node in graph_data["nodes"]:
+                    # Если у узла нет поля 'group', устанавливаем по умолчанию
+                    # group=2 (желтый, доступен) для обычных узлов
+                    # group=3 (серый, недоступен) для узлов без lesson_id
+                    if "group" not in node:
+                        # Проверяем, есть ли lesson_id у узла
+                        lesson_id = node.get("data", {}).get("lesson_id")
+                        if lesson_id:
+                            node["group"] = 2  # Доступен
+                        else:
+                            node["group"] = 3  # Недоступен
+            
+            # Убедимся, что поле 'type' установлено для всех узлов (нужно для Vue Flow)
+            if "nodes" in graph_data:
+                for node in graph_data["nodes"]:
+                    if "type" not in node:
+                        node["type"] = "custom"
             
             return {"graph_data": graph_data}
         else:

@@ -88,7 +88,17 @@
   const hasTakenTest = ref(false);
   
   function onGraphNodeClick({ node, lessonId }) {
-    console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId)
+    console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
+    
+    if (lessonId) {
+      router.push({
+        path: `/lesson/${lessonId}`,
+        query: {
+          courseId: props.courseId,
+          studentId: auth.user.user_id
+        }
+      });
+    }
   }
 
   // Загрузка данных для ученика
@@ -114,13 +124,23 @@
       loadingGraph.value = true;
       graphError.value = "";
       
-      // Используем правильный endpoint из вашего course_routes.py
+      // Используем правильный endpoint из course_routes.py
       const response = await api.get(`/courses/${props.courseId}/student/${auth.user.user_id}/graph`);
       
       if (response.data && response.data.graph_data) {
         // Граф возвращается в поле graph_data
         graphData.value = response.data.graph_data;
         console.log("Граф загружен:", graphData.value);
+        
+        // Убедимся, что у узлов есть group (статус)
+        if (graphData.value.nodes) {
+          graphData.value.nodes.forEach(node => {
+            // Если в данных графа нет group, устанавливаем по умолчанию 2 (Доступен)
+            if (node.group === undefined) {
+              node.group = 2; // Статус "Доступен" по умолчанию
+            }
+          });
+        }
       } else {
         graphError.value = "Граф не содержит данных";
       }
@@ -134,84 +154,12 @@
         graphError.value = "Нет доступа к графу курса";
       } else {
         graphError.value = "Ошибка загрузки графа курса";
-        
-        // Покажем тестовый граф для демонстрации
-        createDemoGraph();
+        // НЕ создаем демо-граф, оставляем null
+        // createDemoGraph(); // УБЕРИТЕ ЭТУ СТРОКУ!
       }
     } finally {
       loadingGraph.value = false;
     }
-  }
-  
-  // Создание демо-графа с уникальными данными для каждого ученика
-  function createDemoGraph() {
-    const studentId = auth.user.user_id;
-    const courseId = parseInt(props.courseId);
-    
-    // Базовые графы для разных курсов
-    const courseGraphs = {
-      1: { // English for Beginners
-        "nodes": [
-          {"id": "1", "label": "Present Simple", "data": {"lesson_id": 1}, "position": {"x": 200, "y": 150}},
-          {"id": "2", "label": "Past Simple", "data": {"lesson_id": 2}, "position": {"x": 400, "y": 150}},
-          {"id": "3", "label": "Future Tenses", "data": {"lesson_id": 3}, "position": {"x": 200, "y": 350}},
-          {"id": "4", "label": "Articles", "data": {"lesson_id": 4}, "position": {"x": 400, "y": 350}},
-          {"id": "5", "label": "Basic Vocabulary", "data": {"lesson_id": 5}, "position": {"x": 300, "y": 500}}
-        ],
-        "edges": [
-          {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-          {"id": "e1-3", "source": "1", "target": "3", "label": "Alternative"},
-          {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-          {"id": "e3-5", "source": "3", "target": "5", "label": "Next"},
-          {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
-        ]
-      },
-      2: { // Conversational English
-        "nodes": [
-          {"id": "1", "label": "Greetings", "data": {"lesson_id": 6}, "position": {"x": 200, "y": 150}},
-          {"id": "2", "label": "Daily Conversations", "data": {"lesson_id": 7}, "position": {"x": 400, "y": 150}},
-          {"id": "3", "label": "Shopping Dialogues", "data": {"lesson_id": 8}, "position": {"x": 200, "y": 350}},
-          {"id": "4", "label": "Restaurant Talk", "data": {"lesson_id": 9}, "position": {"x": 400, "y": 350}}
-        ],
-        "edges": [
-          {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-          {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
-          {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-          {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
-        ]
-      },
-      3: { // Business English
-        "nodes": [
-          {"id": "1", "label": "Business Email", "data": {"lesson_id": 10}, "position": {"x": 200, "y": 150}},
-          {"id": "2", "label": "Meetings", "data": {"lesson_id": 11}, "position": {"x": 400, "y": 150}},
-          {"id": "3", "label": "Presentations", "data": {"lesson_id": 12}, "position": {"x": 200, "y": 350}},
-          {"id": "4", "label": "Negotiations", "data": {"lesson_id": 13}, "position": {"x": 400, "y": 350}}
-        ],
-        "edges": [
-          {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-          {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
-          {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-          {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
-        ]
-      }
-    };
-    
-    // Получаем базовый граф для курса
-    const baseGraph = courseGraphs[courseId] || courseGraphs[1];
-    
-    // Клонируем граф, чтобы не менять оригинал
-    const demoGraph = JSON.parse(JSON.stringify(baseGraph));
-    
-    // Добавляем уникальные статусы для каждого ученика
-    demoGraph.nodes.forEach(node => {
-      // Генерируем уникальный статус на основе studentId и node.id
-      const seed = studentId * 100 + parseInt(node.id);
-      const status = seed % 4; // 0, 1, 2, или 3
-      node.group = status;
-    });
-    
-    graphData.value = demoGraph;
-    graphError.value = "Демо-граф: Индивидуальная траектория обучения";
   }
   
   // Начало тестирования
