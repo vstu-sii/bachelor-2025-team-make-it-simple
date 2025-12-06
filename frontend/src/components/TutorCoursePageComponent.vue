@@ -1,453 +1,543 @@
 <template>
-    <div>
-      <!-- Контейнер 1: Добавление ученика -->
-      <div class="section">
-        <h1 class="title">Добавление ученика</h1>
-        <div class="divider"></div>
-  
-        <div class="form-group">
-          <label class="centered-label">Добавить нового ученика</label>
-          <div class="row centered-row">
-            <input 
-              v-model="newStudentEmail" 
-              type="text" 
-              placeholder="Введите почту ученика" 
-              :disabled="loading"
-              class="centered-input"
-            />
-            <button 
-              class="send-btn" 
-              @click="inviteStudent"
-              :disabled="loading || !newStudentEmail"
-            >
-              {{ loading ? 'Отправка...' : 'Отправить' }}
-            </button>
-          </div>
-          <p v-if="inviteSuccess" class="info success">
-            Письмо успешно отправлено! Дождитесь подтверждения от ученика.
-          </p>
-          <p v-if="inviteError" class="info error">
-            {{ inviteError }}
-          </p>
-        </div>
-      </div>
-  
-      <!-- Контейнер 2: Список текущих учеников - ВЫПАДАЮЩИЙ СПИСОК -->
-      <div v-if="courseStudents.length > 0" class="section">
-        <h2 class="subtitle">Список текущих учеников</h2>
-        <div class="divider"></div>
-  
-        <div class="form-group">
-          <div class="student-selection-container">
-            <div class="selection-row">
-              <select 
-                v-model="selectedStudentId" 
-                :disabled="loading"
-                class="student-select custom-select"
-              >
-                <option value="">Выбрать ученика</option>
-                <option 
-                  v-for="student in courseStudents" 
-                  :key="student.student_id" 
-                  :value="student.student_id"
-                >
-                  {{ student.student_name }}
-                </option>
-              </select>
-              
-              <button 
-                class="open-btn" 
-                @click="openStudentCourse"
-                :disabled="!selectedStudentId || loading"
-              >
-                Открыть курс
-              </button>
-              <button 
-                class="remove-btn" 
-                @click="removeSelectedStudent"
-                :disabled="!selectedStudentId || loading"
-              >
-                Удалить из курса
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-  
-      <!-- Входное тестирование -->
-      <div class="section">
-        <h1 class="title">Входное тестирование</h1>
-        <div class="divider"></div>
-        
-        <div class="test-box">
-          <p>
-            Время прохождение тестирования ~20 мин<br />Количество вопросов: 20<br />
-            Граф курса будет доступен после проверки репетитором<br />
-            входного тестирования
-          </p>
-          <button class="test-btn" @click="startTest">
-            {{ hasTakenTest ? 'Просмотреть результаты' : 'Перейти к тесту' }}
+  <div>
+    <!-- Контейнер 1: Добавление ученика -->
+    <div class="section">
+      <h1 class="title">Добавление ученика</h1>
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label class="centered-label">Добавить нового ученика</label>
+        <div class="row centered-row">
+          <input 
+            v-model="newStudentEmail" 
+            type="text" 
+            placeholder="Введите почту ученика" 
+            :disabled="loading"
+            class="centered-input"
+          />
+          <button 
+            class="send-btn" 
+            @click="inviteStudent"
+            :disabled="loading || !newStudentEmail"
+          >
+            {{ loading ? 'Отправка...' : 'Отправить' }}
           </button>
         </div>
+        <p v-if="inviteSuccess" class="info success">
+          Письмо успешно отправлено! Дождитесь подтверждения от ученика.
+        </p>
+        <p v-if="inviteError" class="info error">
+          {{ inviteError }}
+        </p>
       </div>
-  
-      <!-- Текущие пробелы -->
-      <div class="section">
-        <h1 class="title">
-          Текущие пробелы
-          <span v-if="currentStudent"> {{ getStudentShortName(currentStudent.student_name) }}</span>
-        </h1>
-        <div class="divider"></div>
-        
-        <textarea 
-          v-model="knowledgeGaps" 
-          placeholder="Введите комментарии к результатам прохождения теста ученика"
-        ></textarea>
-        <button 
-          class="save-btn centered-save-btn" 
-          @click="saveKnowledgeGaps"
-          :disabled="loading || !selectedStudentId"
-        >
-          {{ loading ? 'Сохранение...' : 'Сохранить' }}
-        </button>
-      </div>
-  
-      <!-- Граф курса -->
-      <div class="section graph-section">
-        <h1 class="title">Граф курса</h1>
-        <div class="divider"></div>
-        
-        <div class="form-group">
-          <label>Внесите замечания по генерации графа чтобы изменить траекторию обучения</label>
-          <div class="row">
-            <input 
-              v-model="graphChanges" 
-              type="text" 
-              placeholder="Добавить изменения" 
+    </div>
+
+    <!-- Контейнер 2: Список текущих учеников - ВЫПАДАЮЩИЙ СПИСОК -->
+    <div v-if="courseStudents.length > 0" class="section">
+      <h2 class="subtitle">Список текущих учеников</h2>
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <div class="student-selection-container">
+          <div class="selection-row">
+            <select 
+              v-model="selectedStudentId" 
               :disabled="loading"
-            />
-            <button 
-              class="generate-btn" 
-              @click="generateGraph"
-              :disabled="loading"
+              class="student-select custom-select"
+              @change="onStudentSelected"
             >
-              {{ loading ? 'Генерация...' : 'Генерировать' }}
+              <option value="">Выбрать ученика</option>
+              <option 
+                v-for="student in courseStudents" 
+                :key="student.student_id" 
+                :value="student.student_id"
+              >
+                {{ student.student_name }}
+              </option>
+            </select>
+            
+            <button 
+              class="open-btn" 
+              @click="openStudentCourse"
+              :disabled="!selectedStudentId || loading"
+            >
+              Открыть курс
+            </button>
+            <button 
+              class="remove-btn" 
+              @click="removeSelectedStudent"
+              :disabled="!selectedStudentId || loading"
+            >
+              Удалить из курса
             </button>
           </div>
         </div>
-  
-        <div class="graph-box">
-          <!-- Здесь будет интерактивный граф -->
-          <div v-if="loadingGraph" class="loading-graph">
-            <div class="spinner"></div>
-            <p>Загрузка графа курса...</p>
-          </div>
-          <div v-else-if="graphData" class="graph-placeholder">
-            <p>Граф курса будет отображен здесь</p>
-            <!-- В будущем можно подключить GraphView -->
-            <!-- <GraphView :data="graphData" /> -->
-          </div>
-          <div v-else class="no-graph">
-            <p>Граф курса еще не сгенерирован</p>
-          </div>
-        </div>
-  
-        <button 
-          class="save-btn graph-save-btn" 
-          @click="saveGraph"
-          :disabled="loading || !graphData"
-        >
-          Сохранить
+      </div>
+    </div>
+
+    <!-- Входное тестирование -->
+    <div class="section">
+      <h1 class="title">Входное тестирование</h1>
+      <div class="divider"></div>
+      
+      <div class="test-box">
+        <p>
+          Время прохождение тестирования ~20 мин<br />Количество вопросов: 20<br />
+          Граф курса будет доступен после проверки репетитором<br />
+          входного тестирования
+        </p>
+        <button class="test-btn" @click="startTest">
+          {{ hasTakenTest ? 'Просмотреть результаты' : 'Перейти к тесту' }}
         </button>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
-  import { useAuthStore } from "../stores/auth";
-  import api from "../api/axios";
-  
-  const props = defineProps({
-    courseId: {
-      type: String,
-      required: true
-    }
-  });
-  
-  const emit = defineEmits(['load-course-data']);
-  
-  const auth = useAuthStore();
-  
-  // Состояния
-  const loading = ref(false);
-  const loadingGraph = ref(false);
-  const courseStudents = ref([]);
-  const currentStudent = ref(null);
-  const newStudentEmail = ref("");
-  const selectedStudentId = ref("");
-  const knowledgeGaps = ref("");
-  const graphChanges = ref("");
-  const graphData = ref(null);
-  const inviteSuccess = ref(false);
-  const inviteError = ref("");
-  const hasTakenTest = ref(false);
-  
-  // Загрузка данных для репетитора
-  async function loadTutorCourseData() {
-    try {
-      // Загружаем список учеников на курсе
-      const tutorId = auth.user.user_id;
-      const coursesResponse = await api.get(`/courses/tutors/${tutorId}/courses`);
+
+    <!-- Текущие пробелы -->
+    <div class="section">
+      <h1 class="title">
+        Текущие пробелы
+        <span v-if="currentStudent"> {{ getStudentShortName(currentStudent.student_name) }}</span>
+      </h1>
+      <div class="divider"></div>
       
-      // Фильтруем курсы по текущему courseId и находим учеников
-      const currentCourseData = coursesResponse.data.filter(
-        course => course.course_id === parseInt(props.courseId)
-      );
+      <textarea 
+        v-model="knowledgeGaps" 
+        placeholder="Введите комментарии к результатам прохождения теста ученика"
+      ></textarea>
+      <button 
+        class="save-btn centered-save-btn" 
+        @click="saveKnowledgeGaps"
+        :disabled="loading || !selectedStudentId"
+      >
+        {{ loading ? 'Сохранение...' : 'Сохранить' }}
+      </button>
+    </div>
+
+    <!-- Граф курса -->
+    <div class="section graph-section">
+      <h1 class="title">Граф курса</h1>
+      <div class="divider"></div>
       
-      courseStudents.value = currentCourseData.filter(
-        course => course.has_student && course.student_id
-      );
+      <div class="form-group">
+        <label>
+          Граф для ученика: 
+          <span v-if="currentStudent" class="student-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
+          <span v-else class="no-student">(выберите ученика)</span>
+        </label>
+        <div class="row">
+          <input 
+            v-model="graphChanges" 
+            type="text" 
+            placeholder="Внесите изменения в граф (например: 'добавить узел Present Perfect')" 
+            :disabled="loading || !selectedStudentId"
+          />
+          <button 
+            class="generate-btn" 
+            @click="generateGraph"
+            :disabled="loading || !selectedStudentId"
+          >
+            {{ loading ? 'Обновление...' : 'Обновить граф' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="graph-box">
+        <CourseGraph 
+          v-if="graphData && graphData.nodes && graphData.nodes.length > 0 && selectedStudentId"
+          :graphData="graphData"
+          :courseId="parseInt(courseId)"
+          :studentId="selectedStudentId"
+          @node-click="onGraphNodeClick"
+        />
+        <div v-else-if="loadingGraph" class="loading-graph">
+          <div class="spinner"></div>
+          <p>Загрузка графа курса...</p>
+        </div>
+        <div v-else-if="!selectedStudentId" class="no-graph">
+          <p>Выберите ученика для просмотра его графа</p>
+        </div>
+        <div v-else class="no-graph">
+          <p>Граф курса еще не сгенерирован для этого ученика</p>
+          <button @click="loadStudentGraph" class="retry-btn">Загрузить граф</button>
+        </div>
+      </div>
+
+      <button 
+        class="save-btn graph-save-btn" 
+        @click="saveGraph"
+        :disabled="loading || !graphData || !selectedStudentId"
+      >
+        Сохранить изменения
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
+import { useAuthStore } from "../stores/auth";
+import api from "../api/axios";
+import CourseGraph from './CourseGraph.vue'
+
+const props = defineProps({
+  courseId: {
+    type: String,
+    required: true
+  }
+});
+
+const emit = defineEmits(['load-course-data']);
+
+const auth = useAuthStore();
+
+// Состояния
+const loading = ref(false);
+const loadingGraph = ref(false);
+const courseStudents = ref([]);
+const currentStudent = ref(null);
+const newStudentEmail = ref("");
+const selectedStudentId = ref("");
+const knowledgeGaps = ref("");
+const graphChanges = ref("");
+const graphData = ref(null);
+const inviteSuccess = ref(false);
+const inviteError = ref("");
+const hasTakenTest = ref(false);
+
+// Загрузка данных для репетитора
+async function loadTutorCourseData() {
+  try {
+    // Загружаем список учеников на курсе
+    const tutorId = auth.user.user_id;
+    const response = await api.get(`/courses/${props.courseId}/students`);
+    
+    if (response.data && response.data.students) {
+      courseStudents.value = response.data.students;
       
       // Если есть ученики, выбираем первого
       if (courseStudents.value.length > 0) {
+        selectedStudentId.value = courseStudents.value[0].student_id;
         currentStudent.value = courseStudents.value[0];
-        selectedStudentId.value = currentStudent.value.student_id;
-        await loadStudentKnowledgeGaps(currentStudent.value.student_id);
+        await loadStudentData(selectedStudentId.value);
       }
-      
-      // Загружаем граф курса
-      await loadGraphData();
-      
-    } catch (error) {
-      console.error("Ошибка загрузки данных репетитора:", error);
-    }
-  }
-  
-  // Загрузка пробелов в знаниях ученика
-  async function loadStudentKnowledgeGaps(studentId) {
-    try {
-      const response = await api.get(`/courses/students/${studentId}/course`);
-      knowledgeGaps.value = response.data.knowledge_gaps || "";
-    } catch (error) {
-      console.error("Ошибка загрузки пробелов ученика:", error);
-    }
-  }
-  
-  // Загрузка графа курса
-  async function loadGraphData() {
-    try {
-      loadingGraph.value = true;
-      // Здесь можно добавить API запрос для получения графа
-      // const response = await api.get(`/courses/${props.courseId}/graph`);
-      // graphData.value = response.data;
-      
-      // Временный заглушка
-      await new Promise(resolve => setTimeout(resolve, 500));
-      graphData.value = null; // Заменить на реальные данные
-      
-    } catch (error) {
-      console.error("Ошибка загрузки графа:", error);
-    } finally {
-      loadingGraph.value = false;
-    }
-  }
-  
-  // Приглашение ученика
-  async function inviteStudent() {
-    if (!newStudentEmail.value) return;
-    
-    try {
-      loading.value = true;
-      inviteError.value = "";
-      
-      await api.post(`/courses/${props.courseId}/invite`, {
-        email: newStudentEmail.value
-      });
-      
-      inviteSuccess.value = true;
-      newStudentEmail.value = "";
-      
-      // Обновляем список учеников
-      setTimeout(() => {
-        inviteSuccess.value = false;
-        loadTutorCourseData();
-      }, 3000);
-      
-    } catch (error) {
-      inviteError.value = error.response?.data?.detail || "Ошибка отправки приглашения";
-      console.error("Ошибка приглашения ученика:", error);
-    } finally {
-      loading.value = false;
-    }
-  }
-  
-  // Удаление выбранного ученика из курса
-  async function removeSelectedStudent() {
-    if (!selectedStudentId.value || !confirm("Вы уверены, что хотите удалить ученика из курса?")) {
-      return;
     }
     
-    try {
-      loading.value = true;
-      
-      await api.delete(`/courses/${props.courseId}/students/${selectedStudentId.value}`);
-      
-      // Обновляем список учеников
-      await loadTutorCourseData();
-      
-      // Сбрасываем выбранного ученика
-      selectedStudentId.value = "";
-      currentStudent.value = null;
-      knowledgeGaps.value = "";
-      
-      alert("Ученик удален из курса");
-      
-    } catch (error) {
-      console.error("Ошибка удаления ученика:", error);
-      alert("Не удалось удалить ученика из курса");
-    } finally {
-      loading.value = false;
-    }
+  } catch (error) {
+    console.error("Ошибка загрузки данных репетитора:", error);
+    // Для демонстрации создаем тестовых учеников
+    createDemoStudents();
   }
-  
-  // Открытие курса выбранного ученика
-  function openStudentCourse() {
-    if (!selectedStudentId.value) {
-      alert("Сначала выберите ученика из списка");
-      return;
+}
+
+// Загрузка данных ученика
+async function loadStudentData(studentId) {
+  try {
+    // Загружаем пробелы в знаниях
+    const student = courseStudents.value.find(s => s.student_id === studentId);
+    if (student) {
+      knowledgeGaps.value = student.knowledge_gaps || "";
     }
     
-    // Здесь можно добавить логику для открытия курса ученика
-    const selectedStudent = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
-    if (selectedStudent) {
-      alert(`Открытие курса для ученика: ${selectedStudent.student_name}`);
-    }
-  }
-  
-  // Сохранение пробелов в знаниях
-  async function saveKnowledgeGaps() {
-    if (!selectedStudentId.value) {
-      alert("Сначала выберите ученика из списка");
-      return;
-    }
+    // Загружаем граф ученика
+    await loadStudentGraph();
     
-    try {
-      loading.value = true;
-      
-      await api.put(`/courses/students/${selectedStudentId.value}/knowledge-gaps`, {
-        knowledge_gaps: knowledgeGaps.value
-      });
-      
-      alert("Пробелы в знаниях сохранены");
-      
-    } catch (error) {
-      console.error("Ошибка сохранения пробелов:", error);
-      alert("Не удалось сохранить пробелы в знаниях");
-    } finally {
-      loading.value = false;
-    }
+  } catch (error) {
+    console.error("Ошибка загрузки данных ученика:", error);
   }
+}
+
+// Загрузка графа ученика
+async function loadStudentGraph() {
+  if (!selectedStudentId.value) return;
   
-  // Генерация графа
-  async function generateGraph() {
-    if (!graphChanges.value.trim()) {
-      alert("Введите изменения для генерации графа");
-      return;
-    }
+  try {
+    loadingGraph.value = true;
     
-    try {
-      loading.value = true;
-      
-      // Здесь можно добавить API запрос для генерации графа
-      // const response = await api.post(`/courses/${props.courseId}/generate-graph`, {
-      //   changes: graphChanges.value
-      // });
-      
-      // Временная заглушка
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      graphData.value = {
-        nodes: [
-          { id: 1, label: "Начало курса", level: 1 },
-          { id: 2, label: "Грамматика", level: 2 },
-          { id: 3, label: "Лексика", level: 2 },
-          { id: 4, label: "Практика", level: 3 }
-        ],
-        edges: [
-          { from: 1, to: 2 },
-          { from: 1, to: 3 },
-          { from: 2, to: 4 },
-          { from: 3, to: 4 }
-        ]
-      };
-      
-      graphChanges.value = "";
-      alert("Граф успешно сгенерирован");
-      
-    } catch (error) {
-      console.error("Ошибка генерации графа:", error);
-      alert("Не удалось сгенерировать граф");
-    } finally {
-      loading.value = false;
-    }
-  }
-  
-  // Сохранение графа
-  async function saveGraph() {
-    try {
-      loading.value = true;
-      
-      // Здесь можно добавить API запрос для сохранения графа
-      // await api.put(`/courses/${props.courseId}/graph`, graphData.value);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      alert("Граф курса сохранен");
-      
-    } catch (error) {
-      console.error("Ошибка сохранения графа:", error);
-      alert("Не удалось сохранить граф");
-    } finally {
-      loading.value = false;
-    }
-  }
-  
-  // Начало тестирования
-  function startTest() {
-    // Логика перехода к тесту
-    console.log("Начать тестирование");
-  }
-  
-  // Функция для получения сокращенного имени ученика (Фамилия + первая буква имени с точкой)
-  function getStudentShortName(fullName) {
-    if (!fullName) return '';
-    const parts = fullName.split(' ');
-    if (parts.length >= 2) {
-      const lastName = parts[0];
-      const firstNameInitial = parts[1].charAt(0) + '.';
-      return `${lastName} ${firstNameInitial}`;
-    }
-    return fullName;
-  }
-  
-  // Отслеживание изменения выбранного ученика
-  watch(selectedStudentId, async (newStudentId) => {
-    if (newStudentId) {
-      const student = courseStudents.value.find(s => s.student_id === newStudentId);
-      if (student) {
-        currentStudent.value = student;
-        await loadStudentKnowledgeGaps(newStudentId);
-      }
+    const response = await api.get(`/courses/${props.courseId}/student/${selectedStudentId.value}/graph`);
+    
+    if (response.data && response.data.graph_data) {
+      graphData.value = response.data.graph_data;
     } else {
-      currentStudent.value = null;
-      knowledgeGaps.value = "";
+      graphData.value = null;
     }
-  });
+    
+  } catch (error) {
+    console.error("Ошибка загрузки графа ученика:", error);
+    graphData.value = null;
+  } finally {
+    loadingGraph.value = false;
+  }
+}
+
+// Создание демо-студентов для тестирования
+function createDemoStudents() {
+  courseStudents.value = [
+    {
+      student_id: 1,
+      student_name: "Matokhin Ilya",
+      email: "matokhin.ilya@yandex.ru",
+      knowledge_gaps: "Gaps in Past Simple and articles"
+    },
+    {
+      student_id: 6,
+      student_name: "Ivanov Ivan",
+      email: "ivanov@example.com",
+      knowledge_gaps: "Difficulty with Present Continuous and vocabulary"
+    },
+    {
+      student_id: 2,
+      student_name: "Molchanova Liana",
+      email: "liana@bk.ru",
+      knowledge_gaps: "Need business communication practice"
+    }
+  ];
   
-  // Инициализация
-  onMounted(() => {
-    loadTutorCourseData();
-  });
-  </script>
+  if (courseStudents.value.length > 0) {
+    selectedStudentId.value = courseStudents.value[0].student_id;
+    currentStudent.value = courseStudents.value[0];
+    knowledgeGaps.value = courseStudents.value[0].knowledge_gaps;
+  }
+}
+
+// Обработчик выбора ученика
+function onStudentSelected() {
+  if (selectedStudentId.value) {
+    const student = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
+    if (student) {
+      currentStudent.value = student;
+      knowledgeGaps.value = student.knowledge_gaps || "";
+      loadStudentGraph();
+    }
+  } else {
+    currentStudent.value = null;
+    knowledgeGaps.value = "";
+    graphData.value = null;
+  }
+}
+
+// Приглашение ученика
+async function inviteStudent() {
+  if (!newStudentEmail.value) return;
+  
+  try {
+    loading.value = true;
+    inviteError.value = "";
+    
+    // Здесь должен быть API вызов для приглашения ученика
+    await api.post(`/courses/${props.courseId}/invite`, {
+      email: newStudentEmail.value
+    });
+    
+    inviteSuccess.value = true;
+    newStudentEmail.value = "";
+    
+    // Обновляем список учеников
+    setTimeout(() => {
+      inviteSuccess.value = false;
+      loadTutorCourseData();
+    }, 3000);
+    
+  } catch (error) {
+    inviteError.value = error.response?.data?.detail || "Ошибка отправки приглашения";
+    console.error("Ошибка приглашения ученика:", error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Удаление выбранного ученика из курса
+async function removeSelectedStudent() {
+  if (!selectedStudentId.value || !confirm("Вы уверены, что хотите удалить ученика из курса?")) {
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    
+    // Здесь должен быть API вызов для удаления ученика
+    await api.delete(`/courses/${props.courseId}/students/${selectedStudentId.value}`);
+    
+    // Обновляем список учеников
+    await loadTutorCourseData();
+    
+    // Сбрасываем выбранного ученика
+    selectedStudentId.value = "";
+    currentStudent.value = null;
+    knowledgeGaps.value = "";
+    graphData.value = null;
+    
+    alert("Ученик удален из курса");
+    
+  } catch (error) {
+    console.error("Ошибка удаления ученика:", error);
+    alert("Не удалось удалить ученика из курса");
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Открытие курса выбранного ученика
+function openStudentCourse() {
+  if (!selectedStudentId.value) {
+    alert("Сначала выберите ученика из списка");
+    return;
+  }
+  
+  const selectedStudent = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
+  if (selectedStudent) {
+    alert(`Открытие курса для ученика: ${selectedStudent.student_name}`);
+    // Здесь можно добавить навигацию к подробному просмотру курса ученика
+  }
+}
+
+// Сохранение пробелов в знаниях
+async function saveKnowledgeGaps() {
+  if (!selectedStudentId.value) {
+    alert("Сначала выберите ученика из списка");
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    
+    await api.put(`/courses/${props.courseId}/student/${selectedStudentId.value}/knowledge-gaps`, {
+      knowledge_gaps: knowledgeGaps.value
+    });
+    
+    alert("Пробелы в знаниях сохранены");
+    
+  } catch (error) {
+    console.error("Ошибка сохранения пробелов:", error);
+    alert("Не удалось сохранить пробелы в знаниях");
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Генерация/обновление графа
+async function generateGraph() {
+  if (!selectedStudentId.value) {
+    alert("Сначала выберите ученика из списка");
+    return;
+  }
+  
+  if (!graphChanges.value.trim()) {
+    alert("Введите изменения для генерации графа");
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    
+    // Здесь должен быть API вызов для генерации графа
+    // Пока используем демо-данные
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Создаем демо-граф на основе изменений
+    createDemoGraph();
+    
+    graphChanges.value = "";
+    alert("Граф успешно обновлен");
+    
+  } catch (error) {
+    console.error("Ошибка генерации графа:", error);
+    alert("Не удалось обновить граф");
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Создание демо-графа
+function createDemoGraph() {
+  if (!currentStudent.value) return;
+  
+  // Базовый граф курса
+  const baseGraph = {
+    "nodes": [
+      {"id": "1", "label": "Present Simple", "data": {"lesson_id": 1}, "position": {"x": 200, "y": 150}, "group": 0},
+      {"id": "2", "label": "Past Simple", "data": {"lesson_id": 2}, "position": {"x": 400, "y": 150}, "group": 1},
+      {"id": "3", "label": "Future Tenses", "data": {"lesson_id": 3}, "position": {"x": 200, "y": 350}, "group": 2},
+      {"id": "4", "label": "Articles", "data": {"lesson_id": 4}, "position": {"x": 400, "y": 350}, "group": 3},
+      {"id": "5", "label": "Basic Vocabulary", "data": {"lesson_id": 5}, "position": {"x": 300, "y": 500}, "group": 2}
+    ],
+    "edges": [
+      {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
+      {"id": "e1-3", "source": "1", "target": "3", "label": "Alternative"},
+      {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
+      {"id": "e3-5", "source": "3", "target": "5", "label": "Next"},
+      {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
+    ]
+  };
+  
+  // Клонируем граф
+  graphData.value = JSON.parse(JSON.stringify(baseGraph));
+}
+
+// Сохранение графа
+async function saveGraph() {
+  if (!selectedStudentId.value || !graphData.value) {
+    alert("Нет данных для сохранения");
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    
+    await api.put(`/courses/${props.courseId}/student/${selectedStudentId.value}/graph`, graphData.value);
+    
+    alert("Граф курса сохранен");
+    
+  } catch (error) {
+    console.error("Ошибка сохранения графа:", error);
+    alert("Не удалось сохранить граф");
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Обработчик клика по узлу графа
+function onGraphNodeClick({ node, lessonId }) {
+  console.log('Клик по узлу графа ученика:', node.data.label, 'lessonId:', lessonId);
+}
+
+// Начало тестирования
+function startTest() {
+  console.log("Начать тестирование");
+}
+
+// Функция для получения сокращенного имени ученика
+function getStudentShortName(fullName) {
+  if (!fullName) return '';
+  const parts = fullName.split(' ');
+  if (parts.length >= 2) {
+    const lastName = parts[0];
+    const firstNameInitial = parts[1].charAt(0) + '.';
+    return `${lastName} ${firstNameInitial}`;
+  }
+  return fullName;
+}
+
+// Инициализация
+onMounted(() => {
+  loadTutorCourseData();
+});
+
+// Отслеживание изменения выбранного ученика
+watch(selectedStudentId, (newStudentId) => {
+  if (newStudentId) {
+    const student = courseStudents.value.find(s => s.student_id === newStudentId);
+    if (student) {
+      currentStudent.value = student;
+      knowledgeGaps.value = student.knowledge_gaps || "";
+      loadStudentGraph();
+    }
+  } else {
+    currentStudent.value = null;
+    knowledgeGaps.value = "";
+    graphData.value = null;
+  }
+});
+</script>
   
   <style scoped>
   /* Общие стили для всех контейнеров */
@@ -832,5 +922,34 @@
     .graph-box {
       min-height: 250px;
     }
+  }
+
+  .student-name {
+    color: #4CAF50;
+    font-weight: bold;
+  }
+  
+  .no-student {
+    color: #F44336;
+    font-style: italic;
+  }
+  
+  .retry-btn {
+    background: #F4886D;
+    color: #592012;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-family: 'Arial', Georgia, serif;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  
+  .retry-btn:hover {
+    background: #E0785D;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(244, 136, 109, 0.3);
   }
   </style>
