@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import api from "../api/axios";
@@ -59,6 +59,42 @@ const loading = ref(false);
 // Вычисляемые свойства
 const isTutor = computed(() => auth.user?.role === "Репетитор");
 const isStudent = computed(() => auth.user?.role === "Ученик");
+
+// Инициализация аутентификации при монтировании
+async function initializeAuth() {
+  try {
+    // Проверяем наличие токена
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("Токен не найден, перенаправление на логин");
+      router.push("/login");
+      return false;
+    }
+    
+    // Устанавливаем токен в хранилище и API
+    auth.setToken(token);
+    
+    // Загружаем данные пользователя, если их нет
+    if (!auth.user) {
+      await auth.fetchMe();
+      
+      if (!auth.user) {
+        console.log("Не удалось загрузить данные пользователя");
+        localStorage.removeItem("token");
+        router.push("/login");
+        return false;
+      }
+    }
+    
+    return true;
+    
+  } catch (err) {
+    console.error("Ошибка инициализации аутентификации:", err);
+    localStorage.removeItem("token");
+    router.push("/login");
+    return false;
+  }
+}
 
 // Загрузка данных курса
 async function loadCourseData() {
@@ -85,9 +121,27 @@ function goBack() {
 }
 
 // Инициализация
-onMounted(() => {
+onMounted(async () => {
+  // Инициализируем аутентификацию
+  const authSuccess = await initializeAuth();
+  if (!authSuccess) {
+    return;
+  }
+  
+  // Загружаем данные курса
   loadCourseData();
 });
+
+// Следим за изменением ID курса в URL
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      courseId.value = newId;
+      loadCourseData();
+    }
+  }
+);
 </script>
 
 <style scoped>

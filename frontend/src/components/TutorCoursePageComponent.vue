@@ -119,11 +119,6 @@
       <div class="divider"></div>
       
       <div class="form-group">
-        <label>
-          Граф для ученика: 
-          <span v-if="currentStudent" class="student-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
-          <span v-else class="no-student">(выберите ученика)</span>
-        </label>
         <div class="row">
           <input 
             v-model="graphChanges" 
