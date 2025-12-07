@@ -16,6 +16,7 @@
 - [Технические требования](docs/requirements.md);
 - [DoR/DoD критерии](docs/definitions.md);
 - [Roadmap проекта](docs/roadmap.md);
+- [C4 Диаграмма](docs/architecture/c4-diagrams.md);
 
 ### Lab3
 
@@ -23,6 +24,7 @@
 - [Структура проекта](#структура-проекта)
 - [Обновлены технические требования](docs/requirements.md);
 - [Обновлена спецификация openapi](api/openapi-current.json);
+- [Обновлена C4 Диаграмма](docs/architecture/c4-diagrams.md);
 
 # Запуск проекта
 
