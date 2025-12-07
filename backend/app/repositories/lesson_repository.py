@@ -327,3 +327,47 @@ class LessonRepository:
             db.rollback()
             print(f"Error saving test results: {e}")
             return False
+        
+    @staticmethod
+    def update_lesson_content(
+        db: Session,
+        lesson_id: int,
+        content_type: str,  # "theory", "reading", "speaking", "test", "notes", "access"
+        content: str,
+        is_access: bool = None,
+        is_ended: bool = None
+    ) -> Optional[Lesson]:
+        """
+        Обновить контент урока
+        """
+        lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
+        if not lesson:
+            return None
+        
+        try:
+            if content_type == "theory":
+                lesson.theory_text = content
+            elif content_type == "reading":
+                lesson.reading_text = content
+            elif content_type == "speaking":
+                lesson.speaking_text = content
+            elif content_type == "test":
+                lesson.lesson_test_json = content
+            elif content_type == "notes":
+                lesson.lesson_notes = content
+            # Для типа "access" content игнорируется, важен только is_access
+            
+            if is_access is not None:
+                lesson.is_access = is_access
+            
+            if is_ended is not None:
+                lesson.is_ended = is_ended
+            
+            db.commit()
+            db.refresh(lesson)
+            return lesson
+            
+        except Exception as e:
+            db.rollback()
+            print(f"Error updating lesson content: {e}")
+            return None

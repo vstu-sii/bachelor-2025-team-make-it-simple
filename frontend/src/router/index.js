@@ -5,7 +5,7 @@ import Register from "../pages/Register.vue";
 import Profile from "../pages/Profile.vue";
 import CoursePage from "../pages/CoursePage.vue";
 import AddCoursePage from "../pages/AddCoursePage.vue";
-import LessonPage from "../pages/LessonPage.vue"; // НОВЫЙ ИМПОРТ
+import LessonPage from "../pages/LessonPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },

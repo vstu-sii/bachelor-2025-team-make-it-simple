@@ -467,9 +467,8 @@ textarea:focus {
   opacity: 1;
 }
 
-/* Кнопка создания курса */
 .submit-btn {
-  width: 175px;
+  width: 200px;
   margin: 10px auto 0;
   display: block;
   padding: 15px 30px;

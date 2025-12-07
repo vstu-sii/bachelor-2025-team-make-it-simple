@@ -300,3 +300,31 @@ def get_lesson_topic(
         "lesson_id": lesson.lesson_id,
         "courses": courses
     }
+
+@router.put("/{lesson_id}/content")
+def update_lesson_content(
+    lesson_id: int,
+    content_update: LessonContentUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Обновить контент урока (только для репетитора)
+    Включает обновление статуса доступа (is_access)
+    """
+    # Проверяем, что пользователь - репетитор
+    if current_user.role != "Репетитор":
+        raise HTTPException(status_code=403, detail="Только репетиторы могут обновлять контент уроков")
+    
+    lesson = LessonRepository.update_lesson_content(
+        db, lesson_id, 
+        content_update.content_type,
+        content_update.content,
+        content_update.is_access,
+        content_update.is_ended
+    )
+    
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Урок не найден")
+    
+    return {"message": "Контент обновлен", "lesson": lesson}
