@@ -65,6 +65,7 @@
   <script setup>
   import { ref, onMounted, defineProps, defineEmits } from "vue";
   import { useAuthStore } from "../stores/auth";
+  import { useRouter } from "vue-router";
   import api from "../api/axios";
   import CourseGraph from './CourseGraph.vue'
 
@@ -76,9 +77,9 @@
   });
   
   const emit = defineEmits(['load-course-data']);
-  
   const auth = useAuthStore();
-  
+  const router = useRouter();
+
   // Состояния
   const loading = ref(false);
   const loadingGraph = ref(false);
@@ -88,17 +89,21 @@
   const hasTakenTest = ref(false);
   
   function onGraphNodeClick({ node, lessonId }) {
-    console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
-    
-    if (lessonId) {
-      router.push({
-        path: `/lesson/${lessonId}`,
-        query: {
-          courseId: props.courseId,
-          studentId: auth.user.user_id
-        }
-      });
-    }
+      console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
+      
+      if (lessonId) {
+          // Для тестирования показываем alert с реальным ID
+          alert(`Переход к уроку ID: ${lessonId}\nНазвание в графе: ${node.data.label}\n\nНажмите ОК для перехода`);
+          
+          router.push({
+              path: `/lesson/${lessonId}`,
+              query: {
+                  courseId: props.courseId,
+                  studentId: auth.user.user_id,
+                  fromGraph: 'true'
+              }
+          });
+      }
   }
 
   // Загрузка данных для ученика

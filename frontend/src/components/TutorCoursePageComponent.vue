@@ -451,17 +451,20 @@ async function saveGraph() {
 
 // Обработчик клика по узлу графа
 function onGraphNodeClick({ node, lessonId }) {
-  console.log('Клик по узлу графа ученика:', node.data.label, 'lessonId:', lessonId);
-  
-  if (lessonId) {
-    router.push({
-      path: `/lesson/${lessonId}`,
-      query: {
-        courseId: props.courseId,
-        studentId: selectedStudentId.value
-      }
-    });
-  }
+    console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
+    
+    if (lessonId) {
+        // Для перехода к уроку теперь передаем courseId и lessonId
+        router.push({
+            path: `/lesson/${lessonId}`,
+            query: {
+                courseId: props.courseId,
+                studentId: auth.user.user_id,
+                // Можно добавить информацию о теме, если есть
+                fromGraph: 'true'
+            }
+        });
+    }
 }
 
 // Начало тестирования

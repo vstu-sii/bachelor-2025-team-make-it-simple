@@ -2,6 +2,7 @@ import psycopg2
 import json
 import bcrypt
 from datetime import date, datetime
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 def create_users(cursor):
     """Создает пользователей с правильными паролями и русскими ролями"""
@@ -42,9 +43,189 @@ def create_users(cursor):
     
     print(f"  Все пароли установлены: {password}")
 
+def create_database():
+    """Удаляет и создает БД заново с правильной структурой"""
+    print("=" * 60)
+    print("ПЕРЕСОЗДАНИЕ БАЗЫ ДАННЫХ С НОВОЙ СТРУКТУРОЙ")
+    print("=" * 60)
+    
+    # Подключаемся к postgres для удаления/создания БД
+    conn = psycopg2.connect(
+        host="localhost",
+        database="postgres",
+        user="postgres",
+        password="1234"
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = conn.cursor()
+    
+    try:
+        print("Удаление старой БД english_courses...")
+        cursor.execute("DROP DATABASE IF EXISTS english_courses")
+        print("  ✓ БД удалена")
+        
+        print("Создание новой БД english_courses...")
+        cursor.execute("CREATE DATABASE english_courses")
+        print("  ✓ БД создана")
+        
+    except Exception as e:
+        print(f"Ошибка при пересоздании БД: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return True
+
+def create_tables(cursor):
+    """Создает все таблицы с правильной структурой"""
+    print("\nСоздание таблиц...")
+    
+    # Создаем тип для ролей
+    cursor.execute("""
+        DO $$ BEGIN
+            CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    print("  ✓ Тип UserRole создан")
+    
+    # Таблица пользователей
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS "user" (
+            user_id SERIAL PRIMARY KEY,
+            last_name VARCHAR(50) NOT NULL,
+            first_name VARCHAR(50) NOT NULL,
+            middle_name VARCHAR(50),
+            birth_date DATE,
+            phone VARCHAR(20),
+            telegram VARCHAR(100),
+            vk VARCHAR(100),
+            interests TEXT,
+            role UserRole NOT NULL,
+            email VARCHAR(250) UNIQUE NOT NULL,
+            password VARCHAR(500) NOT NULL,
+            avatar_path VARCHAR(500)
+        )
+    """)
+    print("  ✓ Таблица user создана")
+    
+    # Индексы для пользователей
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_last_name ON \"user\"(last_name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_first_name ON \"user\"(first_name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_phone ON \"user\"(phone)")
+    
+    # Таблица курсов
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS course (
+            course_id SERIAL PRIMARY KEY,
+            title VARCHAR(150) NOT NULL,
+            created_at DATE NOT NULL,
+            link_to_vector_db VARCHAR(1000) NOT NULL,
+            input_test_json JSON
+        )
+    """)
+    print("  ✓ Таблица course создана")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_title ON course(title)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_created_at ON course(created_at)")
+    
+    # Таблица материалов
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS material (
+            material_id SERIAL PRIMARY KEY,
+            file_path VARCHAR(1000) UNIQUE NOT NULL
+        )
+    """)
+    print("  ✓ Таблица material создана")
+    
+    # Таблица тем
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS topic (
+            topic_id SERIAL PRIMARY KEY,
+            title VARCHAR(150) NOT NULL,
+            description_text TEXT
+        )
+    """)
+    print("  ✓ Таблица topic создана")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_topic_title ON topic(title)")
+    
+    # Таблица уроков - ВАЖНО: с колонкой topic_id!
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS lesson (
+            lesson_id SERIAL PRIMARY KEY,
+            theory_text TEXT,
+            reading_text TEXT,
+            speaking_text TEXT,
+            lesson_test_json JSON,
+            lesson_test_results_json JSON,
+            lesson_notes TEXT,
+            results_json JSON,
+            is_access BOOLEAN NOT NULL DEFAULT FALSE,
+            is_ended BOOLEAN NOT NULL DEFAULT FALSE,
+            topic_id INTEGER REFERENCES topic(topic_id) ON DELETE SET NULL
+        )
+    """)
+    print("  ✓ Таблица lesson создана (с topic_id!)")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_lesson_topic_id ON lesson(topic_id)")
+    
+    # Таблица связи пользователь-курс
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_course (
+            user_course_id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
+            course_id INTEGER NOT NULL REFERENCES course(course_id) ON DELETE CASCADE,
+            knowledge_gaps TEXT,
+            graph_json JSON,
+            output_test_json JSON,
+            UNIQUE(user_id, course_id)
+        )
+    """)
+    print("  ✓ Таблица user_course создана")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_user_id ON user_course(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_course_id ON user_course(course_id)")
+    
+    # Таблица связи курс-материал
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS course_material (
+            course_id INTEGER NOT NULL REFERENCES course(course_id) ON DELETE CASCADE,
+            material_id INTEGER NOT NULL REFERENCES material(material_id) ON DELETE CASCADE,
+            PRIMARY KEY (course_id, material_id)
+        )
+    """)
+    print("  ✓ Таблица course_material создана")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_course_id ON course_material(course_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_material_id ON course_material(material_id)")
+    
+    # Таблица связи курс-тема
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS course_topic (
+            course_id INTEGER NOT NULL REFERENCES course(course_id) ON DELETE CASCADE,
+            topic_id INTEGER NOT NULL REFERENCES topic(topic_id) ON DELETE CASCADE,
+            PRIMARY KEY (course_id, topic_id)
+        )
+    """)
+    print("  ✓ Таблица course_topic создана")
+    
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_topic_course_id ON course_topic(course_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_topic_topic_id ON course_topic(topic_id)")
+    
+    print("  ✓ Все таблицы успешно созданы!")
+
 def fill_database():
     """Полностью заполняет базу данных тестовыми данными"""
     
+    # Сначала создаем БД
+    if not create_database():
+        print("Не удалось создать БД. Выход.")
+        return
+    
+    # Теперь подключаемся к новой БД
     conn = psycopg2.connect(
         host="localhost",
         database="english_courses",
@@ -58,12 +239,16 @@ def fill_database():
         print("ПОЛНОЕ ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ С ГРАФАМИ КУРСОВ")
         print("=" * 60)
         
+        # Создаем таблицы
+        create_tables(cursor)
+        conn.commit()
+        
         # 1. Создаем пользователей
         create_users(cursor)
         conn.commit()
         
-        # 2. Очистка остальных таблиц
-        print("\n2. Очистка таблиц (кроме пользователей)...")
+        # 2. Очистка остальных таблиц (на всякий случай)
+        print("\n2. Очистка таблиц перед заполнением...")
         
         tables_to_clear = [
             "course_material",
@@ -99,6 +284,11 @@ def fill_database():
                 pass
         
         conn.commit()
+        
+        # ... остальной код fill_db.py БЕЗ ИЗМЕНЕНИЙ ...
+        # Вставьте сюда ВСЮ остальную часть вашего оригинального кода
+        # начиная с "print("\n3. Создание курсов (6 курсов)...")"
+        # и до конца функции
         
         print("\n3. Создание курсов (6 курсов)...")
         
@@ -451,89 +641,137 @@ def fill_database():
         print(f"  ✓ Создано {len(course_topics)} связей курс-тема")
         
         print("\n7. Создание уроков для графа (включая дополнительные для нового графа)...")
-        
-        lessons = [
-            # Course 1 lessons
-            ('Present Simple: theory and examples', 'Text about daily habits', 'Discuss your daily routine', 
-             json.dumps({"questions": ["What is Present Simple?", "Give 3 examples"]}), True, False),
-            ('Past Simple: regular verbs', 'Story about yesterday', 'Talk about what you did yesterday', 
-             json.dumps({"questions": ["How is Past Simple formed?", "Name 5 regular verbs"]}), True, True),
-            ('Future with "will"', 'Future plans', 'Discuss your goals', 
-             json.dumps({"questions": ["When is will used?", "Create 3 sentences"]}), False, False),
-            ('Articles a/an/the', 'Rules and usage', 'Practice with nouns', 
-             json.dumps({"questions": ["When to use a/an?", "When to use the?"]}), True, False),
-            ('Basic Vocabulary: Family', 'Family members', 'Describe your family', 
-             json.dumps({"questions": ["Name family members"]}), True, False),
+
+        # Сначала узнаем ID тем, которые мы создали
+        print("  Получение ID созданных тем...")
+        cursor.execute("SELECT topic_id, title FROM topic ORDER BY topic_id")
+        topics_data = cursor.fetchall()
+        topic_map = {title: topic_id for topic_id, title in topics_data}
+        print(f"  ✓ Найдено {len(topic_map)} тем")
+
+        # Теперь создаем уроки с привязкой к темам
+        lessons_with_topics = [
+            # Курс 1: English for Beginners (Present Simple, Past Simple, Future Tenses, Articles)
+            # Тема 1: Present Simple
+            (1, 'Present Simple: theory and examples', 'Text about daily habits', 'Discuss your daily routine', 
+            json.dumps({"questions": ["What is Present Simple?", "Give 3 examples"]}), True, False),
+            (1, 'Present Simple Practice', 'More exercises', 'Practice simple sentences', 
+            json.dumps({"questions": ["Make 5 sentences"]}), True, False),
             
-            # Course 2 lessons
-            ('Greetings and Introductions', 'Basic greetings', 'Introduce yourself', 
-             json.dumps({"questions": ["How to greet someone?"]}), True, False),
-            ('Daily Conversations', 'Everyday dialogues', 'Practice small talk', 
-             json.dumps({"questions": ["Common daily questions"]}), True, False),
-            ('Shopping Dialogues', 'Store conversations', 'Role play shopping', 
-             json.dumps({"questions": ["How to ask for price?"]}), True, False),
-            ('Restaurant Conversations', 'Menu and ordering', 'Order food in restaurant', 
-             json.dumps({"questions": ["Restaurant phrases"]}), False, False),
+            # Тема 2: Past Simple
+            (2, 'Past Simple: regular verbs', 'Story about yesterday', 'Talk about what you did yesterday', 
+            json.dumps({"questions": ["How is Past Simple formed?", "Name 5 regular verbs"]}), True, True),
+            (2, 'Past Simple: irregular verbs', 'List of irregular verbs', 'Practice irregular forms', 
+            json.dumps({"questions": ["Name 10 irregular verbs"]}), True, False),
             
-            # Course 3 lessons (основные)
-            ('Business Email Writing', 'Email structure', 'Write business email', 
-             json.dumps({"questions": ["Email format"]}), True, False),
-            ('Meeting Vocabulary', 'Meeting phrases', 'Participate in meeting', 
-             json.dumps({"questions": ["Meeting terms"]}), True, False),
-            ('Presentation Skills', 'Presenting ideas', 'Give short presentation', 
-             json.dumps({"questions": ["Presentation structure"]}), True, False),
-            ('Negotiation Techniques', 'Negotiation phrases', 'Role play negotiation', 
-             json.dumps({"questions": ["Negotiation strategies"]}), False, False),
+            # Тема 3: Future Tenses
+            (3, 'Future with "will"', 'Future plans', 'Discuss your goals', 
+            json.dumps({"questions": ["When is will used?", "Create 3 sentences"]}), False, False),
+            (3, 'Future with "going to"', 'Plans and predictions', 'Talk about plans', 
+            json.dumps({"questions": ["Difference between will and going to"]}), True, False),
             
-            # Course 4 lessons
-            ('IELTS Listening Part 1', 'Basic listening', 'Answer questions', 
-             json.dumps({"questions": ["Listening tips"]}), True, False),
-            ('IELTS Reading Section', 'Reading strategies', 'Practice reading', 
-             json.dumps({"questions": ["Reading techniques"]}), True, False),
-            ('IELTS Writing Task 1', 'Graph description', 'Describe chart', 
-             json.dumps({"questions": ["Task 1 structure"]}), True, False),
-            ('IELTS Writing Task 2', 'Essay writing', 'Write essay', 
-             json.dumps({"questions": ["Essay structure"]}), True, False),
-            ('IELTS Speaking Part 2', '2-minute talk', 'Give monologue', 
-             json.dumps({"questions": ["Speaking strategies"]}), False, False),
+            # Тема 4: Modal Verbs
+            (4, 'Modal Verbs: can/could', 'Ability and permission', 'Practice can/could', 
+            json.dumps({"questions": ["When to use can?", "When to use could?"]}), True, False),
+            (4, 'Modal Verbs: should/must', 'Advice and obligation', 'Practice should/must', 
+            json.dumps({"questions": ["Difference between should and must"]}), True, False),
             
-            # Course 5 lessons
-            ('IT Vocabulary Basics', 'Technical terms', 'Discuss technology', 
-             json.dumps({"questions": ["IT terms"]}), True, False),
-            ('Reading Documentation', 'Technical docs', 'Explain documentation', 
-             json.dumps({"questions": ["Doc understanding"]}), True, False),
-            ('Team Communication', 'Team discussions', 'Team meeting practice', 
-             json.dumps({"questions": ["Teamwork phrases"]}), True, False),
-            ('Technical Interview Prep', 'Interview questions', 'Mock interview', 
-             json.dumps({"questions": ["Interview tips"]}), False, False),
+            # Тема 5: Articles
+            (5, 'Articles a/an/the', 'Rules and usage', 'Practice with nouns', 
+            json.dumps({"questions": ["When to use a/an?", "When to use the?"]}), True, False),
+            (5, 'Articles Practice', 'Advanced rules', 'Practice exceptions', 
+            json.dumps({"questions": ["Articles with proper nouns"]}), True, False),
             
-            # Course 6 lessons
-            ('At the Airport', 'Check-in procedures', 'Airport role play', 
-             json.dumps({"questions": ["Airport phrases"]}), True, False),
-            ('Hotel Check-in', 'Hotel vocabulary', 'Book hotel room', 
-             json.dumps({"questions": ["Hotel terms"]}), True, False),
-            ('Restaurant Ordering', 'Food vocabulary', 'Order in restaurant', 
-             json.dumps({"questions": ["Menu items"]}), True, False),
-            ('Sightseeing Vocabulary', 'Tourist places', 'Ask for directions', 
-             json.dumps({"questions": ["Tourism phrases"]}), False, False),
+            # Курс 2: Conversational English
+            # Тема 1: Present Simple (повтор)
+            (1, 'Greetings and Introductions', 'Basic greetings', 'Introduce yourself', 
+            json.dumps({"questions": ["How to greet someone?"]}), True, False),
+            # Тема 2: Past Simple (повтор)
+            (2, 'Daily Conversations', 'Everyday dialogues', 'Practice small talk', 
+            json.dumps({"questions": ["Common daily questions"]}), True, False),
+            # Тема 3: Future Tenses (повтор)
+            (3, 'Shopping Dialogues', 'Store conversations', 'Role play shopping', 
+            json.dumps({"questions": ["How to ask for price?"]}), True, False),
+            # Тема 11: Phrasal Verbs
+            (11, 'Restaurant Conversations', 'Menu and ordering', 'Order food in restaurant', 
+            json.dumps({"questions": ["Restaurant phrases"]}), False, False),
+            
+            # Курс 3: Business English
+            # Тема 6: Business Vocabulary
+            (6, 'Business Email Writing', 'Email structure', 'Write business email', 
+            json.dumps({"questions": ["Email format"]}), True, False),
+            (6, 'Meeting Vocabulary', 'Meeting phrases', 'Participate in meeting', 
+            json.dumps({"questions": ["Meeting terms"]}), True, False),
+            (6, 'Presentation Skills', 'Presenting ideas', 'Give short presentation', 
+            json.dumps({"questions": ["Presentation structure"]}), True, False),
+            (6, 'Negotiation Techniques', 'Negotiation phrases', 'Role play negotiation', 
+            json.dumps({"questions": ["Negotiation strategies"]}), False, False),
+            
+            # Курс 4: IELTS Preparation
+            # Тема 7: IELTS Writing Task 1
+            (7, 'IELTS Listening Part 1', 'Basic listening', 'Answer questions', 
+            json.dumps({"questions": ["Listening tips"]}), True, False),
+            (7, 'IELTS Reading Section', 'Reading strategies', 'Practice reading', 
+            json.dumps({"questions": ["Reading techniques"]}), True, False),
+            # Тема 8: IELTS Speaking Part 2
+            (8, 'IELTS Writing Task 1', 'Graph description', 'Describe chart', 
+            json.dumps({"questions": ["Task 1 structure"]}), True, False),
+            (8, 'IELTS Writing Task 2', 'Essay writing', 'Write essay', 
+            json.dumps({"questions": ["Essay structure"]}), True, False),
+            (8, 'IELTS Speaking Part 2', '2-minute talk', 'Give monologue', 
+            json.dumps({"questions": ["Speaking strategies"]}), False, False),
+            
+            # Курс 5: English for IT
+            # Тема 9: IT Terminology
+            (9, 'IT Vocabulary Basics', 'Technical terms', 'Discuss technology', 
+            json.dumps({"questions": ["IT terms"]}), True, False),
+            (9, 'Reading Documentation', 'Technical docs', 'Explain documentation', 
+            json.dumps({"questions": ["Doc understanding"]}), True, False),
+            (9, 'Team Communication', 'Team discussions', 'Team meeting practice', 
+            json.dumps({"questions": ["Teamwork phrases"]}), True, False),
+            (9, 'Technical Interview Prep', 'Interview questions', 'Mock interview', 
+            json.dumps({"questions": ["Interview tips"]}), False, False),
+            
+            # Курс 6: English for Travel
+            # Тема 10: Travel Phrases
+            (10, 'At the Airport', 'Check-in procedures', 'Airport role play', 
+            json.dumps({"questions": ["Airport phrases"]}), True, False),
+            (10, 'Hotel Check-in', 'Hotel vocabulary', 'Book hotel room', 
+            json.dumps({"questions": ["Hotel terms"]}), True, False),
+            (10, 'Restaurant Ordering', 'Food vocabulary', 'Order in restaurant', 
+            json.dumps({"questions": ["Menu items"]}), True, False),
+            (10, 'Sightseeing Vocabulary', 'Tourist places', 'Ask for directions', 
+            json.dumps({"questions": ["Tourism phrases"]}), False, False),
+            
+            # Тема 11: Phrasal Verbs (продолжение)
+            (11, 'Phrasal Verbs: get up, look after', 'Common phrasal verbs', 'Practice phrasal verbs', 
+            json.dumps({"questions": ["Use in sentences"]}), True, False),
+            
+            # Тема 12: Conditionals
+            (12, 'First Conditional', 'If + present, will + infinitive', 'Practice first conditional', 
+            json.dumps({"questions": ["Make 3 sentences"]}), True, False),
             
             # ДОПОЛНИТЕЛЬНЫЕ УРОКИ для уникального графа пользователя 7 (Course 3)
-            ('Advanced Negotiation Strategies', 'Complex negotiation scenarios', 'Practice advanced negotiations', 
-             json.dumps({"questions": ["Advanced negotiation tactics?", "Handling difficult clients"]}), False, False),
-            ('Business Writing Excellence', 'Professional writing techniques', 'Write business report', 
-             json.dumps({"questions": ["Report structure?", "Formal language"]}), False, False),
-            ('Final Business Project', 'Comprehensive business case study', 'Present business solution', 
-             json.dumps({"questions": ["Case analysis?", "Solution presentation"]}), False, False)
+            # Все относятся к Business Vocabulary (тема 6)
+            (6, 'Advanced Negotiation Strategies', 'Complex negotiation scenarios', 'Practice advanced negotiations', 
+            json.dumps({"questions": ["Advanced negotiation tactics?", "Handling difficult clients"]}), False, False),
+            (6, 'Business Writing Excellence', 'Professional writing techniques', 'Write business report', 
+            json.dumps({"questions": ["Report structure?", "Formal language"]}), False, False),
+            (6, 'Final Business Project', 'Comprehensive business case study', 'Present business solution', 
+            json.dumps({"questions": ["Case analysis?", "Solution presentation"]}), False, False)
         ]
-        
-        for lesson in lessons:
+
+        print(f"  Создание {len(lessons_with_topics)} уроков с привязкой к темам...")
+
+        for topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended in lessons_with_topics:
             cursor.execute(
-                """INSERT INTO lesson (theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended) 
-                   VALUES (%s, %s, %s, %s, %s, %s)""",
-                lesson
+                """INSERT INTO lesson (topic_id, theory_text, reading_text, speaking_text, 
+                                    lesson_test_json, is_access, is_ended) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended)
             )
-        
-        print(f"  ✓ Добавлено {len(lessons)} уроков")
+
+        print(f"  ✓ Добавлено {len(lessons_with_topics)} уроков с привязкой к темам")
         
         conn.commit()
         
