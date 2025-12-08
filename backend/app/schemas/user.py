@@ -97,7 +97,7 @@ class UserWithCourseResponse(BaseModel):
     avatar_path: Optional[str]
     role: str
     course_info: Optional[CourseInfoResponse] = None
-    courses_info: List[TutorCourseInfo] = []  # Добавили информацию о курсах репетитора
+    courses_info: List[TutorCourseInfo] = []
     tutor_full_name: Optional[str] = None
     courses_count: Optional[int] = None
     students_count: Optional[int] = None

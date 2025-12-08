@@ -37,6 +37,6 @@ class LessonTestSubmit(BaseModel):
 
 class LessonContentUpdate(BaseModel):
     content: str
-    content_type: str  # "theory", "reading", "speaking", "test", "notes"
+    content_type: str
     is_access: Optional[bool] = None
     is_ended: Optional[bool] = None

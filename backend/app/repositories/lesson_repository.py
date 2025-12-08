@@ -40,7 +40,7 @@ class LessonRepository:
             
             # Извлекаем lesson_id из узлов графа
             lesson_ids = []
-            lesson_nodes = {}  # lesson_id -> node_id
+            lesson_nodes = {}
             
             for node in graph_data.get('nodes', []):
                 node_data = node.get('data', {})
@@ -72,7 +72,7 @@ class LessonRepository:
                 if node_id:
                     for node in graph_data.get('nodes', []):
                         if node.get('id') == node_id:
-                            node_status = node.get('group')  # 0-пройден, 1-не пройден, 2-доступен, 3-недоступен
+                            node_status = node.get('group')
                             break
                 
                 lesson_info.append({
@@ -85,7 +85,7 @@ class LessonRepository:
                     "is_access": lesson.is_access,
                     "is_ended": lesson.is_ended,
                     "lesson_notes": lesson.lesson_notes,
-                    "node_status": node_status,  # статус из графа (0,1,2,3)
+                    "node_status": node_status,
                     "progress": progress_data,
                     "lesson_test": json.loads(lesson.lesson_test_json) if lesson.lesson_test_json and isinstance(lesson.lesson_test_json, str) else (lesson.lesson_test_json or {}),
                     "test_results": json.loads(lesson.lesson_test_results_json) if lesson.lesson_test_results_json and isinstance(lesson.lesson_test_results_json, str) else (lesson.lesson_test_results_json or {})
@@ -109,7 +109,7 @@ class LessonRepository:
     def update_lesson_content(
         db: Session,
         lesson_id: int,
-        content_type: str,  # "theory", "reading", "speaking", "test", "notes"
+        content_type: str,
         content: str,
         is_access: bool = None,
         is_ended: bool = None
@@ -208,7 +208,7 @@ class LessonRepository:
     def update_lesson_content(
         db: Session,
         lesson_id: int,
-        content_type: str,  # "theory", "reading", "speaking", "test", "notes", "access"
+        content_type: str,
         content: str,
         is_access: bool = None,
         is_ended: bool = None
@@ -231,7 +231,6 @@ class LessonRepository:
                 lesson.lesson_test_json = content
             elif content_type == "notes":
                 lesson.lesson_notes = content
-            # Для типа "access" content игнорируется, важен только is_access
             
             if is_access is not None:
                 lesson.is_access = is_access
@@ -245,5 +244,5 @@ class LessonRepository:
             
         except Exception as e:
             db.rollback()
-            print(f"Error updating lesson content: {e}")
+            print(f"Ошибка обновления содержимого урока: {e}")
             return None

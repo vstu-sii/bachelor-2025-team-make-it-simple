@@ -296,7 +296,7 @@ const props = defineProps({
   },
   lessonLabel: {
     type: String,
-    default: ""  // Добавляем label из графа
+    default: ""
   }
 });
 
@@ -695,7 +695,6 @@ watch(
 </script>
 
 <style scoped>
-/* Стили остаются точно такими же как в оригинале */
 .lesson-page {
   width: 100%;
   min-height: 100vh;
@@ -758,7 +757,6 @@ watch(
   border-radius: 2px;
 }
 
-/* Контейнер контроля доступа - ВЕРТИКАЛЬНЫЙ */
 .access-control-container {
   position: absolute;
   right: 50%;
@@ -769,7 +767,7 @@ watch(
   border-radius: 10px;
   padding: 8px 12px;
   display: flex;
-  flex-direction: column; /* Вертикальное расположение */
+  flex-direction: column;
   align-items: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   min-width: 180px;
@@ -777,7 +775,7 @@ watch(
 
 .access-control-inner {
   display: flex;
-  flex-direction: column; /* Вертикальное расположение */
+  flex-direction: column;
   align-items: center;
   gap: 8px;
   width: 100%;

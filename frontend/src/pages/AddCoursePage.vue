@@ -150,7 +150,6 @@ function goBack() {
   transform: translateX(calc(-50% - 535px - 5px));
 }
 
-/* Основной контейнер цвета #F4886D */
 .main-container {
   width: 95%;
   max-width: 1100px;
@@ -162,7 +161,6 @@ function goBack() {
   position: relative;
 }
 
-/* Внутренний общий контейнер цвета #D9D9D9 */
 .inner-container {
   background: #fbb599;
   border-radius: 20px;
@@ -172,7 +170,6 @@ function goBack() {
   gap: 25px;
 }
 
-/* Центрированная секция */
 .center-section {
   display: flex;
   flex-direction: column;
@@ -180,7 +177,6 @@ function goBack() {
   text-align: center;
 }
 
-/* Общие стили для всех контейнеров */
 .section-container {
   background: #fedac4;
   border-radius: 15px;
@@ -188,7 +184,6 @@ function goBack() {
   border: none;
 }
 
-/* Контейнеры для списков */
 .list-container {
   background: #fedac4;
   border-radius: 15px;
@@ -211,8 +206,8 @@ function goBack() {
   background: #592012;
   border-radius: 2px;
   margin: 20px 0 30px 0;
-  width: 80%; /* Делаем разделитель короче */
-  max-width: 600px; /* Ограничиваем максимальную ширину */
+  width: 80%;
+  max-width: 600px;
 }
 
 .form-group {
@@ -229,7 +224,6 @@ function goBack() {
   font-family: 'Arial', serif;
 }
 
-/* Центрированные поля ввода */
 .center-input {
   display: flex;
   flex-direction: column;
@@ -237,11 +231,10 @@ function goBack() {
 }
 
 .input-wrapper {
-  width: 70%; /* Уменьшаем ширину полей */
-  max-width: 500px; /* Ограничиваем максимальную ширину */
+  width: 70%;
+  max-width: 500px;
 }
 
-/* Текстовые поля с белым фоном и цветом текста #592012 */
 input,
 textarea {
   width: 100%;
@@ -255,7 +248,6 @@ textarea {
   box-sizing: border-box;
 }
 
-/* Уменьшаем размер шрифта в полях ввода для заголовков */
 .center-input input {
   font-size: 14px;
   padding: 10px 15px;
@@ -285,7 +277,6 @@ textarea:focus {
   flex-direction: column;
 }
 
-/* Контейнер для описания урока */
 .description-container {
   background: #FFFFFF;
   border: none;
@@ -328,7 +319,6 @@ textarea:focus {
   background: #A0A0A0;
 }
 
-/* Окно для перетаскивания файлов */
 .dropzone {
   background: #FFFFFF;
   border: 2px solid #F4886D;
@@ -379,25 +369,24 @@ textarea:focus {
   margin-top: 5px;
 }
 
-/* Кнопки "Добавить новый урок" и "Добавить новый материал" */
 .add-btn {
   margin-top: 15px;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Выравниваем по левому краю */
+  justify-content: flex-start;
   gap: 8px;
-  padding: 10px 15px; /* Уменьшаем padding для меньшего размера */
+  padding: 10px 15px;
   background: #F4886D;
   color: #592012;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 14px; /* Уменьшаем размер шрифта */
+  font-size: 14px;
   font-weight: bold;
   font-family: 'Arial', serif;
   transition: all 0.3s;
-  width: auto; /* Убираем ширину 100% */
-  max-width: 250px; /* Ограничиваем максимальную ширину */
+  width: auto;
+  max-width: 250px;
 }
 
 .add-btn:hover {
@@ -406,7 +395,6 @@ textarea:focus {
   box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
 }
 
-/* Списки */
 .list-section {
   height: 100%;
 }
@@ -489,10 +477,9 @@ textarea:focus {
   box-shadow: 0 6px 20px rgba(244, 136, 109, 0.4);
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .back-btn {
-    left: 10px; /* Чуть левее на больших экранах */
+    left: 10px;
   }
 }
 
@@ -504,7 +491,7 @@ textarea:focus {
   }
   
   .back-btn {
-    left: 30px; /* Чуть левее на средних экранах */
+    left: 30px;
     top: 90px;
   }
   
@@ -528,7 +515,7 @@ textarea:focus {
 
 @media (max-width: 768px) {
   .back-btn {
-    left: 20px; /* На мобилках оставляем как было */
+    left: 20px;
     top: 80px;
   }
   

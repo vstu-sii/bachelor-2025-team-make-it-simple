@@ -522,7 +522,6 @@ watch(selectedStudentId, (newStudentId) => {
 </script>
   
   <style scoped>
-  /* Общие стили для всех контейнеров */
   .section {
     background: #fedac4;
     border-radius: 15px;
@@ -530,7 +529,6 @@ watch(selectedStudentId, (newStudentId) => {
     border: none;
   }
   
-  /* Заголовки и divider */
   .title {
     text-align: center;
     margin-bottom: 15px;
@@ -591,7 +589,6 @@ watch(selectedStudentId, (newStudentId) => {
     width: 300px;
   }
   
-  /* Выпадающий список для учеников */
   .student-selection-container {
     margin-top: 15px;
   }
@@ -675,7 +672,6 @@ watch(selectedStudentId, (newStudentId) => {
     font-family: 'Arial', Georgia, serif;
   }
   
-  /* Кнопки */
   .send-btn,
   .remove-btn,
   .test-btn,
@@ -721,7 +717,6 @@ watch(selectedStudentId, (newStudentId) => {
     background: #b35a47;
   }
   
-  /* Входное тестирование */
   .test-box {
     background: #FFFFFF;
     border: 2px solid #F4886D;
@@ -738,14 +733,12 @@ watch(selectedStudentId, (newStudentId) => {
     font-size: 16px;
   }
   
-  /* Кнопка Сохранить для пробелов */
   .centered-save-btn {
     display: block;
     margin: 20px auto 0 auto;
     padding: 12px 40px;
   }
   
-  /* Граф курса */
   .graph-section .row {
     margin-bottom: 15px;
   }
@@ -812,7 +805,6 @@ watch(selectedStudentId, (newStudentId) => {
     border: 1px solid #f5c6cb;
   }
   
-  /* Адаптивность */
   @media (max-width: 1024px) {
     .section {
       padding: 20px;

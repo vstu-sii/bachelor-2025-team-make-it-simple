@@ -290,7 +290,6 @@ const totalStudents = computed(() => {
 </script>
 
 <style scoped>
-/* Внешний контейнер для информации о курсах */
 .course-outer-container {
   background: #fbb599;
   border-radius: 25px;
@@ -306,7 +305,6 @@ const totalStudents = computed(() => {
   gap: 25px;
 }
 
-/* Контейнер 1: Заголовок с поиском */
 .tutor-courses-header {
   background: #fedac4;
   border-radius: 20px;
@@ -322,7 +320,6 @@ const totalStudents = computed(() => {
   text-align: center;
 }
 
-/* Статистика курсов */
 .courses-stats {
   display: flex;
   justify-content: center;
@@ -363,7 +360,6 @@ const totalStudents = computed(() => {
   margin-bottom: 20px;
 }
 
-/* Секция поиска */
 .search-section {
   flex: 1;
 }
@@ -452,7 +448,6 @@ const totalStudents = computed(() => {
   padding-left: 5px;
 }
 
-/* Кнопка добавления курса */
 .add-course-btn {
   padding: 12px 20px 12px 24px;
   background: #f4886d;
@@ -484,7 +479,6 @@ const totalStudents = computed(() => {
   filter: brightness(0) saturate(100%) invert(14%) sepia(43%) saturate(1000%) hue-rotate(340deg) brightness(90%) contrast(90%);
 }
 
-/* Контейнер 2: Таблица курсов */
 .tutor-courses-table-container {
   background: #fedac4;
   border-radius: 20px;
@@ -540,7 +534,6 @@ const totalStudents = computed(() => {
   font-size: 16px;
 }
 
-/* Индикатор загрузки */
 .loading-courses {
   text-align: center;
   padding: 60px 20px;
@@ -562,7 +555,6 @@ const totalStudents = computed(() => {
   100% { transform: rotate(360deg); }
 }
 
-/* Нет курсов */
 .no-courses {
   text-align: center;
   padding: 60px 20px;
@@ -608,7 +600,6 @@ const totalStudents = computed(() => {
   transform: translateY(-2px);
 }
 
-/* Нет результатов поиска */
 .no-search-results {
   text-align: center;
   padding: 40px 20px;
@@ -636,7 +627,6 @@ const totalStudents = computed(() => {
   background: #585c74;
 }
 
-/* Таблица курсов */
 .courses-table-wrapper {
   border-radius: 12px;
   overflow: hidden;
@@ -682,14 +672,12 @@ const totalStudents = computed(() => {
   color: #592012;
 }
 
-/* Стиль для курсов без учеников */
 .no-student {
   color: #888;
   font-style: italic;
   font-size: 15px;
 }
 
-/* Подсветка строк с курсами без учеников */
 .table-row:has(.no-student) {
   background-color: #f9f9f9;
   opacity: 0.9;
@@ -699,12 +687,10 @@ const totalStudents = computed(() => {
   background-color: #f0f0f0;
 }
 
-/* Заголовок курса без учеников */
 .table-row:has(.no-student) .course-title {
   color: #666;
 }
 
-/* Колонки таблицы */
 .student-col {
   justify-content: flex-start;
 }
@@ -721,14 +707,12 @@ const totalStudents = computed(() => {
   justify-content: center;
 }
 
-/* Информация об ученике */
 .student-info {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-/* Стиль для кликабельного ФИО ученика */
 .student-name-link {
   font-weight: bold;
   font-size: 15px;
@@ -752,7 +736,6 @@ const totalStudents = computed(() => {
   transform: translateY(0);
 }
 
-/* Информация о курсе */
 .course-info {
   display: flex;
   flex-direction: column;
@@ -768,7 +751,6 @@ const totalStudents = computed(() => {
   color: #888;
 }
 
-/* Информация о дате */
 .date-info {
   text-align: center;
 }
@@ -778,7 +760,6 @@ const totalStudents = computed(() => {
   color: #666;
 }
 
-/* Кнопки действий */
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -803,7 +784,6 @@ const totalStudents = computed(() => {
   transform: translateY(-2px);
 }
 
-/* Футер таблицы */
 .table-footer {
   background: #f5f5f5;
   padding: 12px 15px;
@@ -816,7 +796,6 @@ const totalStudents = computed(() => {
   text-align: right;
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
   .course-outer-container {
     width: 95%;

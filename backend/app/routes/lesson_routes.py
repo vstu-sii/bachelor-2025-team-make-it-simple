@@ -199,8 +199,6 @@ def generate_lesson_section(
     if not lesson:
         raise HTTPException(status_code=404, detail="Урок не найден")
     
-    # Заглушка для генерации через ИИ
-    # В реальности здесь будет интеграция с ИИ API
     
     lesson_title = lesson.theory_text[:50] + "..." if lesson.theory_text and len(lesson.theory_text) > 50 else f"Урок {lesson_id}"
     

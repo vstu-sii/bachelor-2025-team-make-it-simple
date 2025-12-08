@@ -346,7 +346,6 @@
     position: relative;
   }
   
-  /* Кнопка "назад" */
   .back-btn {
     position: absolute;
     left: 50%;
@@ -369,7 +368,6 @@
     height: 80px;
   }
   
-  /* Заголовок теста */
   .test-title-container {
     position: relative;
     margin-top: 130px;
@@ -406,7 +404,6 @@
     margin-top: 10px;
   }
   
-  /* Основной контейнер */
   .main-container {
     width: 95%;
     max-width: 1100px;
@@ -418,7 +415,6 @@
     margin-top: 10px;
   }
   
-  /* Внутренний контейнер */
   .inner-container {
     background: #fbb599;
     border-radius: 20px;
@@ -428,7 +424,6 @@
     gap: 25px;
   }
   
-  /* Секции */
   .section-box, .task-box {
     background: #fedac4;
     border-radius: 15px;
@@ -453,7 +448,6 @@
     border-radius: 1px;
   }
   
-  /* Формирование теста (для репетитора) */
   .feedback-box {
     display: flex;
     gap: 15px;
@@ -511,7 +505,6 @@
     cursor: not-allowed;
   }
   
-  /* Задания */
   .task-box {
     margin-top: 15px;
   }
@@ -554,7 +547,6 @@
     color: #592012;
   }
   
-  /* Поля ввода */
   .answer-input {
     width: 100%;
     height: 120px;
@@ -580,7 +572,6 @@
     cursor: not-allowed !important;
   }
   
-  /* Варианты ответов */
   .options {
     background: white;
     border: 2px solid #d67962;
@@ -616,7 +607,6 @@
     cursor: not-allowed;
   }
   
-  /* Заполнение пропусков */
   .fill-blanks {
     background: white;
     border: 2px solid #d67962;
@@ -650,7 +640,6 @@
     cursor: not-allowed;
   }
   
-  /* Оценка задания */
   .grade-section {
     margin-top: 20px;
     padding-top: 15px;
@@ -674,7 +663,6 @@
     color: #592012;
   }
   
-  /* Комментарий репетитора */
   .tutor-feedback {
     margin-top: 15px;
     padding: 15px;
@@ -700,7 +688,6 @@
     margin-bottom: 5px;
   }
   
-  /* Кнопки действий */
   .action-buttons {
     display: flex;
     flex-direction: column;
@@ -746,7 +733,6 @@
     box-shadow: 0 4px 12px rgba(89, 32, 18, 0.3);
   }
   
-  /* Адаптивность */
   @media (max-width: 1200px) {
     .back-btn {
       left: 10px;

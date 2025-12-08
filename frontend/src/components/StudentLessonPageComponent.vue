@@ -542,7 +542,6 @@ watch(
   margin-bottom: 10px;
 }
 
-/* Адаптивность (аналогично оригиналу) */
 @media (max-width: 1200px) {
   .back-btn {
     left: 10px;

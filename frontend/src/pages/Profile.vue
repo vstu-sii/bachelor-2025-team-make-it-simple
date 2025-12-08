@@ -388,7 +388,6 @@ function cancelEdit() {
   flex-grow: 1;
 }
 
-/* Индикатор загрузки аутентификации */
 .auth-loading {
   display: flex;
   justify-content: center;
@@ -398,7 +397,6 @@ function cancelEdit() {
   font-size: 18px;
 }
 
-/* ====== Контейнер контента ====== */
 .profile-content {
   margin-top: 120px;
   width: 100%;
@@ -410,7 +408,6 @@ function cancelEdit() {
   overflow-y: visible;
 }
 
-/* ====== ЦВЕТ ТЕКСТА ====== */
 .profile-content {
   color: #592012;
 }
@@ -425,7 +422,6 @@ function cancelEdit() {
   color: #592012;
 }
 
-/* Статистика репетитора */
 .tutor-stats {
   display: flex;
   justify-content: center;
@@ -454,7 +450,6 @@ function cancelEdit() {
   opacity: 0.8;
 }
 
-/* Внешний контейнер для основной информации */
 .main-info-outer-container {
   background: #fbb599;
   border-radius: 25px;
@@ -466,7 +461,6 @@ function cancelEdit() {
   gap: 25px;
 }
 
-/* ====== Основная карточка профиля ====== */
 .main-info-container {
   display: flex;
   gap: 30px;
@@ -480,7 +474,6 @@ function cancelEdit() {
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
 }
 
-/* Левая часть */
 .left-info {
   flex: 1;
   display: flex;
@@ -511,7 +504,6 @@ function cancelEdit() {
   font-size: 16px;
 }
 
-/* Правая часть */
 .right-info {
   flex: 2;
   display: flex;
@@ -519,7 +511,6 @@ function cancelEdit() {
   gap: 20px;
 }
 
-/* ===== КНОПКИ ===== */
 .btn-edit {
   background: #f4886d !important;
   color: #411616 !important;
@@ -575,7 +566,6 @@ function cancelEdit() {
   gap: 10px;
 }
 
-/* ===== КОЛОНОЧНЫЕ ПОЛЯ (ФИО / Контакты) ===== */
 .field-column-group {
   display: flex;
   flex-direction: column;
@@ -588,7 +578,6 @@ function cancelEdit() {
   align-items: center;
 }
 
-/* ЖИРНЫЙ ШРИФТ ДЛЯ ЗНАЧЕНИЙ */
 .field-value-box {
   background: #d8b9a7;
   padding: 6px 12px;
@@ -624,7 +613,6 @@ function cancelEdit() {
   background: #fff9de;
 }
 
-/* ===== ИНТЕРЕСЫ ===== */
 .interests-column-box {
   display: flex;
   flex-direction: column;
@@ -659,13 +647,11 @@ function cancelEdit() {
   background: #fff9de;
 }
 
-/* Контейнер под основной частью */
 .extra-box {
   width: 100%;
   margin-top: 0;
 }
 
-/* Индикатор загрузки */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -690,7 +676,6 @@ function cancelEdit() {
   100% { transform: rotate(360deg); }
 }
 
-/* Сообщение об ошибке */
 .error-container {
   text-align: center;
   padding: 40px;
@@ -717,7 +702,6 @@ function cancelEdit() {
   font-family: 'Arial', serif;
 }
 
-/* ===== Адаптив ====== */
 @media (max-width: 1024px) {
   .main-info-outer-container,
   .course-outer-container {

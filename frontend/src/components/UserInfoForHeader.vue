@@ -1,4 +1,3 @@
-<!-- UserInfo.vue -->
 <template>
     <div class="user-info-section">
       <div class="user-avatar-container">

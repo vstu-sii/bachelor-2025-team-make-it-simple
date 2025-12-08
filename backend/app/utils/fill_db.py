@@ -5,7 +5,6 @@ from datetime import date, datetime
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 def create_users(cursor):
-    """Создает пользователей с правильными паролями и русскими ролями"""
     print("\n1. Создание пользователей...")
     
     password = "12345678"
@@ -39,12 +38,11 @@ def create_users(cursor):
                 email = EXCLUDED.email,
                 password = EXCLUDED.password
         """, user_data)
-        print(f"  ✓ Пользователь ID={user_data[0]}: {user_data[10]} ({user_data[9]})")
+        print(f"Пользователь ID={user_data[0]}: {user_data[10]} ({user_data[9]})")
     
-    print(f"  Все пароли установлены: {password}")
+    print(f"Все пароли установлены: {password}")
 
 def create_database():
-    """Удаляет и создает БД заново с правильной структурой"""
     print("=" * 60)
     print("ПЕРЕСОЗДАНИЕ БАЗЫ ДАННЫХ С НОВОЙ СТРУКТУРОЙ")
     print("=" * 60)
@@ -62,11 +60,11 @@ def create_database():
     try:
         print("Удаление старой БД english_courses...")
         cursor.execute("DROP DATABASE IF EXISTS english_courses")
-        print("  ✓ БД удалена")
+        print("БД удалена")
         
         print("Создание новой БД english_courses...")
         cursor.execute("CREATE DATABASE english_courses")
-        print("  ✓ БД создана")
+        print("БД создана")
         
     except Exception as e:
         print(f"Ошибка при пересоздании БД: {e}")
@@ -78,7 +76,6 @@ def create_database():
     return True
 
 def create_tables(cursor):
-    """Создает все таблицы с правильной структурой"""
     print("\nСоздание таблиц...")
     
     # Создаем тип для ролей
@@ -89,7 +86,7 @@ def create_tables(cursor):
             WHEN duplicate_object THEN null;
         END $$;
     """)
-    print("  ✓ Тип UserRole создан")
+    print("Тип UserRole создан")
     
     # Таблица пользователей
     cursor.execute("""
@@ -109,7 +106,7 @@ def create_tables(cursor):
             avatar_path VARCHAR(500)
         )
     """)
-    print("  ✓ Таблица user создана")
+    print("Таблица user создана")
     
     # Индексы для пользователей
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_last_name ON \"user\"(last_name)")
@@ -126,7 +123,7 @@ def create_tables(cursor):
             input_test_json JSON
         )
     """)
-    print("  ✓ Таблица course создана")
+    print("Таблица course создана")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_title ON course(title)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_created_at ON course(created_at)")
@@ -138,7 +135,7 @@ def create_tables(cursor):
             file_path VARCHAR(1000) UNIQUE NOT NULL
         )
     """)
-    print("  ✓ Таблица material создана")
+    print("Таблица material создана")
     
     # Таблица тем
     cursor.execute("""
@@ -148,7 +145,7 @@ def create_tables(cursor):
             description_text TEXT
         )
     """)
-    print("  ✓ Таблица topic создана")
+    print("Таблица topic создана")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_topic_title ON topic(title)")
     
@@ -168,7 +165,7 @@ def create_tables(cursor):
             topic_id INTEGER REFERENCES topic(topic_id) ON DELETE SET NULL
         )
     """)
-    print("  ✓ Таблица lesson создана (с topic_id!)")
+    print("Таблица lesson создана (с topic_id!)")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_lesson_topic_id ON lesson(topic_id)")
     
@@ -184,7 +181,7 @@ def create_tables(cursor):
             UNIQUE(user_id, course_id)
         )
     """)
-    print("  ✓ Таблица user_course создана")
+    print("Таблица user_course создана")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_user_id ON user_course(user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_course_id ON user_course(course_id)")
@@ -197,7 +194,7 @@ def create_tables(cursor):
             PRIMARY KEY (course_id, material_id)
         )
     """)
-    print("  ✓ Таблица course_material создана")
+    print("Таблица course_material создана")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_course_id ON course_material(course_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_material_id ON course_material(material_id)")
@@ -210,12 +207,12 @@ def create_tables(cursor):
             PRIMARY KEY (course_id, topic_id)
         )
     """)
-    print("  ✓ Таблица course_topic создана")
+    print("Таблица course_topic создана")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_topic_course_id ON course_topic(course_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_topic_topic_id ON course_topic(topic_id)")
     
-    print("  ✓ Все таблицы успешно созданы!")
+    print("Все таблицы успешно созданы!")
 
 def fix_lesson_numbers_in_graphs(graph_json, course_id):
     """Пересчитывает номера уроков в графе так, чтобы всегда начинались с 1"""
@@ -256,12 +253,10 @@ def fix_lesson_numbers_in_graphs(graph_json, course_id):
         return json.dumps(graph_data)
     
     except Exception as e:
-        print(f"  ⚠ Ошибка при пересчете номеров уроков в графе: {e}")
+        print(f"Ошибка при пересчете номеров уроков в графе: {e}")
         return graph_json
 
-def fill_database():
-    """Полностью заполняет базу данных тестовыми данными"""
-    
+def fill_database():    
     # Сначала создаем БД
     if not create_database():
         print("Не удалось создать БД. Выход.")
@@ -305,9 +300,9 @@ def fill_database():
         for table in tables_to_clear:
             try:
                 cursor.execute(f"TRUNCATE TABLE {table} CASCADE")
-                print(f"  ✓ Таблица {table} очищена")
+                print(f"Таблица {table} очищена")
             except Exception as e:
-                print(f"  ⚠ Ошибка при очистке {table}: {e}")
+                print(f"Ошибка при очистке {table}: {e}")
         
         # Сбрасываем sequence для автоинкремента
         sequences = [
@@ -321,13 +316,13 @@ def fill_database():
         for seq in sequences:
             try:
                 cursor.execute(f"ALTER SEQUENCE {seq} RESTART WITH 1")
-                print(f"  ✓ Sequence {seq} сброшен")
+                print(f"Sequence {seq} сброшен")
             except:
                 pass
         
         conn.commit()
         
-        print("\n3. Создание курсов (6 курсов)...")
+        print("\n3. Создание курсов...")
         
         # Определяем графы для каждого курса (будет использоваться при создании user_course)
         course_graphs = [
@@ -470,7 +465,7 @@ def fill_database():
         
         print("\n4. Связывание пользователей с курсами (с графами)...")
         
-        # Создаем УНИКАЛЬНЫЙ граф для нового пользователя (ID=7) на курсе 3
+        # Создаем тестовый граф для нового пользователя (ID=7) на курсе 3
         # Граф с разными статусами: 0 - пройден, 1 - не пройден, 2 - доступен, 3 - недоступен
         unique_graph_for_user_7 = {
             "nodes": [
@@ -496,7 +491,6 @@ def fill_database():
         }
         
         user_courses = [
-            # User 1 -> Course 1 с графом курса 1
             (1, 1, 'Gaps in Past Simple and articles', 
             json.dumps(course_graphs[0]),  # Обновленный граф для курса 1
             json.dumps({
@@ -603,7 +597,7 @@ def fill_database():
                 edges_count = len(graph_data.get('edges', [])) if isinstance(graph_data, dict) else 0
                 
                 if user_role == 'Репетитор':
-                    print(f"  ✓ Репетитор {user_email} -> {course_name}")
+                    print(f"Репетитор {user_email} -> {course_name}")
                 else:
                     # Проверяем номера уроков в графе
                     lesson_numbers = []
@@ -614,15 +608,15 @@ def fill_database():
                         
                         lesson_numbers.sort()
                         if lesson_numbers:
-                            print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей, уроки: {lesson_numbers[0]}-{lesson_numbers[-1]})")
+                            print(f"Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей, уроки: {lesson_numbers[0]}-{lesson_numbers[-1]})")
                         else:
-                            print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
+                            print(f"Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
                     else:
-                        print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
+                        print(f"Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
             except Exception as e:
-                print(f"  ✓ Ученик {user_email} -> {course_name} (ошибка парсинга графа: {e})")
+                print(f"Ученик {user_email} -> {course_name} (ошибка парсинга графа: {e})")
         
-        print(f"  ✓ Ученик z@z.ru (ID=5) не имеет курсов")
+        print(f"Ученик z@z.ru (ID=5) не имеет курсов")
         
         conn.commit()
         
@@ -646,7 +640,7 @@ def fill_database():
         for material in materials:
             cursor.execute("INSERT INTO material (file_path) VALUES (%s)", (material,))
         
-        print(f"  ✓ Добавлено {len(materials)} материалов")
+        print(f"Добавлено {len(materials)} материалов")
         
         # Связь курсов с материалами
         course_materials = [
@@ -662,7 +656,7 @@ def fill_database():
             cursor.execute("INSERT INTO course_material (course_id, material_id) VALUES (%s, %s)", 
                           (course_id, material_id))
         
-        print(f"  ✓ Создано {len(course_materials)} связей курс-материал")
+        print(f"Создано {len(course_materials)} связей курс-материал")
         
         print("\n6. Создание тем и связей...")
         
@@ -684,7 +678,7 @@ def fill_database():
         for topic in topics:
             cursor.execute("INSERT INTO topic (title, description_text) VALUES (%s, %s)", topic)
         
-        print(f"  ✓ Добавлено {len(topics)} тем")
+        print(f"Добавлено {len(topics)} тем")
         
         # Связь курсов с темами
         course_topics = [
@@ -700,16 +694,16 @@ def fill_database():
             cursor.execute("INSERT INTO course_topic (course_id, topic_id) VALUES (%s, %s)", 
                           (course_id, topic_id))
         
-        print(f"  ✓ Создано {len(course_topics)} связей курс-тема")
+        print(f"Создано {len(course_topics)} связей курс-тема")
         
         print("\n7. Создание уроков для графа (включая дополнительные для нового графа)...")
 
         # Сначала узнаем ID тем, которые мы создали
-        print("  Получение ID созданных тем...")
+        print("Получение ID созданных тем...")
         cursor.execute("SELECT topic_id, title FROM topic ORDER BY topic_id")
         topics_data = cursor.fetchall()
         topic_map = {title: topic_id for topic_id, title in topics_data}
-        print(f"  ✓ Найдено {len(topic_map)} тем")
+        print(f"Найдено {len(topic_map)} тем")
 
         # Теперь создаем уроки с привязкой к темам
         lessons_with_topics = [
@@ -806,7 +800,7 @@ def fill_database():
             json.dumps({"questions": ["Case analysis?", "Solution presentation"]}), False, False)
         ]
 
-        print(f"  Создание {len(lessons_with_topics)} уроков с привязкой к темам...")
+        print(f"Создание {len(lessons_with_topics)} уроков с привязкой к темам...")
 
         for topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended in lessons_with_topics:
             cursor.execute(
@@ -816,7 +810,7 @@ def fill_database():
                 (topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended)
             )
 
-        print(f"  ✓ Добавлено {len(lessons_with_topics)} уроков с привязкой к темам")
+        print(f"Добавлено {len(lessons_with_topics)} уроков с привязкой к темам")
         
         conn.commit()
         
@@ -841,7 +835,7 @@ def fill_database():
         
         user_courses_data = cursor.fetchall()
         for uc_id, email, user_id, title, graph_status in user_courses_data:
-            print(f"  UserCourse {uc_id}: {email} (ID={user_id}) -> {title}: {graph_status}")
+            print(f"UserCourse {uc_id}: {email} (ID={user_id}) -> {title}: {graph_status}")
             
             # Детальная информация о графе
             cursor.execute("""
@@ -896,22 +890,7 @@ def fill_database():
             cursor.execute(query)
             count = cursor.fetchone()[0]
             print(f"  {name}: {count}")
-        
-        print("\nГЛАВНОЕ ИСПРАВЛЕНИЕ:")
-        print("-" * 60)
-        print("Теперь у каждого ученика в каждом курсе уроки всегда начинаются с 1!")
-        print("Пример: Уроки Novikov Alexey на курсе Business English:")
-        print("  - Было: уроки 16, 17, 18, 19, 33, 34, 35 (неправильно!)")
-        print("  - Стало: уроки 1, 2, 3, 4, 5, 6, 7 (правильно!)")
-        
-        print("\nИнформация для тестирования:")
-        print("-" * 60)
-        print("1. ДВА ученика на одном курсе с РАЗНЫМИ графами:")
-        print("   - Molchanova Liana (ID=2): liana@bk.ru - стандартный граф (уроки: 1-4)")
-        print("   - Novikov Alexey (ID=7): novikov@example.com - УНИКАЛЬНЫЙ граф (уроки: 1-8)")
-        print("\n2. Все пароли: 12345678")
-        print("\n3. Репетитор: yazenin@gmail.com (ID=3) - видит все курсы")
-        
+            
     except Exception as e:
         print(f"\nОШИБКА: {e}")
         conn.rollback()

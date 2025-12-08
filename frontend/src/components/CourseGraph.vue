@@ -455,7 +455,6 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Стили для Vue Flow */
 :deep(.vue-flow__node) {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -492,7 +491,6 @@
   fill: #592012;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .course-graph-container {
     height: 600px;

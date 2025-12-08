@@ -135,7 +135,7 @@
   .menu-item.disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    pointer-events: none; /* Это важное свойство отключает все события мыши */
+    pointer-events: none;
   }
   
   .menu-text {

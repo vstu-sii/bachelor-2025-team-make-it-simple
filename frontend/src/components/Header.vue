@@ -92,7 +92,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ====== Хедер ====== */
 .main-header.fixed-header {
   position: fixed;
   top: 0;
@@ -146,21 +145,18 @@ onUnmounted(() => {
   align-items: center;
 }
 
-/* Контейнер для меню */
 .menu-container {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-/* Иконка меню с уменьшенным размером */
 .menu-icon {
   width: 20px;
   height: 20px;
   cursor: pointer;
 }
 
-/* ВЫПАДАЮЩЕЕ МЕНЮ - ОСНОВНОЕ ИЗМЕНЕНИЕ */
 .dropdown-menu {
   position: absolute;
   top: 100%;
@@ -170,12 +166,11 @@ onUnmounted(() => {
   border: 2px solid #ff0044;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-  min-width: 280px; /* УВЕЛИЧЕНО с 200px для отображения информации о пользователе */
+  min-width: 280px;
   z-index: 1000;
   overflow: hidden;
 }
 
-/* Кнопка "Вернуться" в хедере */
 .back-to-profile-header-btn {
   background: #6d718b;
   color: white;
@@ -192,14 +187,13 @@ onUnmounted(() => {
   background: #585c74;
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
   .main-header.fixed-header {
     padding: 0 20px;
   }
   
   .dropdown-menu {
-    min-width: 260px; /* АДАПТИВНОЕ значение для планшетов */
+    min-width: 260px;
   }
 }
 
@@ -231,8 +225,8 @@ onUnmounted(() => {
   }
   
   .dropdown-menu {
-    min-width: 240px; /* АДАПТИВНОЕ значение для мобильных */
-    right: -10px; /* СДВИГ вправо для лучшего позиционирования на мобильных */
+    min-width: 240px;
+    right: -10px;
   }
 }
 </style>

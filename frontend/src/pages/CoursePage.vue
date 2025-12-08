@@ -156,7 +156,6 @@ watch(
   position: relative;
 }
 
-/* Кнопка "назад" */
 .back-btn {
   position: absolute;
   left: 50%;
@@ -179,7 +178,6 @@ watch(
   height: 80px;
 }
 
-/* Название курса */
 .course-title-container {
   position: relative;
   margin-top: 130px;
@@ -209,7 +207,6 @@ watch(
   border-radius: 2px;
 }
 
-/* Основной контейнер цвета #F4886D */
 .main-container {
   width: 95%;
   max-width: 1100px;
@@ -221,7 +218,6 @@ watch(
   margin-top: 10px;
 }
 
-/* Внутренний общий контейнер цвета #fbb599 */
 .inner-container {
   background: #fbb599;
   border-radius: 20px;
@@ -231,7 +227,6 @@ watch(
   gap: 25px;
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .back-btn {
     left: 10px;

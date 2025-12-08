@@ -94,7 +94,6 @@ function goToCourse() {
 </script>
 
 <style scoped>
-/* Стили для контейнера курса ученика */
 .course-outer-container {
   background: #fbb599;
   border-radius: 25px;
@@ -216,7 +215,6 @@ function goToCourse() {
   border-radius: 8px;
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
   .course-outer-container {
     width: 95%;

@@ -15,4 +15,4 @@ class Topic(Base):
     description_text = Column(Text)
     
     def __repr__(self):
-        return f'<Topic(id={self.topic_id}, title={self.title})>'  # Исправил название класса
+        return f'<Topic(id={self.topic_id}, title={self.title})>'

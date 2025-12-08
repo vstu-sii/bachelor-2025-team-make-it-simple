@@ -197,7 +197,6 @@
   </script>
   
   <style scoped>
-  /* Общие стили для всех контейнеров */
   .section {
     background: #fedac4;
     border-radius: 15px;
@@ -205,7 +204,6 @@
     border: none;
   }
   
-  /* Заголовки и divider */
   .title {
     text-align: center;
     margin-bottom: 15px;
@@ -254,7 +252,6 @@
     opacity: 0.7;
   }
   
-  /* Кнопки */
   .test-btn {
     background: #F4886D;
     color: #592012;
@@ -281,7 +278,6 @@
     cursor: not-allowed;
   }
   
-  /* Кнопка повторной попытки */
   .retry-btn {
     background: #F4886D;
     color: #592012;
@@ -301,7 +297,6 @@
     box-shadow: 0 4px 8px rgba(244, 136, 109, 0.3);
   }
   
-  /* Входное тестирование */
   .test-box {
     background: #FFFFFF;
     border: 2px solid #F4886D;
@@ -312,7 +307,6 @@
     font-family: 'Arial', Georgia, serif;
   }
   
-  /* Граф курса */
   .graph-box {
     margin-top: 20px;
     min-height: 300px;
@@ -354,7 +348,6 @@
     100% { transform: rotate(360deg); }
   }
   
-  /* Адаптивность */
   @media (max-width: 768px) {
     .title {
       font-size: 24px;

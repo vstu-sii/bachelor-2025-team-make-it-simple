@@ -184,7 +184,6 @@ def get_user_with_course_info(
                             })
         
         # Сохраняем информацию о курсах для ответа
-        # (нужно будет расширить схему ответа)
         user_dict["courses_info"] = courses_info
         students_count = len(courses_info)
     

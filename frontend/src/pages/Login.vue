@@ -107,7 +107,7 @@ export default {
   width: 50%;
   height: 100%;
   overflow: hidden;
-  background: #071446; /* Запасной фон на случай проблем с изображением */
+  background: #071446;
 }
 
 .left-bg {

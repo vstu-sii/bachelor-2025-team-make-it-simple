@@ -48,7 +48,6 @@
       position: 'relative',
       overflow: 'hidden',
       boxShadow: props.selected ? '0 10px 30px rgba(0, 0, 0, 0.2)' : '0 5px 15px rgba(0, 0, 0, 0.1)',
-      // Увеличиваем z-index для избежания перекрытия
       zIndex: props.selected ? 100 : 10
     }
   })
@@ -135,7 +134,6 @@
     max-width: 100%;
   }
   
-  /* Индикатор статуса в углу */
   .custom-node::after {
     content: '';
     position: absolute;
@@ -150,7 +148,6 @@
     z-index: 10;
   }
   
-  /* Эффект свечения при наведении */
   .custom-node:hover::after {
     transform: scale(1.2);
     box-shadow: 0 0 10px rgba(0,0,0,0.4);
