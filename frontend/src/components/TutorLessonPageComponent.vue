@@ -435,7 +435,10 @@ async function loadStudentsProgress() {
   if (!lessonIdRef.value || !courseIdRef.value) return;
   
   try {
-    const response = await api.get(`/lessons/${lessonIdRef.value}/students-progress`);
+    const response = await api.get(
+      `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
+    );
+    
     studentsProgress.value = response.data.map(student => ({
       ...student,
       requires_retry: student.requires_retry || false
@@ -447,6 +450,7 @@ async function loadStudentsProgress() {
     }
   } catch (error) {
     console.error("Ошибка загрузки прогресса учеников:", error);
+    studentsProgress.value = [];
   }
 }
 

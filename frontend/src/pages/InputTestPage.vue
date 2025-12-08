@@ -1,243 +1,162 @@
 <template>
-    <div class="test-page">
-      <AppHeader :show-back-button="true" />
-      
-      <button class="back-btn" @click="goBack">
-        <img src="/src/assets/arrow-back.svg" alt="back" />
-      </button>
-  
-      <div class="test-title-container">
-        <h1 class="test-title">Входное тестирование курса</h1>
-        <div class="test-title-divider"></div>
-        <p class="course-name">{{ courseTitle }}</p>
-      </div>
-  
-      <div class="main-container">
-        <div class="inner-container">
-          <div class="test-info">
-            <h2>Информация о тесте</h2>
-            <div class="info-content">
-              <p><strong>Время на прохождение:</strong> ~20 минут</p>
-              <p><strong>Количество вопросов:</strong> {{ testData?.questions || 20 }}</p>
-              <p><strong>Тип теста:</strong> {{ testData?.test_type || 'Входное тестирование' }}</p>
-            </div>
-          </div>
-  
-          <div class="test-content">
-            <h2>Вопросы теста</h2>
-            <div class="questions-placeholder">
-              <p>Здесь будет отображаться содержимое входного теста</p>
-              <p>Course ID: {{ courseId }}</p>
-              <p>Test Data: {{ JSON.stringify(testData) }}</p>
-            </div>
-          </div>
-  
-          <button class="submit-btn" @click="submitTest">
-            Завершить тестирование
-          </button>
-        </div>
-      </div>
-    </div>
+    <TestPage
+      :test-type="'input'"
+      :title="pageTitle"
+      :subtitle="courseTitle"
+      :initial-tasks="tasks"
+      :time-limit="20"
+      :is-tutor-mode="isTutorMode"
+      :show-scores="showScores"
+      :is-editable="isEditable"
+      @save="handleSave"
+      @publish="handlePublish"
+      @generate="handleGenerate"
+      @exit="goBack"
+    />
   </template>
   
   <script setup>
-  import { ref, onMounted } from "vue";
+  import { ref, computed, onMounted } from "vue";
   import { useRoute, useRouter } from "vue-router";
-  import AppHeader from "../components/Header.vue";
+  import { useAuthStore } from "../stores/auth";
+  import TestPage from "../components/TestPage.vue";
   
   const route = useRoute();
   const router = useRouter();
+  const auth = useAuthStore();
   
   const courseId = ref(null);
   const courseTitle = ref("");
   const testData = ref(null);
+  const tasks = ref([]);
+  const isTutorMode = ref(false);
+  const showScores = ref(false);
+  const isEditable = ref(true);
+  
+  // Вычисляемые свойства
+  const pageTitle = computed(() => {
+    return isTutorMode.value ? 'Редактирование входного теста' : 'Входное тестирование';
+  });
   
   onMounted(() => {
     courseId.value = route.params.courseId;
-    // Здесь можно загрузить данные теста по courseId
-    testData.value = route.query.testData ? JSON.parse(route.query.testData) : null;
     
-    // Для демонстрации
-    if (!testData.value && courseId.value) {
-      testData.value = {
-        test_type: "placement",
-        questions: 20,
-        time_limit: 20
-      };
+    // Определяем режим (репетитор или ученик)
+    isTutorMode.value = route.query.isTutor === 'true';
+    showScores.value = isTutorMode.value || route.query.showScores === 'true';
+    isEditable.value = isTutorMode.value || route.query.editMode === 'true';
+    
+    // Парсим данные теста
+    if (route.query.testData) {
+      try {
+        testData.value = JSON.parse(route.query.testData);
+        
+        // Если в testData есть задачи, используем их
+        if (testData.value.tasks && Array.isArray(testData.value.tasks)) {
+          tasks.value = testData.value.tasks;
+        } else {
+          // Иначе создаем демо-задачи на основе типа теста
+          loadDemoTasks();
+        }
+      } catch (e) {
+        console.error("Ошибка парсинга testData:", e);
+        loadDemoTasks();
+      }
+    } else {
+      loadDemoTasks();
     }
     
     courseTitle.value = route.query.courseTitle || `Курс ${courseId.value}`;
   });
   
+  function loadDemoTasks() {
+    // Демо-задачи для входного теста
+    tasks.value = [
+      {
+        id: 1,
+        type: 'radio',
+        text: 'Выберите правильный перевод: "Я учу английский каждый день."',
+        maxScore: 2,
+        score: null,
+        userAnswer: '',
+        options: [
+          'I study English every day.',
+          'I am studying English every day.',
+          'I studied English every day.',
+          'I have studied English every day.'
+        ],
+        correctAnswer: 0
+      },
+      {
+        id: 2,
+        type: 'checkbox',
+        text: 'Какие времена используются для описания регулярных действий?',
+        maxScore: 3,
+        score: null,
+        userAnswer: [],
+        options: [
+          'Present Simple',
+          'Present Continuous',
+          'Past Simple',
+          'Future Simple',
+          'Present Perfect'
+        ],
+        correctAnswers: [0, 3]
+      },
+      {
+        id: 3,
+        type: 'text',
+        text: 'Опишите свой текущий уровень английского языка и цели обучения.',
+        maxScore: 10,
+        score: null,
+        userAnswer: '',
+        placeholder: 'Напишите о вашем опыте изучения английского...'
+      },
+      {
+        id: 4,
+        type: 'fill-blanks',
+        text: 'Заполните пропуски в диалоге:',
+        maxScore: 6,
+        score: null,
+        parts: [
+          { type: 'text', content: 'A: Hello! How' },
+          { type: 'input', placeholder: 'глагол' },
+          { type: 'text', content: 'you?' },
+          { type: 'text', content: 'B: I' },
+          { type: 'input', placeholder: 'глагол' },
+          { type: 'text', content: 'fine, thank you.' }
+        ]
+      }
+    ];
+  }
+  
+  function handleSave(testData) {
+    console.log("Сохранение входного теста:", testData);
+    
+    if (isTutorMode.value) {
+        alert("Генерация теории сохранена!");
+    } else {
+        alert("Тест завершен! Результаты отправлены на проверку.");
+        goBack();
+    }
+  }
+  
+  function handlePublish(testTasks) {
+    console.log("Публикация входного теста:", testTasks);
+    alert("Входной тест опубликован для всех учеников!");
+  }
+  
+  function handleGenerate(comment) {
+    if (!isTutorMode.value) {
+        alert("Только репетитор может вносить замечания по генерации");
+        return;
+    }
+    
+    console.log("Генерация теста по комментарию:", comment);
+    alert(`Тест будет сгенерирован на основе: "${comment}"`);
+    }
+  
   function goBack() {
     router.back();
   }
-  
-  function submitTest() {
-    alert("Тест завершен! Результаты отправлены на проверку.");
-    goBack();
-  }
   </script>
-  
-  <style scoped>
-  .test-page {
-    width: 100%;
-    min-height: 100vh;
-    background: #0b1444;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: 40px;
-    position: relative;
-  }
-  
-  .back-btn {
-    position: absolute;
-    left: 50%;
-    transform: translateX(calc(-50% - 535px));
-    top: 190px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-    transition: transform 0.3s;
-    z-index: 10;
-  }
-  
-  .back-btn:hover {
-    transform: translateX(calc(-50% - 535px - 5px));
-  }
-  
-  .back-btn img {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .test-title-container {
-    position: relative;
-    margin-top: 130px;
-    margin-bottom: 20px;
-    text-align: center;
-    width: 95%;
-    max-width: 1100px;
-  }
-  
-  .test-title {
-    font-family: 'Arial', Georgia, serif;
-    font-size: 28px;
-    font-weight: bold;
-    color: #fbb599;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    margin: 0 0 10px 0;
-    padding: 0 20px;
-    letter-spacing: 1px;
-  }
-  
-  .test-title-divider {
-    height: 3px;
-    background: linear-gradient(to right, transparent, #fbb599, transparent);
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto 10px auto;
-    border-radius: 2px;
-  }
-  
-  .course-name {
-    color: #fbb599;
-    font-family: 'Arial', Georgia, serif;
-    font-size: 18px;
-    margin-top: 10px;
-  }
-  
-  .main-container {
-    width: 95%;
-    max-width: 1100px;
-    background: #F4886D;
-    border-radius: 25px;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    position: relative;
-    margin-top: 10px;
-  }
-  
-  .inner-container {
-    background: #fbb599;
-    border-radius: 20px;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-  }
-  
-  .test-info, .test-content {
-    background: #fedac4;
-    border-radius: 15px;
-    padding: 25px;
-    border: 2px solid #F4886D;
-  }
-  
-  .test-info h2, .test-content h2 {
-    font-family: 'Arial', Georgia, serif;
-    font-size: 22px;
-    font-weight: bold;
-    color: #592012;
-    margin-bottom: 15px;
-    text-align: center;
-  }
-  
-  .info-content {
-    font-family: 'Arial', Georgia, serif;
-    color: #592012;
-  }
-  
-  .info-content p {
-    margin: 10px 0;
-  }
-  
-  .questions-placeholder {
-    background: white;
-    border-radius: 10px;
-    padding: 30px;
-    text-align: center;
-    color: #666;
-    font-family: 'Arial', Georgia, serif;
-    border: 2px dashed #d67962;
-  }
-  
-  .submit-btn {
-    background: #F4886D;
-    color: #592012;
-    border: none;
-    border-radius: 10px;
-    padding: 15px 40px;
-    font-family: 'Arial', Georgia, serif;
-    font-weight: bold;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.3s;
-    align-self: center;
-    margin-top: 20px;
-  }
-  
-  .submit-btn:hover {
-    background: #E0785D;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
-  }
-  
-  @media (max-width: 768px) {
-    .back-btn {
-      left: 20px;
-      top: 80px;
-    }
-    
-    .back-btn img {
-      width: 60px;
-      height: 60px;
-    }
-    
-    .test-title {
-      font-size: 24px;
-    }
-  }
-  </style>

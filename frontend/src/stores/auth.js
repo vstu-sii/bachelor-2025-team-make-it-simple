@@ -5,6 +5,7 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     token: localStorage.getItem("token") || null,
     user: null,
+    isLoading: false, // Добавляем флаг загрузки
   }),
 
   actions: {
@@ -20,30 +21,55 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async login(email, password) {
-      const res = await api.post("/auth/login", { email, password });
-      const { access_token } = res.data;
+      this.isLoading = true;
+      try {
+        const res = await api.post("/auth/login", { email, password });
+        const { access_token } = res.data;
 
-      this.setToken(access_token);
+        this.setToken(access_token);
 
-      const me = await api.get("/auth/me");
-      this.user = me.data;
+        const me = await api.get("/auth/me");
+        this.user = me.data;
 
-      // Загружаем дополнительную информацию о курсе после входа
-      await this.fetchUserWithCourseInfo();
-
-      return this.user;
+        // Загружаем дополнительную информацию о курсе после входа
+        await this.fetchUserWithCourseInfo();
+        
+        return this.user;
+      } finally {
+        this.isLoading = false;
+      }
     },
 
     async fetchMe() {
-      if (!this.token) return null;
-      api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-      const res = await api.get("/auth/me");
-      this.user = res.data;
+      if (!this.token) {
+        console.log("Нет токена, пропускаем fetchMe");
+        return null;
+      }
       
-      // Загружаем дополнительную информацию о курсе
-      await this.fetchUserWithCourseInfo();
-      
-      return this.user;
+      this.isLoading = true;
+      try {
+        console.log("Загрузка данных пользователя...");
+        api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
+        const res = await api.get("/auth/me");
+        this.user = res.data;
+        
+        console.log("Данные пользователя загружены:", this.user);
+        
+        // Загружаем дополнительную информацию о курсе
+        await this.fetchUserWithCourseInfo();
+        
+        return this.user;
+      } catch (error) {
+        console.error("Ошибка загрузки данных пользователя:", error);
+        // Если токен невалидный, очищаем его
+        if (error.response?.status === 401) {
+          this.setToken(null);
+          this.user = null;
+        }
+        return null;
+      } finally {
+        this.isLoading = false;
+      }
     },
 
     // НОВЫЙ МЕТОД: Загружает информацию о пользователе с данными о курсе
@@ -74,6 +100,7 @@ export const useAuthStore = defineStore("auth", {
     },
 
     logout() {
+      this.isLoading = false;
       this.setToken(null);
       this.user = null;
     },
@@ -82,6 +109,14 @@ export const useAuthStore = defineStore("auth", {
     updateUserData(newData) {
       if (this.user) {
         this.user = { ...this.user, ...newData };
+      }
+    },
+    
+    // Новый метод: проверка и восстановление состояния
+    async checkAndRestoreAuth() {
+      if (this.token && !this.user) {
+        console.log("Токен есть, но пользователь не загружен. Восстанавливаем...");
+        await this.fetchMe();
       }
     },
   },

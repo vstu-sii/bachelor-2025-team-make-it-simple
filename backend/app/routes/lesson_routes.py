@@ -292,3 +292,81 @@ def update_lesson_content(
         raise HTTPException(status_code=404, detail="Урок не найден")
     
     return {"message": "Контент обновлен", "lesson": lesson}
+
+@router.get("/{lesson_id}/students-progress")
+def get_lesson_students_progress(
+    lesson_id: int,
+    course_id: int = Query(..., description="ID курса для фильтрации"),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Получить прогресс учеников для конкретного урока
+    """
+    # Проверяем, что пользователь - репетитор
+    if current_user.role != "Репетитор":
+        raise HTTPException(status_code=403, detail="Только репетиторы могут просматривать прогресс учеников")
+    
+    # Получаем всех учеников, которые проходят этот курс
+    from app.models.user_course import UserCourse
+    
+    # Находим user_course для учеников на этом курсе
+    user_courses = db.query(UserCourse).filter(
+        UserCourse.course_id == course_id,
+        UserCourse.user_id != current_user.user_id  # исключаем репетитора
+    ).all()
+    
+    # Получаем информацию о пользователях
+    from app.models.user import User
+    from app.models.lesson import Lesson
+    
+    result = []
+    
+    # Берем урок, чтобы проверить результаты
+    lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
+    if not lesson:
+        return result
+    
+    for uc in user_courses:
+        # Проверяем, что пользователь - ученик
+        student = db.query(User).filter(
+            User.user_id == uc.user_id,
+            User.role == "Ученик"
+        ).first()
+        
+        if student:
+            student_data = {
+                "student_id": student.user_id,
+                "student_name": f"{student.first_name} {student.last_name}",
+                "theory_completed": False,
+                "reading_completed": False,
+                "speaking_completed": False,
+                "test_completed": False,
+                "test_score": 0,
+                "requires_retry": False
+            }
+            
+            # Проверяем результаты урока
+            if lesson.results_json:
+                try:
+                    results = json.loads(lesson.results_json) if isinstance(lesson.results_json, str) else lesson.results_json
+                    student_key = str(student.user_id)
+                    if student_key in results:
+                        student_data.update(results[student_key])
+                except:
+                    pass
+            
+            # Проверяем результаты теста
+            if lesson.lesson_test_results_json:
+                try:
+                    test_results = json.loads(lesson.lesson_test_results_json) if isinstance(lesson.lesson_test_results_json, str) else lesson.lesson_test_results_json
+                    student_key = str(student.user_id)
+                    if student_key in test_results:
+                        student_data["test_score"] = test_results[student_key].get("score", 0)
+                        student_data["test_completed"] = True
+                except:
+                    pass
+            
+            result.append(student_data)
+    
+    return result

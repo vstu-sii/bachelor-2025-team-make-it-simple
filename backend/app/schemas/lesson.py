@@ -24,6 +24,7 @@ class LessonResponse(LessonBase):
     class Config:
         from_attributes = True
 
+
 class CourseLessonsInfo(BaseModel):
     lessons: List[Dict[str, Any]]
     graph: Optional[Dict[str, Any]] = None
