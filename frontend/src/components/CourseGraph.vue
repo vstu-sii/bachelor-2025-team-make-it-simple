@@ -360,8 +360,6 @@
         path: `/lesson/${lessonId}`,
         query: queryParams
         });
-    } else {
-        alert(`Узел: ${node.data.label}\nСтатус: ${getStatusLabel(node.data.group)}`);
     }
     
     emit('node-click', { node, lessonId });

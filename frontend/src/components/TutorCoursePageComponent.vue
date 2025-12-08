@@ -454,7 +454,6 @@ function onGraphNodeClick({ node, lessonId }) {
     console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
     
     if (lessonId) {
-        // Для перехода к уроку теперь передаем courseId и lessonId
         router.push({
             path: `/lesson/${lessonId}`,
             query: {

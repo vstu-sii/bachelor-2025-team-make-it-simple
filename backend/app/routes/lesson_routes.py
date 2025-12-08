@@ -5,14 +5,10 @@ from typing import List, Dict, Any, Optional
 from app.database import get_db
 from app.repositories.lesson_repository import LessonRepository
 from app.schemas.lesson import (
-    LessonCreate, 
     LessonResponse, 
-    LessonUpdate,
-    LessonProgress,
     CourseLessonsInfo,
     LessonTestSubmit,
-    LessonContentUpdate,
-    LessonProgressUpdate
+    LessonContentUpdate
 )
 from app.utils.jwt import get_current_user
 import json
@@ -77,69 +73,6 @@ def get_course_lessons_info(
         raise HTTPException(status_code=403, detail="Нет доступа к прогрессу другого ученика")
     
     return LessonRepository.get_lessons_by_course_via_graph(db, course_id, target_student_id)
-
-@router.get("/{lesson_id}/progress/{student_id}", response_model=LessonProgress)
-def get_lesson_progress(
-    lesson_id: int,
-    student_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """
-    Получить прогресс ученика по уроку
-    """
-    # Получаем урок
-    lesson = LessonRepository.get_lesson_by_id(db, lesson_id)
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Урок не найден")
-    
-    # Проверяем права доступа
-    if current_user.user_id == student_id:
-        # Ученик смотрит свой прогресс
-        pass
-    elif current_user.role == "Репетитор":
-        # Репетитор может смотреть прогресс учеников
-        # Нужно проверить, что урок связан с курсом репетитора
-        # Это сложно, так как нет прямой связи урок-курс
-        # Пока разрешим репетиторам смотреть любой прогресс
-        pass
-    else:
-        raise HTTPException(status_code=403, detail="Нет доступа к этому прогрессу")
-    
-    progress = LessonRepository.get_lesson_progress_from_json(db, lesson_id, student_id)
-    return LessonProgress(**progress)
-
-@router.put("/{lesson_id}/progress/{student_id}")
-def update_lesson_progress(
-    lesson_id: int,
-    student_id: int,
-    progress_update: LessonProgressUpdate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """
-    Обновить прогресс ученика по уроку
-    """
-    # Проверяем права доступа
-    if current_user.user_id == student_id:
-        # Ученик обновляет свой прогресс
-        pass
-    elif current_user.role == "Репетитор":
-        # Репетитор может обновлять прогресс учеников
-        pass
-    else:
-        raise HTTPException(status_code=403, detail="Нет доступа для обновления прогресса")
-    
-    success = LessonRepository.update_lesson_progress_in_json(
-        db, lesson_id, student_id, 
-        progress_update.progress_type, 
-        progress_update.data
-    )
-    
-    if not success:
-        raise HTTPException(status_code=500, detail="Ошибка обновления прогресса")
-    
-    return {"message": "Прогресс обновлен"}
 
 @router.put("/{lesson_id}/content")
 def update_lesson_content(

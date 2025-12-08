@@ -222,26 +222,12 @@
         }
       }
       
-      // Загружаем прогресс
-      await loadLessonProgress();
-      
     } catch (error) {
       console.error("Ошибка загрузки данных урока:", error);
       alert("Не удалось загрузить данные урока");
       goBack();
     } finally {
       loading.value = false;
-    }
-  }
-  
-  async function loadLessonProgress() {
-    if (!lessonIdRef.value || !studentId.value) return;
-    
-    try {
-      const response = await api.get(`/lessons/${lessonIdRef.value}/progress/${studentId.value}`);
-      progress.value = response.data;
-    } catch (error) {
-      console.error("Ошибка загрузки прогресса:", error);
     }
   }
   

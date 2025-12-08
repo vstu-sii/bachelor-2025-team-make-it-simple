@@ -91,10 +91,7 @@
   function onGraphNodeClick({ node, lessonId }) {
       console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
       
-      if (lessonId) {
-          // Для тестирования показываем alert с реальным ID
-          alert(`Переход к уроку ID: ${lessonId}\nНазвание в графе: ${node.data.label}\n\nНажмите ОК для перехода`);
-          
+      if (lessonId) {          
           router.push({
               path: `/lesson/${lessonId}`,
               query: {

@@ -106,124 +106,6 @@ class LessonRepository:
             return {"lessons": [], "graph": None, "progress": {}}
 
     @staticmethod
-    def get_lesson_progress_from_json(db: Session, lesson_id: int, student_id: int) -> Dict[str, Any]:
-        """
-        Получить прогресс ученика по уроку из JSON полей
-        """
-        lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-        if not lesson:
-            return {}
-        
-        # Проверяем результаты в results_json
-        progress_data = {}
-        if lesson.results_json:
-            try:
-                results = json.loads(lesson.results_json) if isinstance(lesson.results_json, str) else lesson.results_json
-                # Ищем прогресс для конкретного ученика
-                if isinstance(results, dict):
-                    student_progress = results.get(str(student_id)) or results.get(student_id)
-                    if student_progress:
-                        progress_data = student_progress
-            except:
-                pass
-        
-        # Если нет в results_json, проверяем lesson_test_results_json
-        if not progress_data and lesson.lesson_test_results_json:
-            try:
-                test_results = json.loads(lesson.lesson_test_results_json) if isinstance(lesson.lesson_test_results_json, str) else lesson.lesson_test_results_json
-                if isinstance(test_results, dict):
-                    student_results = test_results.get(str(student_id)) or test_results.get(student_id)
-                    if student_results:
-                        progress_data = {
-                            "test_completed": True,
-                            "test_score": student_results.get("score", 0),
-                            "test_answers": student_results.get("answers", [])
-                        }
-            except:
-                pass
-        
-        # Возвращаем прогресс
-        return {
-            "theory_completed": lesson.is_ended,  # is_ended может означать завершение теории
-            "reading_completed": progress_data.get("reading_completed", False),
-            "speaking_completed": progress_data.get("speaking_completed", False),
-            "test_completed": progress_data.get("test_completed", False),
-            "test_score": progress_data.get("test_score", 0),
-            "details": progress_data
-        }
-
-    @staticmethod
-    def update_lesson_progress_in_json(
-        db: Session, 
-        lesson_id: int, 
-        student_id: int,
-        progress_type: str,  # "theory", "reading", "speaking", "test"
-        data: Dict[str, Any]
-    ) -> bool:
-        """
-        Обновить прогресс ученика по уроку в JSON полях
-        """
-        lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-        if not lesson:
-            return False
-        
-        try:
-            # Получаем текущие результаты
-            current_results = {}
-            if lesson.results_json:
-                current_results = json.loads(lesson.results_json) if isinstance(lesson.results_json, str) else lesson.results_json
-            
-            if not isinstance(current_results, dict):
-                current_results = {}
-            
-            # Обновляем прогресс для ученика
-            student_key = str(student_id)
-            student_progress = current_results.get(student_key, {})
-            
-            if progress_type == "theory":
-                student_progress["theory_completed"] = data.get("completed", True)
-                if data.get("completed"):
-                    lesson.is_ended = True
-            elif progress_type == "reading":
-                student_progress["reading_completed"] = data.get("completed", True)
-            elif progress_type == "speaking":
-                student_progress["speaking_completed"] = data.get("completed", True)
-            elif progress_type == "test":
-                student_progress["test_completed"] = data.get("completed", True)
-                student_progress["test_score"] = data.get("score", 0)
-                student_progress["test_answers"] = data.get("answers", [])
-                
-                # Также обновляем lesson_test_results_json
-                test_results = {}
-                if lesson.lesson_test_results_json:
-                    test_results = json.loads(lesson.lesson_test_results_json) if isinstance(lesson.lesson_test_results_json, str) else lesson.lesson_test_results_json
-                
-                if not isinstance(test_results, dict):
-                    test_results = {}
-                
-                test_results[student_key] = {
-                    "score": data.get("score", 0),
-                    "answers": data.get("answers", []),
-                    "completed_at": data.get("completed_at")
-                }
-                lesson.lesson_test_results_json = json.dumps(test_results)
-            
-            # Обновляем notes если есть
-            if "notes" in data:
-                student_progress["notes"] = data["notes"]
-            
-            current_results[student_key] = student_progress
-            lesson.results_json = json.dumps(current_results)
-            
-            db.commit()
-            return True
-            
-        except Exception as e:
-            db.rollback()
-            print(f"Error updating lesson progress: {e}")
-            return False
-
-    @staticmethod
     def update_lesson_content(
         db: Session,
         lesson_id: int,
@@ -313,12 +195,6 @@ class LessonRepository:
             }
             
             lesson.lesson_test_results_json = json.dumps(current_results)
-            
-            # Также обновляем общий прогресс
-            LessonRepository.update_lesson_progress_in_json(
-                db, lesson_id, student_id, "test",
-                {"completed": True, "score": score, "answers": answers}
-            )
             
             db.commit()
             return True

@@ -24,14 +24,6 @@ class LessonResponse(LessonBase):
     class Config:
         from_attributes = True
 
-class LessonProgress(BaseModel):
-    theory_completed: bool = False
-    reading_completed: bool = False
-    speaking_completed: bool = False
-    test_completed: bool = False
-    test_score: int = 0
-    details: Optional[Dict[str, Any]] = None
-
 class CourseLessonsInfo(BaseModel):
     lessons: List[Dict[str, Any]]
     graph: Optional[Dict[str, Any]] = None
@@ -47,7 +39,3 @@ class LessonContentUpdate(BaseModel):
     content_type: str  # "theory", "reading", "speaking", "test", "notes"
     is_access: Optional[bool] = None
     is_ended: Optional[bool] = None
-
-class LessonProgressUpdate(BaseModel):
-    progress_type: str  # "theory", "reading", "speaking", "test"
-    data: Dict[str, Any]
