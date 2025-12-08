@@ -49,7 +49,7 @@ function goBack() {
   if (courseId.value) {
     router.push(`/course/${courseId.value}`);
   } else {
-    router.back();
+    router.push("/");
   }
 }
 

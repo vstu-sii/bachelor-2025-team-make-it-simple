@@ -11,7 +11,7 @@
             Ваш прогресс будет доступен после проверки репетитором<br />
             входного тестирования
           </p>
-          <button class="test-btn" @click="startTest">
+          <button class="test-btn" @click="startInputTest">
             {{ hasTakenTest ? 'Просмотреть результаты' : 'Перейти к тесту' }}
           </button>
         </div>
@@ -70,10 +70,18 @@
   import CourseGraph from './CourseGraph.vue'
 
   const props = defineProps({
-    courseId: {
-      type: String,
-      required: true
-    }
+  courseId: {
+    type: String,
+    required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  courseInfo: {
+    type: Object,
+    default: () => ({})
+  }
   });
   
   const emit = defineEmits(['load-course-data']);
@@ -87,7 +95,8 @@
   const graphData = ref(null);
   const graphError = ref("");
   const hasTakenTest = ref(false);
-  
+  const courseData = ref({});
+
   function onGraphNodeClick({ node, lessonId }) {
       console.log('Клик по узлу графа:', node.data.label, 'lessonId:', lessonId);
       
@@ -107,10 +116,16 @@
   async function loadStudentCourseData() {
     try {
       const studentId = auth.user.user_id;
-      const response = await api.get(`/courses/students/${studentId}/course`);
+      
+      // Загружаем информацию о курсе
+      const courseResponse = await api.get(`/courses/${props.courseId}`);
+      courseData.value = courseResponse.data;
+      
+      // Загружаем данные ученика на курсе
+      const studentResponse = await api.get(`/courses/students/${studentId}/course`);
       
       // Устанавливаем пробелы в знаниях для ученика
-      knowledgeGaps.value = response.data.knowledge_gaps || "";
+      knowledgeGaps.value = studentResponse.data.knowledge_gaps || "";
       
       // Загружаем граф курса
       await loadGraphData();
@@ -126,20 +141,16 @@
       loadingGraph.value = true;
       graphError.value = "";
       
-      // Используем правильный endpoint из course_routes.py
       const response = await api.get(`/courses/${props.courseId}/student/${auth.user.user_id}/graph`);
       
       if (response.data && response.data.graph_data) {
-        // Граф возвращается в поле graph_data
         graphData.value = response.data.graph_data;
         console.log("Граф загружен:", graphData.value);
         
-        // Убедимся, что у узлов есть group (статус)
         if (graphData.value.nodes) {
           graphData.value.nodes.forEach(node => {
-            // Если в данных графа нет group, устанавливаем по умолчанию 2 (Доступен)
             if (node.group === undefined) {
-              node.group = 2; // Статус "Доступен" по умолчанию
+              node.group = 2;
             }
           });
         }
@@ -156,18 +167,27 @@
         graphError.value = "Нет доступа к графу курса";
       } else {
         graphError.value = "Ошибка загрузки графа курса";
-        // НЕ создаем демо-граф, оставляем null
-        // createDemoGraph(); // УБЕРИТЕ ЭТУ СТРОКУ!
       }
     } finally {
       loadingGraph.value = false;
     }
   }
   
-  // Начало тестирования
-  function startTest() {
-    // Логика перехода к тесту
-    console.log("Начать тестирование");
+  function startInputTest() {
+    console.log("Переход к входному тесту курса");
+    
+    router.push({
+      name: "input-test",
+      params: { courseId: props.courseId },
+      query: {
+        courseTitle: courseData.value.title || props.courseInfo?.title || `Курс ${props.courseId}`,
+        testData: JSON.stringify(courseData.value.input_test_json || {
+          test_type: "placement",
+          questions: 20,
+          time_limit: 20
+        })
+      }
+    });
   }
   
   // Инициализация

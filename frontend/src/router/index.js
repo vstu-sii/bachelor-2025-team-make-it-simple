@@ -6,6 +6,8 @@ import Profile from "../pages/Profile.vue";
 import CoursePage from "../pages/CoursePage.vue";
 import AddCoursePage from "../pages/AddCoursePage.vue";
 import LessonPage from "../pages/LessonPage.vue";
+import InputTestPage from "../pages/InputTestPage.vue";
+import LessonTestPage from "../pages/LessonTestPage.vue";
 
 const routes = [
   { path: "/", redirect: "/login" },
@@ -41,6 +43,20 @@ const routes = [
     path: "/lesson/:id(\\d+)", 
     name: "lesson", 
     component: LessonPage,
+    meta: { requiresAuth: true },
+    props: true
+  },
+  { 
+    path: "/course/:courseId(\\d+)/input-test", 
+    name: "input-test", 
+    component: InputTestPage,
+    meta: { requiresAuth: true },
+    props: true
+  },
+  { 
+    path: "/lesson/:lessonId(\\d+)/test", 
+    name: "lesson-test", 
+    component: LessonTestPage,
     meta: { requiresAuth: true },
     props: true
   }

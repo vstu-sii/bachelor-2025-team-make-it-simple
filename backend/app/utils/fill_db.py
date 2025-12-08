@@ -217,6 +217,48 @@ def create_tables(cursor):
     
     print("  ✓ Все таблицы успешно созданы!")
 
+def fix_lesson_numbers_in_graphs(graph_json, course_id):
+    """Пересчитывает номера уроков в графе так, чтобы всегда начинались с 1"""
+    if not graph_json:
+        return graph_json
+    
+    try:
+        graph_data = json.loads(graph_json)
+        nodes = graph_data.get('nodes', [])
+        
+        if not nodes:
+            return graph_json
+        
+        # Найдем все lesson_id в графе
+        lesson_ids = []
+        for node in nodes:
+            if 'data' in node and 'lesson_id' in node['data']:
+                lesson_ids.append(node['data']['lesson_id'])
+        
+        if not lesson_ids:
+            return graph_json
+        
+        # Создаем отображение старых lesson_id на новые (начиная с 1)
+        lesson_ids = sorted(set(lesson_ids))
+        lesson_mapping = {}
+        
+        # Создаем отображение: старый lesson_id -> новый порядковый номер (начиная с 1)
+        for new_number, old_lesson_id in enumerate(lesson_ids, 1):
+            lesson_mapping[old_lesson_id] = new_number
+        
+        # Применяем отображение ко всем узлам
+        for node in nodes:
+            if 'data' in node and 'lesson_id' in node['data']:
+                old_id = node['data']['lesson_id']
+                if old_id in lesson_mapping:
+                    node['data']['lesson_id'] = lesson_mapping[old_id]
+        
+        return json.dumps(graph_data)
+    
+    except Exception as e:
+        print(f"  ⚠ Ошибка при пересчете номеров уроков в графе: {e}")
+        return graph_json
+
 def fill_database():
     """Полностью заполняет базу данных тестовыми данными"""
     
@@ -285,39 +327,92 @@ def fill_database():
         
         conn.commit()
         
-        # ... остальной код fill_db.py БЕЗ ИЗМЕНЕНИЙ ...
-        # Вставьте сюда ВСЮ остальную часть вашего оригинального кода
-        # начиная с "print("\n3. Создание курсов (6 курсов)...")"
-        # и до конца функции
-        
         print("\n3. Создание курсов (6 курсов)...")
         
         # Определяем графы для каждого курса (будет использоваться при создании user_course)
         course_graphs = [
-            # Курс 1: English for Beginners
+            # Курс 1: English for Beginners - обновленный граф
             {
                 "nodes": [
-                    {"id": "1", "label": "Present Simplicus", "data": {"lesson_id": 1}, "position": {"x": 100, "y": 50}, "type": "custom"},
-                    {"id": "2", "label": "Past Simple", "data": {"lesson_id": 2}, "position": {"x": 100, "y": 200}, "type": "custom"},
-                    {"id": "3", "label": "Future Tenses", "data": {"lesson_id": 3}, "position": {"x": 300, "y": 125}, "type": "custom"},
-                    {"id": "4", "label": "Articles a/an/the", "data": {"lesson_id": 4}, "position": {"x": 500, "y": 50}, "type": "custom"},
-                    {"id": "5", "label": "Basic Vocabulary", "data": {"lesson_id": 5}, "position": {"x": 500, "y": 200}, "type": "custom"}
+                    {"id": "1", "label": "Present Simple Theory", "data": {"lesson_id": 1}, "position": {"x": 100, "y": 50}, "type": "custom"},
+                    {"id": "2", "label": "Present Simple Practice", "data": {"lesson_id": 2}, "position": {"x": 100, "y": 150}, "type": "custom"},
+                    {"id": "3", "label": "Past Simple: regular", "data": {"lesson_id": 3}, "position": {"x": 100, "y": 250}, "type": "custom"},
+                    {"id": "4", "label": "Past Simple: irregular", "data": {"lesson_id": 4}, "position": {"x": 100, "y": 350}, "type": "custom"},
+                    {"id": "5", "label": "Future with will", "data": {"lesson_id": 5}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "6", "label": "Future with going to", "data": {"lesson_id": 6}, "position": {"x": 300, "y": 250}, "type": "custom"},
+                    {"id": "7", "label": "Modal Verbs can/could", "data": {"lesson_id": 7}, "position": {"x": 500, "y": 150}, "type": "custom"},
+                    {"id": "8", "label": "Modal Verbs should/must", "data": {"lesson_id": 8}, "position": {"x": 500, "y": 250}, "type": "custom"},
+                    {"id": "9", "label": "Articles a/an/the", "data": {"lesson_id": 9}, "position": {"x": 700, "y": 150}, "type": "custom"},
+                    {"id": "10", "label": "Articles Practice", "data": {"lesson_id": 10}, "position": {"x": 700, "y": 250}, "type": "custom"}
                 ],
                 "edges": [
                     {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-                    {"id": "e1-3", "source": "1", "target": "3", "label": "Alternative"},
+                    {"id": "e2-3", "source": "2", "target": "3", "label": "Next"},
+                    {"id": "e3-4", "source": "3", "target": "4", "label": "Next"},
+                    {"id": "e2-5", "source": "2", "target": "5", "label": "Alternative"},
+                    {"id": "e5-6", "source": "5", "target": "6", "label": "Next"},
+                    {"id": "e4-7", "source": "4", "target": "7", "label": "Next"},
+                    {"id": "e6-7", "source": "6", "target": "7", "label": "Next"},
+                    {"id": "e7-8", "source": "7", "target": "8", "label": "Next"},
+                    {"id": "e8-9", "source": "8", "target": "9", "label": "Next"},
+                    {"id": "e9-10", "source": "9", "target": "10", "label": "Next"}
+                ]
+            },
+            # Курс 2: Conversational English - обновленный граф
+            {
+                "nodes": [
+                    {"id": "1", "label": "Greetings", "data": {"lesson_id": 11}, "position": {"x": 100, "y": 100}, "type": "custom"},
+                    {"id": "2", "label": "Daily Conversations", "data": {"lesson_id": 12}, "position": {"x": 300, "y": 50}, "type": "custom"},
+                    {"id": "3", "label": "Shopping Dialogues", "data": {"lesson_id": 13}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "4", "label": "Restaurant Talk", "data": {"lesson_id": 14}, "position": {"x": 500, "y": 100}, "type": "custom"},
+                    {"id": "5", "label": "Phrasal Verbs", "data": {"lesson_id": 15}, "position": {"x": 500, "y": 200}, "type": "custom"}
+                ],
+                "edges": [
+                    {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
+                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
+                    {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
+                    {"id": "e3-4", "source": "3", "target": "4", "label": "Next"},
+                    {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
+                ]
+            },
+            # Курс 3: Business English (БАЗОВЫЙ ГРАФ) - обновленный
+            {
+                "nodes": [
+                    {"id": "1", "label": "Business Email", "data": {"lesson_id": 16}, "position": {"x": 100, "y": 100}, "type": "custom"},
+                    {"id": "2", "label": "Meetings", "data": {"lesson_id": 17}, "position": {"x": 300, "y": 50}, "type": "custom"},
+                    {"id": "3", "label": "Presentations", "data": {"lesson_id": 18}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "4", "label": "Negotiations", "data": {"lesson_id": 19}, "position": {"x": 500, "y": 100}, "type": "custom"}
+                ],
+                "edges": [
+                    {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
+                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
+                    {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
+                    {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
+                ]
+            },
+            # Курс 4: IELTS Preparation - обновленный
+            {
+                "nodes": [
+                    {"id": "1", "label": "IELTS Listening", "data": {"lesson_id": 20}, "position": {"x": 100, "y": 50}, "type": "custom"},
+                    {"id": "2", "label": "IELTS Reading", "data": {"lesson_id": 21}, "position": {"x": 100, "y": 150}, "type": "custom"},
+                    {"id": "3", "label": "Writing Task 1", "data": {"lesson_id": 22}, "position": {"x": 300, "y": 50}, "type": "custom"},
+                    {"id": "4", "label": "Writing Task 2", "data": {"lesson_id": 23}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "5", "label": "Speaking Part 2", "data": {"lesson_id": 24}, "position": {"x": 500, "y": 100}, "type": "custom"}
+                ],
+                "edges": [
+                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
                     {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
                     {"id": "e3-5", "source": "3", "target": "5", "label": "Next"},
                     {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
                 ]
             },
-            # Курс 2: Conversational English
+            # Курс 5: English for IT - обновленный
             {
                 "nodes": [
-                    {"id": "1", "label": "Greetings!!", "data": {"lesson_id": 6}, "position": {"x": 100, "y": 100}, "type": "custom"},
-                    {"id": "2", "label": "Daily Conversations", "data": {"lesson_id": 7}, "position": {"x": 300, "y": 50}, "type": "custom"},
-                    {"id": "3", "label": "Shopping Dialogues", "data": {"lesson_id": 8}, "position": {"x": 300, "y": 150}, "type": "custom"},
-                    {"id": "4", "label": "Restaurant Talk", "data": {"lesson_id": 9}, "position": {"x": 500, "y": 100}, "type": "custom"}
+                    {"id": "1", "label": "IT Vocabulary", "data": {"lesson_id": 25}, "position": {"x": 100, "y": 100}, "type": "custom"},
+                    {"id": "2", "label": "Documentation", "data": {"lesson_id": 26}, "position": {"x": 300, "y": 50}, "type": "custom"},
+                    {"id": "3", "label": "Team Communication", "data": {"lesson_id": 27}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "4", "label": "Technical Interview", "data": {"lesson_id": 28}, "position": {"x": 500, "y": 100}, "type": "custom"}
                 ],
                 "edges": [
                     {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
@@ -326,59 +421,13 @@ def fill_database():
                     {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
                 ]
             },
-            # Курс 3: Business English (БАЗОВЫЙ ГРАФ)
+            # Курс 6: English for Travel - обновленный
             {
                 "nodes": [
-                    {"id": "1", "label": "Business Email", "data": {"lesson_id": 10}, "position": {"x": 100, "y": 100}, "type": "custom"},
-                    {"id": "2", "label": "Meetings", "data": {"lesson_id": 11}, "position": {"x": 300, "y": 50}, "type": "custom"},
-                    {"id": "3", "label": "Presentations", "data": {"lesson_id": 12}, "position": {"x": 300, "y": 150}, "type": "custom"},
-                    {"id": "4", "label": "Negotiations", "data": {"lesson_id": 13}, "position": {"x": 500, "y": 100}, "type": "custom"}
-                ],
-                "edges": [
-                    {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
-                    {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-                    {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
-                ]
-            },
-            # Курс 4: IELTS Preparation
-            {
-                "nodes": [
-                    {"id": "1", "label": "Listening", "data": {"lesson_id": 14}, "position": {"x": 100, "y": 50}, "type": "custom"},
-                    {"id": "2", "label": "Reading", "data": {"lesson_id": 15}, "position": {"x": 100, "y": 150}, "type": "custom"},
-                    {"id": "3", "label": "Writing Task 1", "data": {"lesson_id": 16}, "position": {"x": 300, "y": 50}, "type": "custom"},
-                    {"id": "4", "label": "Writing Task 2", "data": {"lesson_id": 17}, "position": {"x": 300, "y": 150}, "type": "custom"},
-                    {"id": "5", "label": "Speaking", "data": {"lesson_id": 18}, "position": {"x": 500, "y": 100}, "type": "custom"}
-                ],
-                "edges": [
-                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
-                    {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-                    {"id": "e3-5", "source": "3", "target": "5", "label": "Next"},
-                    {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
-                ]
-            },
-            # Курс 5: English for IT
-            {
-                "nodes": [
-                    {"id": "1", "label": "IT Vocabulary", "data": {"lesson_id": 19}, "position": {"x": 100, "y": 100}, "type": "custom"},
-                    {"id": "2", "label": "Documentation", "data": {"lesson_id": 20}, "position": {"x": 300, "y": 50}, "type": "custom"},
-                    {"id": "3", "label": "Team Communication", "data": {"lesson_id": 21}, "position": {"x": 300, "y": 150}, "type": "custom"},
-                    {"id": "4", "label": "Technical Interview", "data": {"lesson_id": 22}, "position": {"x": 500, "y": 100}, "type": "custom"}
-                ],
-                "edges": [
-                    {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
-                    {"id": "e1-3", "source": "1", "target": "3", "label": "Next"},
-                    {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
-                    {"id": "e3-4", "source": "3", "target": "4", "label": "Next"}
-                ]
-            },
-            # Курс 6: English for Travel
-            {
-                "nodes": [
-                    {"id": "1", "label": "Airport", "data": {"lesson_id": 23}, "position": {"x": 100, "y": 100}, "type": "custom"},
-                    {"id": "2", "label": "Hotel", "data": {"lesson_id": 24}, "position": {"x": 300, "y": 50}, "type": "custom"},
-                    {"id": "3", "label": "Restaurant", "data": {"lesson_id": 25}, "position": {"x": 300, "y": 150}, "type": "custom"},
-                    {"id": "4", "label": "Sightseeing", "data": {"lesson_id": 26}, "position": {"x": 500, "y": 100}, "type": "custom"}
+                    {"id": "1", "label": "Airport", "data": {"lesson_id": 29}, "position": {"x": 100, "y": 100}, "type": "custom"},
+                    {"id": "2", "label": "Hotel", "data": {"lesson_id": 30}, "position": {"x": 300, "y": 50}, "type": "custom"},
+                    {"id": "3", "label": "Restaurant", "data": {"lesson_id": 31}, "position": {"x": 300, "y": 150}, "type": "custom"},
+                    {"id": "4", "label": "Sightseeing", "data": {"lesson_id": 32}, "position": {"x": 500, "y": 100}, "type": "custom"}
                 ],
                 "edges": [
                     {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
@@ -425,14 +474,14 @@ def fill_database():
         # Граф с разными статусами: 0 - пройден, 1 - не пройден, 2 - доступен, 3 - недоступен
         unique_graph_for_user_7 = {
             "nodes": [
-                {"id": "1", "label": "Business Email", "data": {"lesson_id": 10}, "position": {"x": 100, "y": 100}, "group": 0},  # Пройден успешно
-                {"id": "2", "label": "Meetings", "data": {"lesson_id": 11}, "position": {"x": 300, "y": 50}, "group": 0},  # Пройден успешно
-                {"id": "3", "label": "Presentations", "data": {"lesson_id": 12}, "position": {"x": 300, "y": 150}, "group": 1},  # Не пройден (завалил)
-                {"id": "4", "label": "Presentations Review", "data": {"lesson_id": 12}, "position": {"x": 300, "y": 250}, "group": 0},  # Та же тема, но пройдена после повторения
-                {"id": "5", "label": "Negotiations Basics", "data": {"lesson_id": 13}, "position": {"x": 500, "y": 100}, "group": 2},  # Доступен
-                {"id": "6", "label": "Advanced Negotiations", "data": {"lesson_id": 27}, "position": {"x": 500, "y": 200}, "group": 3},  # Недоступен (еще не открыт)
-                {"id": "7", "label": "Business Writing", "data": {"lesson_id": 28}, "position": {"x": 500, "y": 300}, "group": 2},  # Доступен
-                {"id": "8", "label": "Final Project", "data": {"lesson_id": 29}, "position": {"x": 700, "y": 200}, "group": 3}  # Недоступен
+                {"id": "1", "label": "Business Email", "data": {"lesson_id": 16}, "position": {"x": 100, "y": 100}, "group": 0},  # Пройден успешно
+                {"id": "2", "label": "Meetings", "data": {"lesson_id": 17}, "position": {"x": 300, "y": 50}, "group": 0},  # Пройден успешно
+                {"id": "3", "label": "Presentations", "data": {"lesson_id": 18}, "position": {"x": 300, "y": 150}, "group": 1},  # Не пройден (завалил)
+                {"id": "4", "label": "Presentations Review", "data": {"lesson_id": 18}, "position": {"x": 300, "y": 250}, "group": 0},  # Та же тема, но пройдена после повторения
+                {"id": "5", "label": "Negotiations Basics", "data": {"lesson_id": 19}, "position": {"x": 500, "y": 100}, "group": 2},  # Доступен
+                {"id": "6", "label": "Advanced Negotiations", "data": {"lesson_id": 33}, "position": {"x": 500, "y": 200}, "group": 3},  # Недоступен
+                {"id": "7", "label": "Business Writing", "data": {"lesson_id": 34}, "position": {"x": 500, "y": 300}, "group": 2},  # Доступен
+                {"id": "8", "label": "Final Project", "data": {"lesson_id": 35}, "position": {"x": 700, "y": 200}, "group": 3}  # Недоступен
             ],
             "edges": [
                 {"id": "e1-2", "source": "1", "target": "2", "label": "Basic → Advanced"},
@@ -449,18 +498,19 @@ def fill_database():
         user_courses = [
             # User 1 -> Course 1 с графом курса 1
             (1, 1, 'Gaps in Past Simple and articles', 
-             json.dumps(course_graphs[0]),  # Граф для курса 1
-             json.dumps({
-                 "custom_nodes": [
-                     {"id": "1", "label": "Present Simple", "color": "#4CAF50", "completed": True},
-                     {"id": "2", "label": "Past Simple", "color": "#FF9800", "completed": False},
-                     {"id": "3", "label": "Future Tenses", "color": "#9C27B0", "completed": False}
-                 ],
-                 "custom_edges": [
-                     {"from": "1", "to": "2", "label": "Focus on this"},
-                     {"from": "2", "to": "3", "label": "Next"}
-                 ]
-             })),
+            json.dumps(course_graphs[0]),  # Обновленный граф для курса 1
+            json.dumps({
+                "custom_nodes": [
+                    {"id": "1", "label": "Present Simple", "color": "#4CAF50", "completed": True},
+                    {"id": "2", "label": "Present Simple Practice", "color": "#4CAF50", "completed": True},
+                    {"id": "3", "label": "Past Simple: regular", "color": "#FF9800", "completed": False},
+                    {"id": "4", "label": "Past Simple: irregular", "color": "#FF9800", "completed": False}
+                ],
+                "custom_edges": [
+                    {"from": "2", "to": "3", "label": "Focus on this"},
+                    {"from": "3", "to": "4", "label": "Next"}
+                ]
+            })),
             # User 6 -> Course 1 с графом курса 1
             (6, 1, 'Difficulty with Present Continuous and vocabulary',
              json.dumps(course_graphs[0]),  # Граф для курса 1
@@ -523,11 +573,21 @@ def fill_database():
             (3, 6, 'Course instructor', '{"role": "tutor"}', '{}')
         ]
         
+        # Перед вставкой пересчитываем номера уроков в каждом графе
+        print("\n  Пересчет номеров уроков в графах (чтобы всегда начинались с 1)...")
+        processed_user_courses = []
+        
         for user_id, course_id, knowledge_gaps, graph_json, output_test_json in user_courses:
+            # Пересчитываем номера уроков в графе
+            fixed_graph_json = fix_lesson_numbers_in_graphs(graph_json, course_id)
+            processed_user_courses.append((user_id, course_id, knowledge_gaps, fixed_graph_json, output_test_json))
+        
+        # Вставляем данные с исправленными графами
+        for user_id, course_id, knowledge_gaps, fixed_graph_json, output_test_json in processed_user_courses:
             cursor.execute(
                 """INSERT INTO user_course (user_id, course_id, knowledge_gaps, graph_json, output_test_json) 
                    VALUES (%s, %s, %s, %s, %s)""",
-                (user_id, course_id, knowledge_gaps, graph_json, output_test_json)
+                (user_id, course_id, knowledge_gaps, fixed_graph_json, output_test_json)
             )
             
             cursor.execute("SELECT email, role FROM \"user\" WHERE user_id = %s", (user_id,))
@@ -538,25 +598,27 @@ def fill_database():
             
             # Парсим graph_json для подсчета вершин и связей
             try:
-                graph_data = json.loads(graph_json)
+                graph_data = json.loads(fixed_graph_json)
                 nodes_count = len(graph_data.get('nodes', [])) if isinstance(graph_data, dict) else 0
                 edges_count = len(graph_data.get('edges', [])) if isinstance(graph_data, dict) else 0
                 
                 if user_role == 'Репетитор':
                     print(f"  ✓ Репетитор {user_email} -> {course_name}")
                 else:
-                    # Проверяем наличие group в узлах
-                    groups_info = ""
+                    # Проверяем номера уроков в графе
+                    lesson_numbers = []
                     if nodes_count > 0 and isinstance(graph_data, dict):
-                        groups = []
                         for node in graph_data.get('nodes', []):
-                            group = node.get('group')
-                            if group is not None:
-                                groups.append(str(group))
-                        if groups:
-                            groups_info = f" [статусы: {', '.join(groups)}]"
-                    
-                    print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей){groups_info}")
+                            if 'data' in node and 'lesson_id' in node['data']:
+                                lesson_numbers.append(node['data']['lesson_id'])
+                        
+                        lesson_numbers.sort()
+                        if lesson_numbers:
+                            print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей, уроки: {lesson_numbers[0]}-{lesson_numbers[-1]})")
+                        else:
+                            print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
+                    else:
+                        print(f"  ✓ Ученик {user_email} -> {course_name} ({nodes_count} вершин, {edges_count} связей)")
             except Exception as e:
                 print(f"  ✓ Ученик {user_email} -> {course_name} (ошибка парсинга графа: {e})")
         
@@ -651,53 +713,43 @@ def fill_database():
 
         # Теперь создаем уроки с привязкой к темам
         lessons_with_topics = [
-            # Курс 1: English for Beginners (Present Simple, Past Simple, Future Tenses, Articles)
-            # Тема 1: Present Simple
+            # Курс 1: English for Beginners
             (1, 'Present Simple: theory and examples', 'Text about daily habits', 'Discuss your daily routine', 
             json.dumps({"questions": ["What is Present Simple?", "Give 3 examples"]}), True, False),
             (1, 'Present Simple Practice', 'More exercises', 'Practice simple sentences', 
             json.dumps({"questions": ["Make 5 sentences"]}), True, False),
             
-            # Тема 2: Past Simple
             (2, 'Past Simple: regular verbs', 'Story about yesterday', 'Talk about what you did yesterday', 
             json.dumps({"questions": ["How is Past Simple formed?", "Name 5 regular verbs"]}), True, True),
             (2, 'Past Simple: irregular verbs', 'List of irregular verbs', 'Practice irregular forms', 
             json.dumps({"questions": ["Name 10 irregular verbs"]}), True, False),
             
-            # Тема 3: Future Tenses
             (3, 'Future with "will"', 'Future plans', 'Discuss your goals', 
             json.dumps({"questions": ["When is will used?", "Create 3 sentences"]}), False, False),
             (3, 'Future with "going to"', 'Plans and predictions', 'Talk about plans', 
             json.dumps({"questions": ["Difference between will and going to"]}), True, False),
             
-            # Тема 4: Modal Verbs
             (4, 'Modal Verbs: can/could', 'Ability and permission', 'Practice can/could', 
             json.dumps({"questions": ["When to use can?", "When to use could?"]}), True, False),
             (4, 'Modal Verbs: should/must', 'Advice and obligation', 'Practice should/must', 
             json.dumps({"questions": ["Difference between should and must"]}), True, False),
             
-            # Тема 5: Articles
             (5, 'Articles a/an/the', 'Rules and usage', 'Practice with nouns', 
             json.dumps({"questions": ["When to use a/an?", "When to use the?"]}), True, False),
             (5, 'Articles Practice', 'Advanced rules', 'Practice exceptions', 
             json.dumps({"questions": ["Articles with proper nouns"]}), True, False),
             
             # Курс 2: Conversational English
-            # Тема 1: Present Simple (повтор)
             (1, 'Greetings and Introductions', 'Basic greetings', 'Introduce yourself', 
             json.dumps({"questions": ["How to greet someone?"]}), True, False),
-            # Тема 2: Past Simple (повтор)
             (2, 'Daily Conversations', 'Everyday dialogues', 'Practice small talk', 
             json.dumps({"questions": ["Common daily questions"]}), True, False),
-            # Тема 3: Future Tenses (повтор)
             (3, 'Shopping Dialogues', 'Store conversations', 'Role play shopping', 
             json.dumps({"questions": ["How to ask for price?"]}), True, False),
-            # Тема 11: Phrasal Verbs
             (11, 'Restaurant Conversations', 'Menu and ordering', 'Order food in restaurant', 
             json.dumps({"questions": ["Restaurant phrases"]}), False, False),
             
             # Курс 3: Business English
-            # Тема 6: Business Vocabulary
             (6, 'Business Email Writing', 'Email structure', 'Write business email', 
             json.dumps({"questions": ["Email format"]}), True, False),
             (6, 'Meeting Vocabulary', 'Meeting phrases', 'Participate in meeting', 
@@ -708,12 +760,10 @@ def fill_database():
             json.dumps({"questions": ["Negotiation strategies"]}), False, False),
             
             # Курс 4: IELTS Preparation
-            # Тема 7: IELTS Writing Task 1
             (7, 'IELTS Listening Part 1', 'Basic listening', 'Answer questions', 
             json.dumps({"questions": ["Listening tips"]}), True, False),
             (7, 'IELTS Reading Section', 'Reading strategies', 'Practice reading', 
             json.dumps({"questions": ["Reading techniques"]}), True, False),
-            # Тема 8: IELTS Speaking Part 2
             (8, 'IELTS Writing Task 1', 'Graph description', 'Describe chart', 
             json.dumps({"questions": ["Task 1 structure"]}), True, False),
             (8, 'IELTS Writing Task 2', 'Essay writing', 'Write essay', 
@@ -722,7 +772,6 @@ def fill_database():
             json.dumps({"questions": ["Speaking strategies"]}), False, False),
             
             # Курс 5: English for IT
-            # Тема 9: IT Terminology
             (9, 'IT Vocabulary Basics', 'Technical terms', 'Discuss technology', 
             json.dumps({"questions": ["IT terms"]}), True, False),
             (9, 'Reading Documentation', 'Technical docs', 'Explain documentation', 
@@ -733,7 +782,6 @@ def fill_database():
             json.dumps({"questions": ["Interview tips"]}), False, False),
             
             # Курс 6: English for Travel
-            # Тема 10: Travel Phrases
             (10, 'At the Airport', 'Check-in procedures', 'Airport role play', 
             json.dumps({"questions": ["Airport phrases"]}), True, False),
             (10, 'Hotel Check-in', 'Hotel vocabulary', 'Book hotel room', 
@@ -743,16 +791,13 @@ def fill_database():
             (10, 'Sightseeing Vocabulary', 'Tourist places', 'Ask for directions', 
             json.dumps({"questions": ["Tourism phrases"]}), False, False),
             
-            # Тема 11: Phrasal Verbs (продолжение)
+            # Дополнительные уроки
             (11, 'Phrasal Verbs: get up, look after', 'Common phrasal verbs', 'Practice phrasal verbs', 
             json.dumps({"questions": ["Use in sentences"]}), True, False),
-            
-            # Тема 12: Conditionals
             (12, 'First Conditional', 'If + present, will + infinitive', 'Practice first conditional', 
             json.dumps({"questions": ["Make 3 sentences"]}), True, False),
             
-            # ДОПОЛНИТЕЛЬНЫЕ УРОКИ для уникального графа пользователя 7 (Course 3)
-            # Все относятся к Business Vocabulary (тема 6)
+            # Дополнительные уроки для Business English (пользователь 7)
             (6, 'Advanced Negotiation Strategies', 'Complex negotiation scenarios', 'Practice advanced negotiations', 
             json.dumps({"questions": ["Advanced negotiation tactics?", "Handling difficult clients"]}), False, False),
             (6, 'Business Writing Excellence', 'Professional writing techniques', 'Write business report', 
@@ -777,7 +822,7 @@ def fill_database():
         
         # 8. ФИНАЛЬНАЯ ПРОВЕРКА
         print("\n" + "=" * 60)
-        print("ФИНАЛЬНАЯ ПРОВЕРКА ДАННЫХ С ГРАФАМИ")
+        print("ФИНАЛЬНАЯ ПРОВЕРКА ДАННЫХ С ИСПРАВЛЕННЫМИ НОМЕРАМИ УРОКОВ")
         print("=" * 60)
         
         # Проверка графов в user_course
@@ -810,6 +855,14 @@ def fill_database():
                     nodes = graph_data.get('nodes', [])
                     edges = graph_data.get('edges', [])
                     
+                    # Собираем информацию о номерах уроков
+                    lesson_numbers = []
+                    for node in nodes:
+                        if 'data' in node and 'lesson_id' in node['data']:
+                            lesson_numbers.append(node['data']['lesson_id'])
+                    
+                    lesson_numbers.sort()
+                    
                     # Собираем информацию о статусах
                     groups = {}
                     for node in nodes:
@@ -818,7 +871,12 @@ def fill_database():
                             groups[group] = groups.get(group, 0) + 1
                     
                     groups_str = ', '.join([f"группа {k}: {v} узлов" for k, v in sorted(groups.items())])
-                    print(f"    - {len(nodes)} вершин, {len(edges)} связей. Статусы: {groups_str if groups_str else 'не указаны'}")
+                    
+                    if lesson_numbers:
+                        print(f"    - {len(nodes)} вершин, {len(edges)} связей, номера уроков: {lesson_numbers[0]}-{lesson_numbers[-1]}")
+                        print(f"    - Статусы: {groups_str if groups_str else 'не указаны'}")
+                    else:
+                        print(f"    - {len(nodes)} вершин, {len(edges)} связей. Статусы: {groups_str if groups_str else 'не указаны'}")
                     
                 except Exception as e:
                     print(f"    - Ошибка парсинга графа: {e}")
@@ -839,28 +897,20 @@ def fill_database():
             count = cursor.fetchone()[0]
             print(f"  {name}: {count}")
         
-        print("\nИнформация для тестирования графа на курсе Business English (Course 3):")
+        print("\nГЛАВНОЕ ИСПРАВЛЕНИЕ:")
+        print("-" * 60)
+        print("Теперь у каждого ученика в каждом курсе уроки всегда начинаются с 1!")
+        print("Пример: Уроки Novikov Alexey на курсе Business English:")
+        print("  - Было: уроки 16, 17, 18, 19, 33, 34, 35 (неправильно!)")
+        print("  - Стало: уроки 1, 2, 3, 4, 5, 6, 7 (правильно!)")
+        
+        print("\nИнформация для тестирования:")
         print("-" * 60)
         print("1. ДВА ученика на одном курсе с РАЗНЫМИ графами:")
-        print("   - Molchanova Liana (ID=2): liana@bk.ru - стандартный граф")
-        print("   - Novikov Alexey (ID=7): novikov@example.com - УНИКАЛЬНЫЙ граф")
-        print("\n2. Особенности графа Novikov Alexey (ID=7):")
-        print("   - 8 узлов с разными статусами (group):")
-        print("     * 0 (зеленый): Business Email, Meetings, Presentations Review - пройдены успешно")
-        print("     * 1 (красный): Presentations - не пройдена (завалена)")
-        print("     * 2 (желтый): Negotiations Basics, Business Writing - доступны")
-        print("     * 3 (серый): Advanced Negotiations, Final Project - недоступны")
-        print("   - ОДНА тема 'Presentations' встречается дважды:")
-        print("     * Сначала как непройденная (group=1, red)")
-        print("     * Потом как пройденная после повторения (group=0, green)")
-        print("   - Разные пути прохождения (альтернативные ветки)")
-        
-        print("\n3. Для тестирования используйте:")
-        print("   - Репетитор: yazenin@gmail.com (ID=3) - видит оба графа")
-        print("   - Ученик Liana: liana@bk.ru (ID=2) - стандартный граф")
-        print("   - Ученик Alexey: novikov@example.com (ID=7) - уникальный граф")
-        
-        print("\n4. Все пароли: 12345678")
+        print("   - Molchanova Liana (ID=2): liana@bk.ru - стандартный граф (уроки: 1-4)")
+        print("   - Novikov Alexey (ID=7): novikov@example.com - УНИКАЛЬНЫЙ граф (уроки: 1-8)")
+        print("\n2. Все пароли: 12345678")
+        print("\n3. Репетитор: yazenin@gmail.com (ID=3) - видит все курсы")
         
     except Exception as e:
         print(f"\nОШИБКА: {e}")

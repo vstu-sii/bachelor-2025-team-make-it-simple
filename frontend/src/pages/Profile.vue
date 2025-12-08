@@ -364,7 +364,6 @@ function cancelEdit() {
 </template>
 
 <style scoped>
-/* ====== Общие настройки ====== */
 .profile-page-container {
   background-color: #F4886D;
   border-radius: 14%;

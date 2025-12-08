@@ -29,11 +29,42 @@ def get_lesson(
     if not lesson:
         raise HTTPException(status_code=404, detail="Урок не найден")
     
-    # Проверяем доступ к уроку (если is_access=False, то только репетитор может видеть)
+    # Проверяем доступ к уроку
     if not lesson.is_access and current_user.role != "Репетитор":
         raise HTTPException(status_code=403, detail="Урок недоступен")
     
-    return lesson
+    # Вручную преобразуем JSON поля
+    lesson_dict = {
+        "lesson_id": lesson.lesson_id,
+        "theory_text": lesson.theory_text,
+        "reading_text": lesson.reading_text,
+        "speaking_text": lesson.speaking_text,
+        "lesson_notes": lesson.lesson_notes,
+        "is_access": lesson.is_access,
+        "is_ended": lesson.is_ended
+    }
+    
+    # Обрабатываем JSON поля
+    if lesson.lesson_test_json:
+        if isinstance(lesson.lesson_test_json, str):
+            try:
+                lesson_dict["lesson_test_json"] = json.loads(lesson.lesson_test_json)
+            except:
+                lesson_dict["lesson_test_json"] = lesson.lesson_test_json
+        else:
+            lesson_dict["lesson_test_json"] = lesson.lesson_test_json
+    
+    if lesson.results_json:
+        if isinstance(lesson.results_json, str):
+            try:
+                lesson_dict["results_json"] = json.loads(lesson.results_json)
+            except:
+                lesson_dict["results_json"] = lesson.results_json
+        else:
+            lesson_dict["results_json"] = lesson.results_json
+    
+    return lesson_dict
+
 
 @router.get("/course/{course_id}/info", response_model=CourseLessonsInfo)
 def get_course_lessons_info(

@@ -117,7 +117,7 @@ async function loadCourseData() {
 
 // Навигация
 function goBack() {
-  router.back();
+  router.push(`/profile`);
 }
 
 // Инициализация

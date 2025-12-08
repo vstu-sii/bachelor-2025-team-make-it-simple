@@ -164,6 +164,7 @@
 <script setup>
 import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
 import { useAuthStore } from "../stores/auth";
+import { useRouter } from "vue-router";
 import api from "../api/axios";
 import CourseGraph from './CourseGraph.vue'
 
@@ -175,8 +176,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['load-course-data']);
-
 const auth = useAuthStore();
+const router = useRouter(); 
 
 // Состояния
 const loading = ref(false);
@@ -458,8 +459,7 @@ function onGraphNodeClick({ node, lessonId }) {
             path: `/lesson/${lessonId}`,
             query: {
                 courseId: props.courseId,
-                studentId: auth.user.user_id,
-                // Можно добавить информацию о теме, если есть
+                studentId: selectedStudentId.value || auth.user.user_id,
                 fromGraph: 'true'
             }
         });
@@ -467,8 +467,24 @@ function onGraphNodeClick({ node, lessonId }) {
 }
 
 // Начало тестирования
-function startTest() {
-  console.log("Начать тестирование");
+function startTest() 
+{
+  // Репетитор может просматривать входные тесты
+  console.log("Переход к входному тесту курса");
+  
+  router.push({
+    name: "input-test",
+    params: { courseId: props.courseId },
+    query: {
+      courseTitle: props.courseInfo?.title || `Курс ${props.courseId}`,
+      testData: JSON.stringify({
+        test_type: "placement",
+        questions: 20,
+        time_limit: 20
+      }),
+      isTutor: true // Флаг для режима просмотра репетитором
+    }
+  });
 }
 
 // Функция для получения сокращенного имени ученика
