@@ -1,0 +1,66 @@
+# Комментарий: Это комментарий в YAML формате (не влияет на выполнение).
+# Этот workflow выполнит чистую установку зависимостей Node.js, закэширует/восстановит их,
+# соберёт исходный код и запустит тесты на разных версиях Node.js.
+# Подробнее: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+# Указываем имя workflow, которое будет отображаться в интерфейсе GitHub.
+name: Node.js CI
+
+# Определяем, при каких событиях запускать этот workflow.
+# В данном случае — при пуше в ветку "main" и при создании pull request в "main".
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Определяем список задач (jobs), которые будут выполняться.
+jobs:
+  # Название задачи. Можно любое, в данном случае — "build".
+  build:
+
+    # Указывает, на каком типе машины запускать задачу.
+    # В данном случае — на виртуальной машине с Ubuntu.
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    # Используем стратегию "matrix", чтобы запустить задачу несколько раз с разными параметрами.
+    # Здесь мы указываем, что нужно запустить тесты для нескольких версий Node.js.
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+        # Комментарий: см. поддерживаемый график релизов Node.js: https://nodejs.org/en/about/releases/
+
+    # Определяем шаги (steps), которые нужно выполнить.
+    steps:
+    # Шаг 1: Клонируем репозиторий на виртуальную машину.
+    - uses: actions/checkout@v4
+
+    # Шаг 2: Устанавливаем Node.js нужной версии (из матрицы).
+    # Также настраиваем кэширование зависимостей npm.
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache-dependency-path: ./frontend
+        cache: 'npm'
+
+    - name: Clean install
+      run: |
+        rm -rf node_modules
+        rm -f package-lock.json
+        npm install
+        
+    # Шаг 3: Устанавливаем зависимости из package-lock.json (или npm-shrinkwrap.json).
+    # `npm ci` используется вместо `npm install`, так как он быстрее и надежнее.
+    - run: npm ci
+
+    # Шаг 4: Запускаем скрипт `build`, если он определён в package.json.
+    # `--if-present` означает, что ошибка не возникнет, если скрипт `build` не найден.
+    - run: npm run build --if-present
+
+    # Шаг 5: Запускаем тесты.
+    # - run: npm test
