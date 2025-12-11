@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 class CourseBase(BaseModel):
     title: str
@@ -14,6 +14,13 @@ class CourseResponse(CourseBase):
     
     class Config:
         from_attributes = True
+
+class CourseWithRelationsCreate(BaseModel):
+    title: str
+    link_to_vector_db: Optional[str] = None
+    input_test_json: Optional[Dict[str, Any]] = {}
+    topics_ids: List[int]
+    materials_ids: Optional[List[int]] = None
 
 # Схема для курса с учениками
 class CourseWithStudentsResponse(CourseResponse):
@@ -37,3 +44,9 @@ class StudentCourseResponse(BaseModel):
     tutor_name: str
     created_at: Optional[date] = None
     knowledge_gaps: Optional[str] = None
+
+class CourseWithDetailsResponse(CourseResponse):
+    link_to_vector_db: str
+    input_test_json: Dict[str, Any] = {}
+    topics: List[Dict[str, Any]] = []
+    materials: List[Dict[str, Any]] = []

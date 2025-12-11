@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
+from datetime import date
 
 from app.database import get_db
 from app.repositories.course_repository import CourseRepository
@@ -9,11 +10,35 @@ from app.schemas.course import (
     CourseCreate, 
     CourseResponse, 
     TutorCourseResponse,
-    StudentCourseResponse
+    StudentCourseResponse,
+    CourseWithRelationsCreate
 )
 from app.utils.jwt import get_current_user
+from app.models.course import Course
+from app.models.topic import Topic
+from app.models.material import Material
+from app.models.course_topic import CourseTopic
+from app.models.course_material import CourseMaterial
+from app.models.user_course import UserCourse
+from app.models.user import User
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
+
+@router.get("/", response_model=List[CourseResponse])
+def get_all_courses(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    
+    if current_user.role == "Ученик":
+        raise HTTPException(status_code=403, detail="Только репетиторы могут просматривать все курсы")
+    
+    courses = db.query(Course).offset(skip).limit(limit).all()
+    return courses
 
 @router.get("/tutors/{tutor_id}/courses", response_model=List[TutorCourseResponse])
 def get_tutor_courses(
@@ -21,9 +46,6 @@ def get_tutor_courses(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Получить все курсы репетитора
-    """
     # Проверяем, что текущий пользователь имеет доступ
     if current_user.user_id != tutor_id and current_user.role != "Администратор":
         raise HTTPException(status_code=403, detail="Нет доступа к этим курсам")
@@ -68,17 +90,92 @@ def search_tutor_courses(
     courses = CourseRepository.search_student_courses(db, tutor_id, query)
     return courses
 
+@router.post("/", response_model=CourseResponse)
+def create_course(
+    course_data: CourseWithRelationsCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Проверяем авторизацию и роль
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    
+    if current_user.role != "Репетитор":
+        raise HTTPException(status_code=403, detail="Только репетиторы могут создавать курсы")
+    
+    # Проверяем, что название не пустое
+    if not course_data.title or not course_data.title.strip():
+        raise HTTPException(status_code=400, detail="Название курса не может быть пустым")
+    
+    # Проверяем, что переданы темы
+    if not course_data.topics_ids or len(course_data.topics_ids) == 0:
+        raise HTTPException(status_code=400, detail="Курс должен содержать хотя бы одну тему")
+    
+    # Создаем новый курс
+    new_course = Course(
+        title=course_data.title.strip(),
+        created_at=date.today(),
+        link_to_vector_db=course_data.link_to_vector_db or f"/static/vector_dbs/course_{int(date.today().strftime('%Y%m%d'))}_{current_user.user_id}",
+        input_test_json=course_data.input_test_json or {}
+    )
+    
+    db.add(new_course)
+    db.commit()
+    db.refresh(new_course)
+    
+    # Связываем темы с курсом
+    for topic_id in course_data.topics_ids:
+        # Проверяем, что тема существует
+        topic = db.query(Topic).filter(Topic.topic_id == topic_id).first()
+        if not topic:
+            continue  # Пропускаем несуществующие темы
+        
+        course_topic = CourseTopic(
+            course_id=new_course.course_id,
+            topic_id=topic_id
+        )
+        db.add(course_topic)
+    
+    # Связываем материалы с курсом
+    if course_data.materials_ids:
+        for material_id in course_data.materials_ids:
+            # Проверяем, что материал существует
+            material = db.query(Material).filter(Material.material_id == material_id).first()
+            if not material:
+                continue  # Пропускаем несуществующие материалы
+            
+            course_material = CourseMaterial(
+                course_id=new_course.course_id,
+                material_id=material_id
+            )
+            db.add(course_material)
+    
+    # Связываем репетитора с курсом
+    user_course = UserCourse(
+        user_id=current_user.user_id,
+        course_id=new_course.course_id,
+        knowledge_gaps=None,
+        graph_json={},
+        output_test_json={}
+    )
+    db.add(user_course)
+    
+    db.commit()
+    
+    print(f"✅ Создан курс: ID={new_course.course_id}, Title={new_course.title}")
+    print(f"   Тем: {len(course_data.topics_ids)}")
+    print(f"   Материалов: {len(course_data.materials_ids) if course_data.materials_ids else 0}")
+    
+    return new_course
+
 @router.post("/tutors/{tutor_id}/courses", response_model=CourseResponse)
 def create_tutor_course(
     tutor_id: int,
     course_data: CourseCreate,
-    student_id: int = None,  # Можно передать student_id в query параметрах
+    student_id: Optional[int] = None,  # Можно передать student_id в query параметрах
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Создать новый курс для репетитора
-    """
     # Проверяем, что текущий пользователь имеет доступ
     if current_user.user_id != tutor_id:
         raise HTTPException(status_code=403, detail="Нельзя создавать курсы для другого репетитора")
@@ -89,7 +186,6 @@ def create_tutor_course(
     
     # Если указан student_id, проверяем что он существует и является учеником
     if student_id:
-        from app.models.user import User
         student = db.query(User).filter(User.user_id == student_id).first()
         if not student or student.role != "Ученик":
             raise HTTPException(status_code=400, detail="Указанный ученик не найден")
@@ -107,17 +203,12 @@ def get_course(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Получить информацию о курсе по ID
-    """
-    from app.models.course import Course
     course = db.query(Course).filter(Course.course_id == course_id).first()
     
     if not course:
         raise HTTPException(status_code=404, detail="Курс не найден")
     
     # Проверяем, что у пользователя есть доступ к курсу
-    from app.models.user_course import UserCourse
     user_course = db.query(UserCourse).filter(
         UserCourse.user_id == current_user.user_id,
         UserCourse.course_id == course_id
@@ -135,16 +226,12 @@ async def get_student_course_graph(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Получить индивидуальный граф курса для ученика
-    """
     try:
         # Проверяем доступ пользователя
         if current_user.user_id != student_id and current_user.role != "Репетитор":
             raise HTTPException(status_code=403, detail="Нет доступа к этому графу")
         
         # Ищем запись в user_course для конкретного ученика и курса
-        from app.models.user_course import UserCourse
         user_course = db.query(UserCourse).filter(
             UserCourse.user_id == student_id,
             UserCourse.course_id == course_id
@@ -195,16 +282,12 @@ async def update_student_course_graph(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Обновить граф курса для ученика (для репетитора)
-    """
     try:
         # Проверяем, что пользователь - репетитор
         if current_user.role != "Репетитор":
             raise HTTPException(status_code=403, detail="Только репетиторы могут изменять графы")
         
         # Проверяем, что репетитор ведет этот курс
-        from app.models.user_course import UserCourse
         tutor_course = db.query(UserCourse).filter(
             UserCourse.user_id == current_user.user_id,
             UserCourse.course_id == course_id
@@ -240,16 +323,12 @@ async def get_course_students(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Получить список всех учеников на курсе (для репетитора)
-    """
     try:
         # Проверяем, что пользователь - репетитор
         if current_user.role != "Репетитор":
             raise HTTPException(status_code=403, detail="Только репетиторы могут просматривать список учеников")
         
         # Проверяем, что репетитор ведет этот курс
-        from app.models.user_course import UserCourse
         tutor_course = db.query(UserCourse).filter(
             UserCourse.user_id == current_user.user_id,
             UserCourse.course_id == course_id
@@ -259,9 +338,6 @@ async def get_course_students(
             raise HTTPException(status_code=403, detail="Вы не ведете этот курс")
         
         # Получаем всех учеников на курсе
-        from app.models.user import User
-        from app.models.user_course import UserCourse
-        
         students = db.query(User).join(
             UserCourse, User.user_id == UserCourse.user_id
         ).filter(
@@ -298,16 +374,12 @@ async def update_student_knowledge_gaps(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Обновить пробелы в знаниях ученика (для репетитора)
-    """
     try:
         # Проверяем, что пользователь - репетитор
         if current_user.role != "Репетитор":
             raise HTTPException(status_code=403, detail="Только репетиторы могут обновлять пробелы в знаниях")
         
         # Находим запись ученика на курсе
-        from app.models.user_course import UserCourse
         student_course = db.query(UserCourse).filter(
             UserCourse.user_id == student_id,
             UserCourse.course_id == course_id
@@ -328,3 +400,61 @@ async def update_student_knowledge_gaps(
         db.rollback()
         print(f"Error updating student knowledge gaps: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при обновлении пробелов в знаниях")
+
+@router.get("/{course_id}/topics")
+async def get_course_topics(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    try:
+        # Проверяем доступ к курсу
+        user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not user_course:
+            raise HTTPException(status_code=403, detail="Нет доступа к этому курсу")
+        
+        # Получаем темы курса
+        topics = db.query(Topic).join(
+            CourseTopic, Topic.topic_id == CourseTopic.topic_id
+        ).filter(
+            CourseTopic.course_id == course_id
+        ).all()
+        
+        return {"topics": topics}
+        
+    except Exception as e:
+        print(f"Error getting course topics: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при получении тем курса")
+
+@router.get("/{course_id}/materials")
+async def get_course_materials(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    try:
+        # Проверяем доступ к курсу
+        user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not user_course:
+            raise HTTPException(status_code=403, detail="Нет доступа к этому курсу")
+        
+        # Получаем материалы курса
+        materials = db.query(Material).join(
+            CourseMaterial, Material.material_id == CourseMaterial.material_id
+        ).filter(
+            CourseMaterial.course_id == course_id
+        ).all()
+        
+        return {"materials": materials}
+        
+    except Exception as e:
+        print(f"Error getting course materials: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при получении материалов курса")

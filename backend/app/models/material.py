@@ -13,5 +13,5 @@ class Material(Base):
     file_path = Column(String(1000), nullable=False)
 
     def __repr__(self):
-        return f'<UserCourse(id={self.material_id}, file_path="{self.file_path}")>'
+        return f'<Material(id={self.material_id}, file_path="{self.file_path}")>'
     

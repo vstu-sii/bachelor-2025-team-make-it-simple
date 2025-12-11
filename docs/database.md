@@ -75,7 +75,7 @@ CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
 | Поле          | Тип данных    | Описание                                 | Индексы      |
 | ------------- | ------------- | ---------------------------------------- | ------------ |
 | `course_id`   | INT           | ID курса                                 | INDEX        |
-| `topic_id   ` | INT           | ID темы                                  | INDEX        |
+| `topic_id`    | INT           | ID темы                                  | INDEX        |
 | -             | -             | Уникальная пара (course_id, topic_id)    | UNIQUE INDEX |
 ---
 
@@ -93,6 +93,7 @@ CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
 | `results_json`             | JSON          | JSON файл (выходной) с результатами урока                | -           |
 | `is_access`                | BOOLEAN       | Флаг, определяющий доступность урока ученику             | -           |
 | `is_ended`                 | BOOLEAN       | Флаг, определяющий завершен ли урок                      | -           |
+| `topic_id`                 | INT           | ID темы                                                  | -           |
 ---
 
 # Взаимодействие с AI-сервисом
