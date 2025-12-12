@@ -24,7 +24,7 @@
           :class="['access-toggle-btn', lessonData?.is_access ? 'access-open' : 'access-closed']"
           @click="toggleLessonAccess"
         >
-          {{ lessonData?.is_access ? 'Открыто' : 'Закрыто' }}
+          {{ lessonData?.is_access ? 'Открыт' : 'Закрыт' }}
         </button>
       </div>
     </div>
@@ -69,7 +69,7 @@
               class="btn-save"
               :disabled="!theoryText"
             >
-              Подтвердить
+              Подтвердить генерацию теории
             </button>
           </div>
         </div>
@@ -110,7 +110,7 @@
               class="btn-save"
               :disabled="!readingText"
             >
-              Подтвердить
+              Подтвердить генерацию задания на чтение
             </button>
           </div>
         </div>
@@ -151,7 +151,7 @@
               class="btn-save"
               :disabled="!speakingText"
             >
-              Подтвердить
+              Подтвердить генерацию задания на говорение
             </button>
           </div>
         </div>
@@ -165,7 +165,6 @@
             <p>Тест урока содержит вопросы по пройденному материалу</p>
             <div class="questions-preview">
               <p><strong>Количество вопросов:</strong> {{ lessonTest.questions?.length || 0 }}</p>
-              <p v-if="lessonTest.time_limit"><strong>Время на прохождение:</strong> {{ lessonTest.time_limit }} мин.</p>
             </div>
             
             <div class="test-button-container">
@@ -192,7 +191,7 @@
           
           <div class="actions">
             <button @click="saveNotes" class="btn-save">
-              Сохранить
+              Сохранить заметки
             </button>
           </div>
         </div>
