@@ -458,3 +458,150 @@ async def get_course_materials(
     except Exception as e:
         print(f"Error getting course materials: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при получении материалов курса")
+
+@router.post("/{course_id}/add-student", status_code=201)
+async def add_student_to_course(
+    course_id: int,
+    student_data: Dict[str, str],  # {"email": "student@example.com"}
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    try:
+        # Проверяем, что текущий пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут добавлять учеников в курсы")
+        
+        email = student_data.get("email", "").strip()
+        if not email:
+            raise HTTPException(status_code=400, detail="Email ученика не указан")
+        
+        # Проверяем, что репетитор ведет этот курс
+        tutor_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not tutor_course:
+            raise HTTPException(status_code=403, detail="Вы не ведете этот курс")
+        
+        # Ищем ученика по email
+        student = db.query(User).filter(
+            User.email == email,
+            User.role == "Ученик"
+        ).first()
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик с указанным email не найден")
+        
+        # Проверяем, что ученик уже не записан на какой-либо курс
+        existing_user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student.user_id
+        ).first()
+        
+        if existing_user_course:
+            raise HTTPException(status_code=400, detail="Ученик уже записан на другой курс")
+        
+        # Проверяем, что ученик уже не записан на этот курс (на всякий случай)
+        already_enrolled = db.query(UserCourse).filter(
+            UserCourse.user_id == student.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if already_enrolled:
+            raise HTTPException(status_code=400, detail="Ученик уже записан на этот курс")
+        
+        # Добавляем ученика в курс
+        new_user_course = UserCourse(
+            user_id=student.user_id,
+            course_id=course_id,
+            knowledge_gaps="",
+            graph_json=json.dumps({}),
+            output_test_json=json.dumps({})
+        )
+        
+        db.add(new_user_course)
+        db.commit()
+        db.refresh(new_user_course)
+        
+        return {
+            "message": "Ученик успешно добавлен в курс",
+            "student": {
+                "student_id": student.user_id,
+                "student_name": f"{student.last_name} {student.first_name}",
+                "email": student.email
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error adding student to course: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при добавлении ученика в курс")
+    
+@router.delete("/{course_id}/students/{student_id}")
+async def remove_student_from_course(
+    course_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Удалить ученика из курса
+    """
+    try:
+        # Проверяем, что текущий пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут удалять учеников из курсов")
+        
+        # Проверяем существование курса
+        course = db.query(Course).filter(Course.course_id == course_id).first()
+        if not course:
+            raise HTTPException(status_code=404, detail="Курс не найден")
+        
+        # Проверяем, что репетитор ведет этот курс
+        tutor_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not tutor_course:
+            raise HTTPException(status_code=403, detail="Вы не ведете этот курс")
+        
+        # Проверяем существование ученика
+        student = db.query(User).filter(
+            User.user_id == student_id,
+            User.role == "Ученик"
+        ).first()
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+        
+        # Находим запись ученика на курсе
+        student_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not student_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
+        
+        # Удаляем запись из user_course
+        db.delete(student_course)
+        db.commit()
+        
+        return {
+            "message": "Ученик успешно удален из курса",
+            "student": {
+                "student_id": student.user_id,
+                "student_name": f"{student.last_name} {student.first_name}",
+                "email": student.email
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error removing student from course: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при удалении ученика из курса")

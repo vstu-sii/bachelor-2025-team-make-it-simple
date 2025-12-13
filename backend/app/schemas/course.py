@@ -45,8 +45,5 @@ class StudentCourseResponse(BaseModel):
     created_at: Optional[date] = None
     knowledge_gaps: Optional[str] = None
 
-class CourseWithDetailsResponse(CourseResponse):
-    link_to_vector_db: str
-    input_test_json: Dict[str, Any] = {}
-    topics: List[Dict[str, Any]] = []
-    materials: List[Dict[str, Any]] = []
+class AddStudentRequest(BaseModel):
+    email: str

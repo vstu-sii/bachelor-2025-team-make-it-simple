@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSON
 from app.database import Base
-
+from app.models.user import User
 
 class UserCourse(Base):
     __tablename__ = "user_course"
@@ -10,6 +10,14 @@ class UserCourse(Base):
         UniqueConstraint("user_id", "course_id", name="idx_user_course_unique"),
         Index("idx_user_course_user_id", "user_id"),
         Index("idx_user_course_course_id", "course_id"),
+        Index("idx_one_course_for_student", "user_id", unique=True,
+            postgresql_where="""
+                EXISTS (
+                    SELECT 1 FROM "user" u 
+                    WHERE u.user_id = user_course.user_id 
+                    AND u.role = 'Ученик'
+                ) """
+        ),
     )
 
     user_course_id = Column(Integer, primary_key=True)
@@ -21,7 +29,3 @@ class UserCourse(Base):
 
     def __repr__(self):
         return f'<UserCourse(id={self.user_course_id}, user_id={self.user_id}, course_id={self.course_id})>'
-    
-    # TODO
-    # idx_one_course_for_student просто так не сделать через SQLAlchemy
-    # поэтому эту штуку придется потом вручную докинуть через Alembic!! (не сейчас)

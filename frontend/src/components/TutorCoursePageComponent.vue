@@ -6,28 +6,29 @@
       <div class="divider"></div>
 
       <div class="form-group">
-        <label class="centered-label">Добавить нового ученика</label>
+        <label class="centered-label">Добавить ученика в курс</label>
         <div class="row centered-row">
           <input 
             v-model="newStudentEmail" 
-            type="text" 
+            type="email" 
             placeholder="Введите почту ученика" 
             :disabled="loading"
             class="centered-input"
+            @keyup.enter="addStudent"
           />
           <button 
             class="send-btn" 
-            @click="inviteStudent"
+            @click="addStudent"
             :disabled="loading || !newStudentEmail"
           >
-            {{ loading ? 'Отправка...' : 'Отправить' }}
+            {{ loading ? 'Добавление...' : 'Добавить' }}
           </button>
         </div>
-        <p v-if="inviteSuccess" class="info success">
-          Письмо успешно отправлено! Дождитесь подтверждения от ученика.
+        <p v-if="addSuccess" class="info success">
+          Ученик успешно добавлен в курс!
         </p>
-        <p v-if="inviteError" class="info error">
-          {{ inviteError }}
+        <p v-if="addError" class="info error">
+          {{ addError }}
         </p>
       </div>
     </div>
@@ -68,6 +69,14 @@
       </div>
     </div>
 
+    <!-- Сообщение, если учеников нет -->
+    <div v-if="courseStudents.length === 0" class="section">
+      <div class="no-students-message">
+        <h3>На курсе пока нет учеников</h3>
+        <p>Добавьте учеников, используя форму выше</p>
+      </div>
+    </div>
+
     <!-- Входное тестирование -->
     <div class="section">
       <h1 class="title">Входное тестирование</h1>
@@ -85,11 +94,11 @@
       </div>
     </div>
 
-    <!-- Текущие пробелы -->
-    <div class="section">
+    <!-- Текущие пробелы - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ВЫБРАН УЧЕНИК -->
+    <div v-if="selectedStudentId && currentStudent" class="section">
       <h1 class="title">
         Текущие пробелы
-        <span v-if="currentStudent"> {{ getStudentShortName(currentStudent.student_name) }}</span>
+        <span class="student-short-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
       </h1>
       <div class="divider"></div>
       
@@ -106,9 +115,12 @@
       </button>
     </div>
 
-    <!-- Граф курса -->
-    <div class="section graph-section">
-      <h1 class="title">Граф курса</h1>
+    <!-- Граф курса - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ВЫБРАН УЧЕНИК -->
+    <div v-if="selectedStudentId && currentStudent" class="section graph-section">
+      <h1 class="title">
+        Граф курса
+        <span class="student-short-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
+      </h1>
       <div class="divider"></div>
       
       <div class="form-group">
@@ -141,12 +153,8 @@
           <div class="spinner"></div>
           <p>Загрузка графа курса...</p>
         </div>
-        <div v-else-if="!selectedStudentId" class="no-graph">
-          <p>Выберите ученика для просмотра его графа</p>
-        </div>
         <div v-else class="no-graph">
           <p>Граф курса еще не сгенерирован для этого ученика</p>
-          <button @click="loadStudentGraph" class="retry-btn">Загрузить граф</button>
         </div>
       </div>
 
@@ -189,8 +197,8 @@ const selectedStudentId = ref("");
 const knowledgeGaps = ref("");
 const graphChanges = ref("");
 const graphData = ref(null);
-const inviteSuccess = ref(false);
-const inviteError = ref("");
+const addSuccess = ref(false);
+const addError = ref("");
 const hasTakenTest = ref(false);
 
 // Загрузка данных для репетитора
@@ -215,6 +223,70 @@ async function loadTutorCourseData() {
     console.error("Ошибка загрузки данных репетитора:", error);
     // Для демонстрации создаем тестовых учеников
     createDemoStudents();
+  }
+}
+
+// Функция добавления ученика в курс
+async function addStudent() {
+  if (!newStudentEmail.value) {
+    addError.value = "Введите email ученика";
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    addError.value = "";
+    addSuccess.value = false;
+    
+    // Проверяем валидность email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStudentEmail.value)) {
+      addError.value = "Введите корректный email адрес";
+      loading.value = false;
+      return;
+    }
+    
+    // Вызываем API для добавления ученика
+    const response = await api.post(`/courses/${props.courseId}/add-student`, {
+      email: newStudentEmail.value
+    });
+    
+    addSuccess.value = true;
+    newStudentEmail.value = "";
+    
+    // Обновляем список учеников
+    await loadTutorCourseData();
+    
+    // Сбрасываем успешное сообщение через 3 секунды
+    setTimeout(() => {
+      addSuccess.value = false;
+    }, 3000);
+    
+  } catch (error) {
+    console.error("Ошибка добавления ученика:", error);
+    
+    // Обрабатываем различные ошибки
+    if (error.response?.status === 404) {
+      if (error.response?.data?.detail?.includes("не найден")) {
+        addError.value = "Ученик с указанным email не найден в системе";
+      } else {
+        addError.value = "Курс не найден";
+      }
+    } else if (error.response?.status === 400) {
+      if (error.response?.data?.detail?.includes("уже записан")) {
+        addError.value = "Ученик уже записан на курс или на другой курс";
+      } else {
+        addError.value = error.response.data.detail || "Некорректные данные";
+      }
+    } else if (error.response?.status === 403) {
+      addError.value = "У вас нет прав для добавления учеников";
+    } else if (error.response?.status === 500) {
+      addError.value = "Ошибка сервера. Попробуйте позже";
+    } else {
+      addError.value = "Ошибка добавления ученика. Проверьте email и попробуйте снова";
+    }
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -284,47 +356,28 @@ function onStudentSelected() {
   }
 }
 
-// Приглашение ученика
-async function inviteStudent() {
-  if (!newStudentEmail.value) return;
-  
-  try {
-    loading.value = true;
-    inviteError.value = "";
-    
-    // Здесь должен быть API вызов для приглашения ученика
-    await api.post(`/courses/${props.courseId}/invite`, {
-      email: newStudentEmail.value
-    });
-    
-    inviteSuccess.value = true;
-    newStudentEmail.value = "";
-    
-    // Обновляем список учеников
-    setTimeout(() => {
-      inviteSuccess.value = false;
-      loadTutorCourseData();
-    }, 3000);
-    
-  } catch (error) {
-    inviteError.value = error.response?.data?.detail || "Ошибка отправки приглашения";
-    console.error("Ошибка приглашения ученика:", error);
-  } finally {
-    loading.value = false;
-  }
-}
-
 // Удаление выбранного ученика из курса
 async function removeSelectedStudent() {
-  if (!selectedStudentId.value || !confirm("Вы уверены, что хотите удалить ученика из курса?")) {
+  if (!selectedStudentId.value) {
+    alert("Сначала выберите ученика из списка");
+    return;
+  }
+  
+  // Подтверждение удаления
+  const student = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
+  const studentName = student ? student.student_name : "выбранного ученика";
+  
+  if (!confirm(`Вы уверены, что хотите удалить ученика ${studentName} из курса?`)) {
     return;
   }
   
   try {
     loading.value = true;
     
-    // Здесь должен быть API вызов для удаления ученика
-    await api.delete(`/courses/${props.courseId}/students/${selectedStudentId.value}`);
+    // Вызываем API для удаления ученика
+    const response = await api.delete(`/courses/${props.courseId}/students/${selectedStudentId.value}`);
+    
+    console.log("Ответ сервера при удалении:", response.data);
     
     // Обновляем список учеников
     await loadTutorCourseData();
@@ -335,11 +388,27 @@ async function removeSelectedStudent() {
     knowledgeGaps.value = "";
     graphData.value = null;
     
-    alert("Ученик удален из курса");
+    // Показываем уведомление
+    alert(`Ученик ${studentName} успешно удален из курса`);
     
   } catch (error) {
     console.error("Ошибка удаления ученика:", error);
-    alert("Не удалось удалить ученика из курса");
+    console.error("Детали ошибки:", error.response?.data);
+    
+    // Обрабатываем различные ошибки
+    let errorMessage = "Не удалось удалить ученика из курса";
+    
+    if (error.response?.status === 404) {
+      errorMessage = error.response.data.detail || "Ученик или курс не найден";
+    } else if (error.response?.status === 403) {
+      errorMessage = "У вас нет прав для удаления учеников из курса";
+    } else if (error.response?.status === 500) {
+      errorMessage = "Ошибка сервера. Попробуйте позже";
+    } else if (error.code === 'ERR_NETWORK') {
+      errorMessage = "Ошибка сети. Проверьте подключение к интернету";
+    }
+    
+    alert(errorMessage);
   } finally {
     loading.value = false;
   }
@@ -499,6 +568,20 @@ function getStudentShortName(fullName) {
   return fullName;
 }
 
+// Демо-функции
+function createDemoStudents() {
+  // Для демонстрации, если API недоступен
+  courseStudents.value = [
+    { student_id: 1, student_name: "Matokhin Ilya", knowledge_gaps: "Need practice with Past Simple" },
+    { student_id: 6, student_name: "Z Z", knowledge_gaps: "Difficulty with vocabulary" }
+  ];
+  
+  if (courseStudents.value.length > 0) {
+    selectedStudentId.value = courseStudents.value[0].student_id;
+    currentStudent.value = courseStudents.value[0];
+  }
+}
+
 // Инициализация
 onMounted(() => {
   loadTutorCourseData();
@@ -520,156 +603,365 @@ watch(selectedStudentId, (newStudentId) => {
   }
 });
 </script>
-  
-  <style scoped>
+
+<style scoped>
+.section {
+  background: #fedac4;
+  border-radius: 15px;
+  padding: 25px;
+  border: none;
+  margin-bottom: 20px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #592012;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.student-short-name {
+  color: #4CAF50;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.subtitle {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #592012;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.divider {
+  height: 3px;
+  background: #592012;
+  border-radius: 2px;
+  margin: 0 auto 20px auto;
+  width: 80%;
+  max-width: 600px;
+}
+
+label {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 8px;
+  color: #592012;
+  font-weight: bold;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.centered-label {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.centered-row {
+  justify-content: center;
+  align-items: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.centered-input {
+  width: 300px;
+}
+
+.student-selection-container {
+  margin-top: 15px;
+}
+
+.selection-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.custom-select {
+  width: 100%;
+  padding: 12px 15px;
+  padding-right: 40px;
+  background: #FFFFFF url('/src/assets/arrow_list.svg') no-repeat right 15px center;
+  background-size: 12px;
+  border: 2px solid #F4886D;
+  border-radius: 10px;
+  font-family: 'Arial', Georgia, serif;
+  font-size: 15px;
+  color: #592012;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.custom-select::-ms-expand {
+  display: none;
+}
+
+.custom-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
+}
+
+.custom-select:disabled {
+  background: #f5f5f5 url('/src/assets/arrow_list.svg') no-repeat right 15px center;
+  background-size: 12px;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px 15px;
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 10px;
+  font-family: 'Arial', Georgia, serif;
+  font-size: 15px;
+  color: #592012;
+  box-sizing: border-box;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8A7D75;
+  opacity: 0.7;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
+}
+
+input:disabled,
+textarea:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+textarea {
+  height: 100px;
+  resize: none;
+  margin-top: 10px;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.send-btn,
+.remove-btn,
+.test-btn,
+.save-btn,
+.generate-btn {
+  background: #F4886D;
+  color: #592012;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Arial', Georgia, serif;
+  font-weight: bold;
+  transition: all 0.3s;
+  font-size: 15px;
+}
+
+.send-btn:hover:not(:disabled),
+.test-btn:hover:not(:disabled),
+.save-btn:hover:not(:disabled),
+.generate-btn:hover:not(:disabled) {
+  background: #E0785D;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
+}
+
+.send-btn:disabled,
+.remove-btn:disabled,
+.test-btn:disabled,
+.save-btn:disabled,
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.remove-btn {
+  background: #c46a57;
+  color: white;
+}
+
+.remove-btn:hover:not(:disabled) {
+  background: #b35a47;
+}
+
+.test-box {
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  color: #592012;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.test-btn {
+  margin-top: 15px;
+  padding: 15px 30px;
+  font-size: 16px;
+}
+
+.centered-save-btn {
+  display: block;
+  margin: 20px auto 0 auto;
+  padding: 12px 40px;
+}
+
+.graph-section .row {
+  margin-bottom: 15px;
+}
+
+.graph-box {
+  margin-top: 20px;
+  min-height: 300px;
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.loading-graph,
+.no-graph {
+  text-align: center;
+  color: #666;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #F4886D;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.graph-save-btn {
+  display: block;
+  margin: 20px auto 0 auto;
+  padding: 12px 40px;
+}
+
+.info {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Arial', Georgia, serif;
+  text-align: center;
+}
+
+.info.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.info.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Сообщения для пользователя */
+.no-students-message {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.no-students-message h3 {
+  color: #592012;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.no-students-message p {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
   .section {
-    background: #fedac4;
-    border-radius: 15px;
-    padding: 25px;
-    border: none;
-  }
-  
-  .title {
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #592012;
-    font-family: 'Arial', Georgia, serif;
-  }
-  
-  .subtitle {
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #592012;
-    font-family: 'Arial', Georgia, serif;
-  }
-  
-  .divider {
-    height: 3px;
-    background: #592012;
-    border-radius: 2px;
-    margin: 0 auto 20px auto;
-    width: 80%;
-    max-width: 600px;
-  }
-  
-  label {
-    font-size: 16px;
-    display: block;
-    margin-bottom: 8px;
-    color: #592012;
-    font-weight: bold;
-    font-family: 'Arial', Georgia, serif;
-  }
-  
-  .centered-label {
-    text-align: center;
-    font-size: 14px;
-    margin-bottom: 10px;
-  }
-  
-  .row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-  .centered-row {
-    justify-content: center;
-    align-items: center;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-  
-  .centered-input {
-    width: 300px;
-  }
-  
-  .student-selection-container {
-    margin-top: 15px;
+    padding: 20px;
   }
   
   .selection-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+    flex-wrap: wrap;
   }
   
   .custom-select {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .remove-btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 24px;
+  }
+  
+  .subtitle {
+    font-size: 20px;
+  }
+  
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .centered-row {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .centered-input {
     width: 100%;
-    padding: 12px 15px;
-    padding-right: 40px;
-    background: #FFFFFF url('/src/assets/arrow_list.svg') no-repeat right 15px center;
-    background-size: 12px;
-    border: 2px solid #F4886D;
-    border-radius: 10px;
-    font-family: 'Arial', Georgia, serif;
-    font-size: 15px;
-    color: #592012;
-    box-sizing: border-box;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    max-width: 300px;
   }
   
-  .custom-select::-ms-expand {
-    display: none;
+  .selection-row {
+    flex-direction: column;
   }
   
-  .custom-select:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
-  }
-  
-  .custom-select:disabled {
-    background: #f5f5f5 url('/src/assets/arrow_list.svg') no-repeat right 15px center;
-    background-size: 12px;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-  
-  input,
-  textarea {
+  .custom-select,
+  .remove-btn {
     width: 100%;
-    padding: 12px 15px;
-    background: #FFFFFF;
-    border: 2px solid #F4886D;
-    border-radius: 10px;
-    font-family: 'Arial', Georgia, serif;
-    font-size: 15px;
-    color: #592012;
-    box-sizing: border-box;
-  }
-  
-  input::placeholder,
-  textarea::placeholder {
-    color: #8A7D75;
-    opacity: 0.7;
-  }
-  
-  input:focus,
-  textarea:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
-  }
-  
-  input:disabled,
-  textarea:disabled {
-    background: #f5f5f5;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-  
-  textarea {
-    height: 100px;
-    resize: none;
-    margin-top: 10px;
-    font-family: 'Arial', Georgia, serif;
   }
   
   .send-btn,
@@ -677,247 +969,46 @@ watch(selectedStudentId, (newStudentId) => {
   .test-btn,
   .save-btn,
   .generate-btn {
-    background: #F4886D;
-    color: #592012;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 20px;
-    cursor: pointer;
-    white-space: nowrap;
-    font-family: 'Arial', Georgia, serif;
-    font-weight: bold;
-    transition: all 0.3s;
-    font-size: 15px;
+    width: 100%;
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 15px;
   }
   
-  .send-btn:hover:not(:disabled),
-  .test-btn:hover:not(:disabled),
-  .save-btn:hover:not(:disabled),
-  .generate-btn:hover:not(:disabled) {
-    background: #E0785D;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
+  .title {
+    font-size: 20px;
   }
   
-  .send-btn:disabled,
-  .remove-btn:disabled,
-  .test-btn:disabled,
-  .save-btn:disabled,
-  .generate-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  .subtitle {
+    font-size: 18px;
   }
   
-  .remove-btn {
-    background: #c46a57;
-    color: white;
-  }
-  
-  .remove-btn:hover:not(:disabled) {
-    background: #b35a47;
-  }
-  
-  .test-box {
-    background: #FFFFFF;
-    border: 2px solid #F4886D;
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    color: #592012;
-    font-family: 'Arial', Georgia, serif;
-  }
-  
-  .test-btn {
-    margin-top: 15px;
-    padding: 15px 30px;
-    font-size: 16px;
-  }
-  
-  .centered-save-btn {
-    display: block;
-    margin: 20px auto 0 auto;
-    padding: 12px 40px;
-  }
-  
-  .graph-section .row {
-    margin-bottom: 15px;
+  input,
+  .custom-select,
+  textarea {
+    padding: 10px 12px;
+    font-size: 14px;
   }
   
   .graph-box {
-    margin-top: 20px;
-    min-height: 300px;
-    background: #FFFFFF;
-    border: 2px solid #F4886D;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    min-height: 250px;
   }
   
-  .loading-graph,
-  .graph-placeholder,
-  .no-graph {
-    text-align: center;
-    color: #666;
-    font-family: 'Arial', Georgia, serif;
+  .no-students-message {
+    padding: 20px 15px;
   }
   
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #F4886D;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
+  .no-students-message h3 {
+    font-size: 18px;
   }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .graph-save-btn {
-    display: block;
-    margin: 20px auto 0 auto;
-    padding: 12px 40px;
-  }
-  
-  .info {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Arial', Georgia, serif;
-    text-align: center;
-  }
-  
-  .info.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-  
-  .info.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-  }
-  
-  @media (max-width: 1024px) {
-    .section {
-      padding: 20px;
-    }
-    
-    .selection-row {
-      flex-wrap: wrap;
-    }
-    
-    .custom-select {
-      flex: 1;
-      min-width: 200px;
-    }
-    
-    .remove-btn {
-      flex: 1;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .title {
-      font-size: 24px;
-    }
-    
-    .subtitle {
-      font-size: 20px;
-    }
-    
-    .row {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .centered-row {
-      flex-direction: row;
-      justify-content: center;
-    }
-    
-    .centered-input {
-      width: 100%;
-      max-width: 300px;
-    }
-    
-    .selection-row {
-      flex-direction: column;
-    }
-    
-    .custom-select,
-    .remove-btn {
-      width: 100%;
-    }
-    
-    .send-btn,
-    .remove-btn,
-    .test-btn,
-    .save-btn,
-    .generate-btn {
-      width: 100%;
-      margin-top: 5px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .section {
-      padding: 15px;
-    }
-    
-    .title {
-      font-size: 20px;
-    }
-    
-    .subtitle {
-      font-size: 18px;
-    }
-    
-    input,
-    .custom-select,
-    textarea {
-      padding: 10px 12px;
-      font-size: 14px;
-    }
-    
-    .graph-box {
-      min-height: 250px;
-    }
-  }
+}
 
-  .student-name {
-    color: #4CAF50;
-    font-weight: bold;
-  }
-  
-  .no-student {
-    color: #F44336;
-    font-style: italic;
-  }
-  
-  .retry-btn {
-    background: #F4886D;
-    color: #592012;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 20px;
-    cursor: pointer;
-    margin-top: 15px;
-    font-family: 'Arial', Georgia, serif;
-    font-weight: bold;
-    transition: all 0.3s;
-  }
-  
-  .retry-btn:hover {
-    background: #E0785D;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(244, 136, 109, 0.3);
-  }
-  </style>
+.no-student {
+  color: #F44336;
+  font-style: italic;
+}
+</style>
