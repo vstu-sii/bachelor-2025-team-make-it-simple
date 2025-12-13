@@ -45,14 +45,14 @@ def get_lesson(
     }
     
     # Обрабатываем JSON поля
-    if lesson.lesson_test_json:
-        if isinstance(lesson.lesson_test_json, str):
+    if lesson.lesson_plan_json:
+        if isinstance(lesson.lesson_plan_json, str):
             try:
-                lesson_dict["lesson_test_json"] = json.loads(lesson.lesson_test_json)
+                lesson_dict["lesson_plan_json"] = json.loads(lesson.lesson_plan_json)
             except:
-                lesson_dict["lesson_test_json"] = lesson.lesson_test_json
+                lesson_dict["lesson_plan_json"] = lesson.lesson_plan_json
         else:
-            lesson_dict["lesson_test_json"] = lesson.lesson_test_json
+            lesson_dict["lesson_plan_json"] = lesson.lesson_plan_json
     
     if lesson.results_json:
         if isinstance(lesson.results_json, str):

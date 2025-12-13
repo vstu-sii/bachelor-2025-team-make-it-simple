@@ -407,11 +407,11 @@ async function loadLessonData() {
     lessonNotes.value = lessonData.value.lesson_notes || "";
     
     // Загружаем тест урока
-    if (lessonData.value.lesson_test_json) {
+    if (lessonData.value.lesson_plan_json) {
       try {
-        lessonTest.value = typeof lessonData.value.lesson_test_json === 'string'
-          ? JSON.parse(lessonData.value.lesson_test_json)
-          : lessonData.value.lesson_test_json;
+        lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
+          ? JSON.parse(lessonData.value.lesson_plan_json)
+          : lessonData.value.lesson_plan_json;
       } catch (e) {
         console.error("Error parsing lesson test:", e);
         lessonTest.value = null;

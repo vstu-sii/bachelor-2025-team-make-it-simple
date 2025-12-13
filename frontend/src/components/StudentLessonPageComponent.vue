@@ -228,11 +228,11 @@ async function loadLessonData() {
     resultNotes.value = lessonData.value.result_notes || "";
     
     // Загружаем тест урока
-    if (lessonData.value.lesson_test_json) {
+    if (lessonData.value.lesson_plan_json) {
       try {
-        lessonTest.value = typeof lessonData.value.lesson_test_json === 'string'
-          ? JSON.parse(lessonData.value.lesson_test_json)
-          : lessonData.value.lesson_test_json;
+        lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
+          ? JSON.parse(lessonData.value.lesson_plan_json)
+          : lessonData.value.lesson_plan_json;
         console.log('Тест урока загружен');
       } catch (e) {
         console.error("Error parsing lesson test:", e);

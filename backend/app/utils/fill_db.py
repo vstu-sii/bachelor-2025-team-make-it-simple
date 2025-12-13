@@ -156,7 +156,7 @@ def create_tables(cursor):
             theory_text TEXT,
             reading_text TEXT,
             speaking_text TEXT,
-            lesson_test_json JSON,
+            lesson_plan_json JSON,
             lesson_test_results_json JSON,
             lesson_notes TEXT,
             results_json JSON,
@@ -802,12 +802,10 @@ def fill_database():
 
         print(f"Создание {len(lessons_with_topics)} уроков с привязкой к темам...")
 
-        for topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended in lessons_with_topics:
+        for topic_id, theory_text, reading_text, speaking_text, lesson_plan_json, is_access, is_ended in lessons_with_topics:
             cursor.execute(
-                """INSERT INTO lesson (topic_id, theory_text, reading_text, speaking_text, 
-                                    lesson_test_json, is_access, is_ended) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                (topic_id, theory_text, reading_text, speaking_text, lesson_test_json, is_access, is_ended)
+                """INSERT INTO lesson (topic_id, theory_text, reading_text, speaking_text, lesson_plan_json, is_access, is_ended) VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (topic_id, theory_text, reading_text, speaking_text, lesson_plan_json, is_access, is_ended)
             )
 
         print(f"Добавлено {len(lessons_with_topics)} уроков с привязкой к темам")

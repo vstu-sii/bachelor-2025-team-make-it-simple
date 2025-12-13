@@ -6,7 +6,7 @@ class LessonBase(BaseModel):
     theory_text: Optional[str] = None
     reading_text: Optional[str] = None
     speaking_text: Optional[str] = None
-    lesson_test_json: Optional[Dict[str, Any]] = None
+    lesson_plan_json: Optional[Dict[str, Any]] = None
     lesson_notes: Optional[str] = None
     results_json: Optional[Dict[str, Any]] = None
     is_access: bool = False

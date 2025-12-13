@@ -11,7 +11,7 @@ class Lesson(Base):
     theory_text = Column(Text)
     reading_text = Column(Text)
     speaking_text = Column(Text)
-    lesson_test_json = Column(JSON)
+    lesson_plan_json = Column(JSON)
     lesson_test_results_json = Column(JSON)
     lesson_notes = Column(Text)
     results_json = Column(JSON)

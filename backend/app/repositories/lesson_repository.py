@@ -87,7 +87,7 @@ class LessonRepository:
                     "lesson_notes": lesson.lesson_notes,
                     "node_status": node_status,
                     "progress": progress_data,
-                    "lesson_test": json.loads(lesson.lesson_test_json) if lesson.lesson_test_json and isinstance(lesson.lesson_test_json, str) else (lesson.lesson_test_json or {}),
+                    "lesson_test": json.loads(lesson.lesson_plan_json) if lesson.lesson_plan_json and isinstance(lesson.lesson_plan_json, str) else (lesson.lesson_plan_json or {}),
                     "test_results": json.loads(lesson.lesson_test_results_json) if lesson.lesson_test_results_json and isinstance(lesson.lesson_test_results_json, str) else (lesson.lesson_test_results_json or {})
                 })
             
@@ -129,7 +129,7 @@ class LessonRepository:
             elif content_type == "speaking":
                 lesson.speaking_text = content
             elif content_type == "test":
-                lesson.lesson_test_json = content
+                lesson.lesson_plan_json = content
             elif content_type == "notes":
                 lesson.lesson_notes = content
             
@@ -154,11 +154,11 @@ class LessonRepository:
         Получить тест урока
         """
         lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-        if not lesson or not lesson.lesson_test_json:
+        if not lesson or not lesson.lesson_plan_json:
             return None
         
         try:
-            return json.loads(lesson.lesson_test_json) if isinstance(lesson.lesson_test_json, str) else lesson.lesson_test_json
+            return json.loads(lesson.lesson_plan_json) if isinstance(lesson.lesson_plan_json, str) else lesson.lesson_plan_json
         except:
             return None
 
@@ -228,7 +228,7 @@ class LessonRepository:
             elif content_type == "speaking":
                 lesson.speaking_text = content
             elif content_type == "test":
-                lesson.lesson_test_json = content
+                lesson.lesson_plan_json = content
             elif content_type == "notes":
                 lesson.lesson_notes = content
             

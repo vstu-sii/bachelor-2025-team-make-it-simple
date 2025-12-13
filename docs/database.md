@@ -87,7 +87,7 @@ CREATE TYPE UserRole AS ENUM ('Ученик', 'Репетитор');
 | `theory_text`              | TEXT          | Текст с теоретическим материалом                         | -           |
 | `reading_text`             | TEXT          | Текст задания на чтение                                  | -           |
 | `speaking_text`            | TEXT          | Текст задания на говорение                               | -           |
-| `lesson_test_json`         | JSON          | JSON файл (выходной) с заданиями и тестом в рамках урока | -           |
+| `lesson_plan_json`         | JSON          | JSON файл (выходной) с заданиями и тестом в рамках урока | -           |
 | `lesson_test_results_json` | JSON          | JSON файл с результатами тестирования в рамках урока     | -           |
 | `lesson_notes`             | TEXT          | Текст с заметками репетитора по уроку                    | -           |
 | `results_json`             | JSON          | JSON файл (выходной) с результатами урока                | -           |
