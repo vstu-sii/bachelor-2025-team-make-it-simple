@@ -198,75 +198,64 @@
 
         <!-- Кнопка оценки результатов (ВНЕ контейнера результатов) -->
         <button @click="showResults" class="btn-results-section">
-          Оценить результаты урока
+          {{ showResultsSection ? 'Скрыть результаты урока' : 'Оценить результаты урока' }}
         </button>
 
-        <!-- Результаты урока -->
-        <div class="section-box">
+        <!-- Результаты урока (изначально скрыт) -->
+        <div v-if="showResultsSection" class="section-box results-section">
           <h2 class="section-header">Результаты урока</h2>
           <div class="section-divider"></div>
           
           <div class="results-content">
             <!-- Белая область с информацией о результатах -->
             <div class="results-info">
-              <div v-if="studentsProgress.length > 0" class="student-results-container">
-                <div v-for="student in studentsProgress" :key="student.student_id" class="student-result-item">
-                  <div class="student-result-header">
-                    <h4>{{ student.student_name }}</h4>
-                    <span class="student-progress">
-                      Прогресс: {{ calculateStudentProgress(student) }}%
-                    </span>
+              <!-- Шаблон-заглушка вместо данных о прогрессе -->
+              <div class="template-info">
+                <div class="template-header">
+                  <h3>Анализ урока от ИИ</h3>
+                </div>      
+                <div class="template-sections">
+                  <div class="template-section">
+                    <h4>Анализ грамматики (на основе тестовой части):</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
                   </div>
                   
-                  <div class="student-result-details">
-                    <div class="result-detail-item">
-                      <span>Теория:</span>
-                      <span :class="student.theory_completed ? 'completed' : 'not-completed'">
-                        {{ student.theory_completed ? '✓' : '○' }}
-                      </span>
-                    </div>
-                    <div class="result-detail-item">
-                      <span>Чтение:</span>
-                      <span :class="student.reading_completed ? 'completed' : 'not-completed'">
-                        {{ student.reading_completed ? '✓' : '○' }}
-                      </span>
-                    </div>
-                    <div class="result-detail-item">
-                      <span>Говорение:</span>
-                      <span :class="student.speaking_completed ? 'completed' : 'not-completed'">
-                        {{ student.speaking_completed ? '✓' : '○' }}
-                      </span>
-                    </div>
-                    <div class="result-detail-item">
-                      <span>Тест:</span>
-                      <span :class="student.test_completed ? 'completed' : 'not-completed'">
-                        {{ student.test_completed ? `✓ (${student.test_score} баллов)` : '○' }}
-                      </span>
-                    </div>
+                  <div class="template-section">
+                    <h4>Анализ заметок репетитора:</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
+                  </div>
+                  
+                  <div class="template-section">
+                    <h4>Итоговое заключение:</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
                   </div>
                 </div>
               </div>
-              <div v-else class="no-results">
-                <p>Нет данных о результатах учеников</p>
-              </div>
             </div>
             
-            <!-- Нижняя часть с чекбоксом и кнопкой -->
             <div class="results-controls">
-              <label class="control-checkbox">
-                <input 
-                  type="checkbox" 
-                  v-model="requiresRetry"
-                  @change="updateAllStudentsRetry"
-                />
-                Требуется повторное прохождение темы
-              </label>
-              <button 
-                @click="approveAllResults"
-                class="btn-approve"
-              >
-                Утвердить результаты
-              </button>
+              <div class="controls-left">
+                <label class="control-checkbox">
+                  <input type="checkbox" v-model="requiresRetry"@change="updateAllStudentsRetry"/>Требуется повторное прохождение темы
+                </label>
+              </div>
+              <div class="controls-right">
+                <button @click="approveAllResults" class="btn-approve">
+                  Утвердить результаты
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -310,6 +299,9 @@ const lessonLabelFromGraph = ref(props.lessonLabel); // Используем lab
 // Данные урока
 const lessonData = ref(null);
 const loading = ref(false);
+
+// Флаг отображения раздела результатов
+const showResultsSection = ref(false);
 
 // Данные урока
 const theoryText = ref("");
@@ -417,9 +409,6 @@ async function loadLessonData() {
         lessonTest.value = null;
       }
     }
-    
-    // Загружаем прогресс учеников
-    await loadStudentsProgress();
     
   } catch (error) {
     console.error("Ошибка загрузки данных урока:", error);
@@ -629,8 +618,15 @@ function editTest()
 }
 
 function showResults() {
-  // Логика отображения результатов
-  console.log("Показать результаты");
+  // Переключаем видимость раздела результатов
+  showResultsSection.value = !showResultsSection.value;
+  
+  // Если показываем раздел впервые, загружаем прогресс учеников
+  if (showResultsSection.value && courseIdRef.value) {
+    loadStudentsProgress();
+  }
+  
+  console.log("Результаты урока:", showResultsSection.value ? "показаны" : "скрыты");
 }
 
 // Навигация
@@ -662,6 +658,9 @@ onMounted(async () => {
   
   // Загружаем данные урока
   await loadLessonData();
+  
+  // Раздел результатов изначально скрыт
+  showResultsSection.value = false;
 });
 
 // Следим за изменением props
@@ -679,9 +678,6 @@ watch(
   () => props.courseId,
   (newCourseId) => {
     courseIdRef.value = newCourseId;
-    if (newCourseId) {
-      loadStudentsProgress();
-    }
   }
 );
 
@@ -1000,6 +996,40 @@ watch(
   transform: translateY(-2px);
 }
 
+.results-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  gap: 20px;
+}
+
+.controls-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.controls-right {
+  display: flex;
+  align-items: center;
+}
+
+.control-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Arial', Georgia, serif;
+  color: #592012;
+  font-size: 14px;
+}
+
+.control-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .btn-approve {
   background: #f4886d;
   color: #592012;
@@ -1042,94 +1072,95 @@ watch(
   padding: 20px;
 }
 
-.student-results-container {
+/* Стили для шаблона-заглушки */
+.template-info {
+  font-family: 'Arial', Georgia, serif;
+  color: #592012;
+}
+
+.template-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.template-header h3 {
+  font-size: 20px;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.template-subtitle {
+  font-size: 14px;
+  color: #718096;
+  font-style: italic;
+}
+
+.template-sections {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
+  margin-bottom: 25px;
 }
 
-.student-result-item {
+.template-section {
+  background: #f7fafc;
+  border-radius: 8px;
   padding: 15px;
-  border-bottom: 1px solid #eee;
+  border-left: 4px solid #4299e1;
 }
 
-.student-result-item:last-child {
-  border-bottom: none;
-}
-
-.student-result-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.student-result-header h4 {
-  margin: 0;
-  font-family: 'Arial', Georgia, serif;
-  color: #592012;
+.template-section h4 {
   font-size: 16px;
-}
-
-.student-progress {
-  font-family: 'Arial', Georgia, serif;
-  color: #007bff;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.student-result-details {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.result-detail-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-family: 'Arial', Georgia, serif;
-  color: #592012;
-  font-size: 14px;
-}
-
-.result-detail-item .completed {
-  color: #28a745;
-  font-weight: bold;
-}
-
-.result-detail-item .not-completed {
-  color: #dc3545;
-  font-weight: bold;
-}
-
-.no-results {
-  text-align: center;
-  padding: 20px;
-  font-family: 'Arial', Georgia, serif;
-  color: #592012;
-}
-
-.results-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 0;
-}
-
-.control-checkbox {
+  color: #2d3748;
+  margin-top: 0;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Arial', Georgia, serif;
-  color: #592012;
-  font-size: 14px;
 }
 
-.control-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+.template-section ul {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+}
+
+.template-section li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4a5568;
+}
+
+.template-note {
+  background: #e6fffa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #81e6d9;
+  font-size: 13px;
+  color: #234e52;
+}
+
+.template-note p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Анимация появления раздела результатов */
+.results-section {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Адаптивность */
@@ -1154,6 +1185,10 @@ watch(
   
   .btn-results-section {
     max-width: 350px;
+  }
+  
+  .template-section {
+    padding: 12px;
   }
 }
 
@@ -1200,6 +1235,10 @@ watch(
     max-width: 300px;
     padding: 10px 20px;
     font-size: 15px;
+  }
+  
+  .template-sections {
+    gap: 15px;
   }
 }
 
@@ -1260,15 +1299,17 @@ watch(
     width: 100%;
   }
   
-  .results-controls {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-  
   .btn-results-section {
     max-width: 250px;
     font-size: 14px;
+  }
+  
+  .template-header h3 {
+    font-size: 18px;
+  }
+  
+  .template-section h4 {
+    font-size: 15px;
   }
 }
 
@@ -1331,6 +1372,14 @@ watch(
     max-width: 200px;
     padding: 8px 16px;
     font-size: 13px;
+  }
+  
+  .template-section {
+    padding: 10px;
+  }
+  
+  .template-section h4 {
+    font-size: 14px;
   }
 }
 </style>

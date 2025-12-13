@@ -103,25 +103,52 @@
               </button>
             </div>
           </div>
-          
-          <div v-if="progress.test_completed" class="test-results">
-            <h3>Результаты урока:</h3>
-            <p>Оценка: <strong>{{ progress.test_score }} баллов</strong></p>
-            <p>Тест пройден: {{ progress.test_completed ? 'Да' : 'Нет' }}</p>
-          </div>
         </div>
 
-        <!-- Результаты урока -->
-        <div class="section-box">
+        <!-- Результаты урока (такие же как у репетитора) -->
+        <div class="section-box results-section">
           <h2 class="section-header">Результаты урока</h2>
           <div class="section-divider"></div>
           
-          <textarea 
-            v-model="resultNotes" 
-            class="textarea"
-            readonly
-            :placeholder="resultNotesPlaceholder"
-          ></textarea>
+          <div class="results-content">
+            <!-- Белая область с информацией о результатах -->
+            <div class="results-info">
+              <!-- Тот же шаблон-заглушка, что и у репетитора -->
+              <div class="template-info">
+                <div class="template-header">
+                  <h3>Анализ урока от ИИ</h3>
+                </div>      
+                <div class="template-sections">
+                  <div class="template-section">
+                    <h4>Анализ грамматики (на основе тестовой части):</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
+                  </div>
+                  
+                  <div class="template-section">
+                    <h4>Анализ заметок репетитора:</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
+                  </div>
+                  
+                  <div class="template-section">
+                    <h4>Итоговое заключение:</h4>
+                    <ul>
+                      <li>...</li>
+                      <li>...</li>
+                      <li>...</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -174,6 +201,9 @@ const progress = ref({
   test_score: 0
 });
 
+// Флаг повторного прохождения для ученика
+const requiresRetryStudent = ref(false);
+
 // Данные урока
 const theoryText = ref("");
 const readingText = ref("");
@@ -200,13 +230,6 @@ const lessonTitle = computed(() => {
   }
   
   return "Урок";
-});
-
-const resultNotesPlaceholder = computed(() => {
-  if (progress.value.test_completed) {
-    return "Комментарии репетитора будут загружены...";
-  }
-  return "Результаты и комментарии появятся после прохождения теста";
 });
 
 async function loadLessonData() {
@@ -240,6 +263,9 @@ async function loadLessonData() {
       }
     }
     
+    // Загружаем прогресс ученика (если есть)
+    await loadStudentProgress();
+    
   } catch (error) {
     console.error("Ошибка загрузки данных урока:", error);
     
@@ -269,6 +295,39 @@ async function loadLessonData() {
     goBack();
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadStudentProgress() {
+  if (!lessonIdRef.value || !courseIdRef.value || !studentId.value) return;
+  
+  try {
+    // Загружаем прогресс конкретного ученика
+    const response = await api.get(
+      `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
+    );
+    
+    // Находим прогресс текущего ученика
+    if (response.data && Array.isArray(response.data)) {
+      const studentProgressData = response.data.find(
+        student => student.student_id === studentId.value
+      );
+      
+      if (studentProgressData) {
+        progress.value = {
+          theory_completed: studentProgressData.theory_completed || false,
+          reading_completed: studentProgressData.reading_completed || false,
+          speaking_completed: studentProgressData.speaking_completed || false,
+          test_completed: studentProgressData.test_completed || false,
+          test_score: studentProgressData.test_score || 0
+        };
+        
+        requiresRetryStudent.value = studentProgressData.requires_retry || false;
+      }
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки прогресса ученика:", error);
+    // Не показываем ошибку пользователю, просто оставляем пустой прогресс
   }
 }
 
@@ -350,6 +409,8 @@ watch(
 </script>
 
 <style scoped>
+/* Существующие стили остаются без изменений */
+
 .lesson-page {
   width: 100%;
   min-height: 100vh;
@@ -528,20 +589,73 @@ watch(
   font-family: 'Arial', Georgia, serif;
 }
 
-.test-results {
-  background: rgba(255, 255, 255, 0.5);
+/* Новые стили для раздела результатов (как у репетитора) */
+.results-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.results-info {
+  background: #ffffff;
   border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 20px;
+  border: 2px solid #d67962;
+  padding: 20px;
+}
+
+/* Стили для шаблона-заглушки (как у репетитора) */
+.template-info {
   font-family: 'Arial', Georgia, serif;
   color: #592012;
 }
 
-.test-results h3 {
+.template-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.template-header h3 {
+  font-size: 20px;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.template-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.template-section {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 15px;
+  border-left: 4px solid #4299e1;
+}
+
+.template-section h4 {
+  font-size: 16px;
+  color: #2d3748;
   margin-top: 0;
   margin-bottom: 10px;
 }
 
+.template-section ul {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+}
+
+.template-section li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4a5568;
+}
+
+/* Адаптивность */
 @media (max-width: 1200px) {
   .back-btn {
     left: 10px;
@@ -554,6 +668,43 @@ watch(
   
   .lesson-title {
     font-size: 24px;
+  }
+  
+  .template-section {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main-container {
+    width: 98%;
+    padding: 25px;
+  }
+  
+  .back-btn {
+    left: 30px;
+    top: 90px;
+  }
+  
+  .inner-container {
+    padding: 25px;
+  }
+  
+  .lesson-title-container {
+    margin-top: 120px;
+    margin-bottom: 15px;
+  }
+  
+  .lesson-title {
+    font-size: 20px;
+  }
+  
+  .section-header {
+    font-size: 20px;
+  }
+  
+  .template-sections {
+    gap: 15px;
   }
 }
 
@@ -590,6 +741,70 @@ watch(
   
   .section-box {
     padding: 20px;
+  }
+  
+  .btn-test {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .template-header h3 {
+    font-size: 18px;
+  }
+  
+  .template-section h4 {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .back-btn {
+    left: 15px;
+    top: 70px;
+  }
+  
+  .back-btn img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .main-container {
+    padding: 15px;
+  }
+  
+  .inner-container {
+    padding: 15px;
+  }
+  
+  .lesson-title-container {
+    margin-top: 100px;
+    margin-bottom: 10px;
+  }
+  
+  .lesson-title {
+    font-size: 16px;
+    padding: 0 10px;
+  }
+  
+  .section-box {
+    padding: 15px;
+  }
+  
+  .section-header {
+    font-size: 18px;
+  }
+  
+  .textarea {
+    height: 150px;
+    padding: 10px;
+  }
+  
+  .template-section {
+    padding: 10px;
+  }
+  
+  .template-section h4 {
+    font-size: 14px;
   }
 }
 </style>
