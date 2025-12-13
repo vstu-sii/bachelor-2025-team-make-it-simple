@@ -1,78 +1,31 @@
-# Файл docker-compose.yml — это YAML-файл, описывающий многоконтейнерное приложение.
-# Он позволяет определить сервисы (контейнеры), сети, тома и другие настройки в одном месте.
+version: '3.8'
 
-# Основной ключ, под которым описываются все сервисы (контейнеры).
 services:
-  # Имя первого сервиса. В данном случае — 'prometheus'.
   prometheus:
-    # Указывает Docker-образ, из которого будет создан контейнер.
-    # В данном случае используется официальный образ Prometheus.
-    image: prom/prometheus
-
-    # Устанавливает имя контейнера. Если не указано, Docker генерирует имя автоматически.
-    # В данном случае контейнер будет называться 'prometheus'.
-    container_name: prometheus
-
-    # Указывает команду, которая будет выполнена при запуске контейнера.
-    # '--config.file=/etc/prometheus/prometheus.yml' — это стандартная команда запуска Prometheus
-    # с указанием пути к файлу конфигурации.
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-
-    # Публикует порты контейнера на хосте.
-    # '9090:9090' означает, что порт 9090 внутри контейнера будет доступен как 9090 на хосте.
-    # Теперь ты можешь получить доступ к веб-интерфейсу Prometheus по адресу http://localhost:9090
+    image: prom/prometheus:v3.8.0
+    container_name: monitoring-prometheus
     ports:
-      - 9090:9090
-
-    # Определяет политику перезапуска контейнера.
-    # 'unless-stopped' означает, что контейнер будет перезапускаться при сбоях или перезапуске Docker,
-    # если только он не был остановлен вручную.
-    restart: unless-stopped
-
-    # Определяет тома (bind mounts или named volumes), которые будут смонтированы в контейнер.
+      - "9090:9090"
     volumes:
-      # Монтирует локальную папку './prometheus' в контейнер в путь '/etc/prometheus'.
-      # Это позволяет использовать твой локальный файл конфигурации 'prometheus.yml'.
-      - ./prometheus:/etc/prometheus
-      # Монтирует именованный том 'prom_data' в путь '/prometheus' внутри контейнера.
-      # Это место, где Prometheus хранит собранные метрики. Использование именованного тома
-      # гарантирует, что данные не потеряются при перезапуске или удалении контейнера.
-      - prom_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./.prometheus_data:/prometheus
+    networks:
+      - monitoring
 
-  # Имя второго сервиса. В данном случае — 'grafana'.
   grafana:
-    # Указывает Docker-образ, из которого будет создан контейнер.
-    # В данном случае используется официальный образ Grafana.
-    image: grafana/grafana
-
-    # Устанавливает имя контейнера. В данном случае — 'grafana'.
-    container_name: grafana
-
-    # Публикует порт 3000 контейнера на порт 3000 хоста.
-    # Теперь ты можешь получить доступ к веб-интерфейсу Grafana по адресу http://localhost:3000
+    image: grafana/grafana:12.1
+    container_name: monitoring-grafana
     ports:
-      - 3000:3000
-
-    # Определяет политику перезапуска контейнера.
-    # 'unless-stopped' — та же логика, что и у Prometheus.
-    restart: unless-stopped
-
-    # Устанавливает переменные окружения внутри контейнера.
-    # В данном случае задаются учетные данные для администратора Grafana.
-    environment:
-      # Имя администратора Grafana.
-      - GF_SECURITY_ADMIN_USER=admin
-      # Пароль администратора Grafana.
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
-
-    # Монтирует локальную папку './grafana' в контейнер в путь '/etc/grafana/provisioning/datasources'.
-    # Это позволяет автоматически настроить источники данных (например, Prometheus) при запуске Grafana.
+      - "3000:3000"
     volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
+      - ./grafana/datasource.yml:/etc/grafana/provisioning/datsources/datasource.yml
+      - ./.grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    networks:
+      - monitoring
 
-# Здесь определяются все именованные тома, используемые в compose-файле.
-volumes:
-  # Имя тома — 'prom_data'.
-  # Он будет создан автоматически Docker Compose и использован для хранения данных Prometheus.
-  prom_data:
+networks:
+  monitoring:
+    external: false
