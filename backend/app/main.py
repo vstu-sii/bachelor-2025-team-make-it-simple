@@ -7,6 +7,7 @@ from app.routes.topic_routes import router as topic_router
 from app.routes.material_routes import router as material_router
 from app.database import init_db
 from .config import settings
+from prometheus_fastapi_instrumentator import Instrumentator
 
 init_db()
 
@@ -26,5 +27,11 @@ app.include_router(lesson_router)
 app.include_router(topic_router)
 app.include_router(material_router)
 
+instrumentator = Instrumentator().instrument(app)
+
 from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.on_event("startup")
+async def startup():
+    instrumentator.expose(app)
