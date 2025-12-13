@@ -1,13 +1,13 @@
 services:
   backend:
     build: .
-    container_name: "backend"
+    container_name: "backend-backend"
     restart: unless-stopped
     ports:
       - 2026:8001
     environment:
       PORT: 8001
-      database_url: postgresql://postgre:passgre@postgresql:5432/english
+      database_url: postgresql://postgre:passgre@backend-postgresql:5432/english
       app_name: "English courses"
       debug: "true"
       static_dir: "static"
@@ -22,7 +22,7 @@ services:
 
   database:
     image: 'postgres:15.15'
-    container_name: "postgresql"
+    container_name: "backend-postgresql"
     restart: unless-stopped
     ports:
       - 15432:5432
@@ -39,7 +39,7 @@ services:
 
   pgadmin:
     image: 'dpage/pgadmin4:9.10'
-    container_name: "pgadmin"
+    container_name: "backend-pgadmin"
     restart: unless-stopped
     ports:
       - 15433:80

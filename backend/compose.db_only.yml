@@ -1,7 +1,7 @@
 services:
   database:
     image: 'postgres:15.15'
-    container_name: "postgresql"
+    container_name: "backend-dev-postgresql"
     ports:
       - 15432:5432
     environment:
@@ -15,7 +15,7 @@ services:
 
   pgadmin:
     image: 'dpage/pgadmin4:9.10'
-    container_name: "pgadmin"
+    container_name: "backend-dev-pgadmin"
     ports:
       - 15433:80
     environment:
