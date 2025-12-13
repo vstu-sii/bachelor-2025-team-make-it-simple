@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_test
+    container_name: "backend-test-backend"
+    restart: no
+    ports:
+      - 2026:8001
+    environment:
+      PORT: 8001
+      database_url: postgresql://postgre:passgre@backend-test-postgresql:5432/english
+      app_name: "English courses"
+      debug: "true"
+      static_dir: "static"
+      images_dir: "static/images"
+      cors_origins: '["*"]'
+    volumes:
+      - ./.backend_data:/app/static
+    depends_on:
+      - database
+    networks:
+      - backend
+
+  database:
+    image: 'postgres:15.15'
+    container_name: "backend-test-postgresql"
+    restart: no
+    ports:
+      - 15432:5432
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: postgre
+      POSTGRES_PASSWORD: passgre
+      POSTGRES_DB: english
+    volumes:
+      - ./.postgre_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+networks:
+    backend:
+        external: false

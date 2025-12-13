@@ -61,6 +61,12 @@ pip install -r ./requirements.txt
 uvicorn app.main:app
 ```
 
+### Для теста backend сервиса
+
+```
+docker compose -f ./compose.test.yml up --exit-code-from backend --abort-on-container-exit
+```
+
 > pgadmin доступен по адресу `http://127.0.0.1:15433`
 
 > Если контейнер не обновляется, к `compose up` можно добавить флаги `--build --force-recreate`
