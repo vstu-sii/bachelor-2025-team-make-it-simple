@@ -123,7 +123,7 @@
       </h1>
       <div class="divider"></div>
       
-      <div class="form-group">
+      <div v-if="!isGraphFinalized" class="form-group">
         <div class="row">
           <input 
             v-model="graphChanges" 
@@ -159,6 +159,7 @@
       </div>
 
       <button 
+        v-if="!isGraphFinalized"
         class="save-btn graph-save-btn" 
         @click="saveGraph"
         :disabled="loading || !graphData || !selectedStudentId"
@@ -170,7 +171,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useAuthStore } from "../stores/auth";
 import { useRouter } from "vue-router";
 import api from "../api/axios";
@@ -178,14 +179,14 @@ import CourseGraph from './CourseGraph.vue'
 
 const props = defineProps({
   courseId: {
-    type: String,
+    type: [String, Number],
     required: true
   }
 });
 
 const emit = defineEmits(['load-course-data']);
 const auth = useAuthStore();
-const router = useRouter(); 
+const router = useRouter();
 
 // Состояния
 const loading = ref(false);
@@ -200,16 +201,28 @@ const graphData = ref(null);
 const addSuccess = ref(false);
 const addError = ref("");
 const hasTakenTest = ref(false);
+const isGraphFinalized = ref(false);
+
+// Вычисляемое свойство для получения courseId как числа
+const courseId = computed(() => {
+  const id = props.courseId;
+  if (typeof id === 'string') {
+    return parseInt(id) || null;
+  }
+  return id || null;
+});
 
 // Загрузка данных для репетитора
 async function loadTutorCourseData() {
   try {
+    console.log("Загрузка данных репетитора для курса:", courseId.value);
+    
     // Загружаем список учеников на курсе
-    const tutorId = auth.user.user_id;
-    const response = await api.get(`/courses/${props.courseId}/students`);
+    const response = await api.get(`/courses/${courseId.value}/students`);
     
     if (response.data && response.data.students) {
       courseStudents.value = response.data.students;
+      console.log("Загружены ученики:", courseStudents.value);
       
       // Если есть ученики, выбираем первого
       if (courseStudents.value.length > 0) {
@@ -247,7 +260,7 @@ async function addStudent() {
     }
     
     // Вызываем API для добавления ученика
-    const response = await api.post(`/courses/${props.courseId}/add-student`, {
+    const response = await api.post(`/courses/${courseId.value}/add-student`, {
       email: newStudentEmail.value
     });
     
@@ -300,7 +313,7 @@ async function loadStudentData(studentId) {
     }
     
     // Загружаем граф ученика
-    await loadStudentGraph();
+    await loadStudentGraph(studentId);
     
   } catch (error) {
     console.error("Ошибка загрузки данных ученика:", error);
@@ -308,33 +321,41 @@ async function loadStudentData(studentId) {
 }
 
 // Загрузка графа ученика
-async function loadStudentGraph() {
-  if (!selectedStudentId.value) return;
+async function loadStudentGraph(studentId = null) {
+  const targetStudentId = studentId || selectedStudentId.value;
+  
+  if (!targetStudentId || !courseId.value) {
+    console.error("Нет studentId или courseId для загрузки графа");
+    console.log("studentId:", targetStudentId);
+    console.log("courseId:", courseId.value);
+    return;
+  }
   
   try {
     loadingGraph.value = true;
+    console.log(`Загрузка графа для студента ${targetStudentId}, курс ${courseId.value}`);
     
-    const response = await api.get(`/courses/${props.courseId}/student/${selectedStudentId.value}/graph`);
+    const response = await api.get(
+      `/courses/${courseId.value}/student/${targetStudentId}/graph`
+    );
+    
+    console.log("Ответ от сервера при загрузке графа:", response.data);
     
     if (response.data && response.data.graph_data) {
       graphData.value = response.data.graph_data;
       
-      // Убедимся, что у узлов есть group
-      if (graphData.value.nodes) {
-        graphData.value.nodes.forEach(node => {
-          if (node.group === undefined) {
-            // Для репетитора показываем все узлы как доступные (группа 2)
-            node.group = 2;
-          }
-        });
-      }
-    } else {
-      graphData.value = null;
+      // Проверяем, финализирован ли граф
+      isGraphFinalized.value = response.data.is_finalized || false;
+      console.log("Граф финализирован:", isGraphFinalized.value);
     }
-    
   } catch (error) {
-    console.error("Ошибка загрузки графа ученика:", error);
+    console.error("Ошибка загрузки графа:", error);
     graphData.value = null;
+    isGraphFinalized.value = false;
+    
+    if (error.response) {
+      console.error("Детали ошибки:", error.response.data);
+    }
   } finally {
     loadingGraph.value = false;
   }
@@ -347,7 +368,7 @@ function onStudentSelected() {
     if (student) {
       currentStudent.value = student;
       knowledgeGaps.value = student.knowledge_gaps || "";
-      loadStudentGraph();
+      loadStudentGraph(selectedStudentId.value);
     }
   } else {
     currentStudent.value = null;
@@ -375,7 +396,7 @@ async function removeSelectedStudent() {
     loading.value = true;
     
     // Вызываем API для удаления ученика
-    const response = await api.delete(`/courses/${props.courseId}/students/${selectedStudentId.value}`);
+    const response = await api.delete(`/courses/${courseId.value}/students/${selectedStudentId.value}`);
     
     console.log("Ответ сервера при удалении:", response.data);
     
@@ -424,7 +445,7 @@ async function saveKnowledgeGaps() {
   try {
     loading.value = true;
     
-    await api.put(`/courses/${props.courseId}/student/${selectedStudentId.value}/knowledge-gaps`, {
+    await api.put(`/courses/${courseId.value}/student/${selectedStudentId.value}/knowledge-gaps`, {
       knowledge_gaps: knowledgeGaps.value
     });
     
@@ -495,27 +516,81 @@ function createDemoGraph() {
   
   // Клонируем граф
   graphData.value = JSON.parse(JSON.stringify(baseGraph));
+  
+  // Снимаем флаг финализации при создании нового графа
+  isGraphFinalized.value = false;
 }
 
 // Сохранение графа
 async function saveGraph() {
-  if (!selectedStudentId.value || !graphData.value) {
-    alert("Нет данных для сохранения");
+  console.log("Начинаем сохранение графа...");
+  console.log("graphData:", graphData.value);
+  console.log("selectedStudentId:", selectedStudentId.value);
+  console.log("courseId:", courseId.value);
+
+  if (!graphData.value || !graphData.value.nodes || graphData.value.nodes.length === 0) {
+    alert("Граф не может быть пустым");
     return;
   }
-  
+
   try {
-    loading.value = true;
-    
-    await api.put(`/courses/${props.courseId}/student/${selectedStudentId.value}/graph`, graphData.value);
-    
-    alert("Граф курса сохранен");
+    // Проверяем необходимые данные
+    if (!selectedStudentId.value) {
+      alert("Выберите ученика");
+      return;
+    }
+
+    if (!courseId.value) {
+      alert("ID курса не определен");
+      return;
+    }
+
+    // Подготовка данных для отправки
+    const saveData = {
+      ...graphData.value,
+      is_finalized: true, // Добавляем флаг финализации
+      saved_at: new Date().toISOString(),
+      saved_by: auth.user?.user_id // ID пользователя, который сохранил
+    };
+
+    console.log("Отправляемые данные:", saveData);
+
+    // Отправляем на сервер
+    const response = await api.put(
+      `/courses/${courseId.value}/student/${selectedStudentId.value}/graph`,
+      saveData
+    );
+
+    console.log("Ответ сервера:", response.data);
+
+    if (response.data) {
+      // Помечаем граф как финализированный
+      isGraphFinalized.value = true;
+      
+      // Очищаем поле для редактирования
+      graphChanges.value = "";
+      
+      alert("Граф курса успешно сохранен как окончательный!");
+      
+      // Перезагружаем граф, чтобы получить обновленные данные с сервера
+      await loadStudentGraph(selectedStudentId.value);
+    }
     
   } catch (error) {
     console.error("Ошибка сохранения графа:", error);
-    alert("Не удалось сохранить граф");
-  } finally {
-    loading.value = false;
+    
+    // Более детальная информация об ошибке
+    if (error.response) {
+      console.error("Статус ошибки:", error.response.status);
+      console.error("Данные ошибки:", error.response.data);
+      alert(`Ошибка сервера: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      console.error("Нет ответа от сервера:", error.request);
+      alert("Не удалось подключиться к серверу");
+    } else {
+      console.error("Ошибка настройки запроса:", error.message);
+      alert(`Ошибка: ${error.message}`);
+    }
   }
 }
 
@@ -527,7 +602,7 @@ function onGraphNodeClick({ node, lessonId }) {
         router.push({
             path: `/lesson/${lessonId}`,
             query: {
-                courseId: props.courseId,
+                courseId: courseId.value,
                 studentId: selectedStudentId.value || auth.user.user_id,
                 fromGraph: 'true'
             }
@@ -543,9 +618,8 @@ function startTest()
   
   router.push({
     name: "input-test",
-    params: { courseId: props.courseId },
+    params: { courseId: courseId.value },
     query: {
-      courseTitle: props.courseInfo?.title || `Курс ${props.courseId}`,
       testData: JSON.stringify({
         test_type: "placement",
         questions: 20,
@@ -584,22 +658,25 @@ function createDemoStudents() {
 
 // Инициализация
 onMounted(() => {
+  console.log("TutorCoursePageComponent mounted with courseId:", courseId.value);
   loadTutorCourseData();
 });
 
 // Отслеживание изменения выбранного ученика
 watch(selectedStudentId, (newStudentId) => {
+  console.log("Выбран новый ученик:", newStudentId);
   if (newStudentId) {
     const student = courseStudents.value.find(s => s.student_id === newStudentId);
     if (student) {
       currentStudent.value = student;
       knowledgeGaps.value = student.knowledge_gaps || "";
-      loadStudentGraph();
+      loadStudentGraph(newStudentId);
     }
   } else {
     currentStudent.value = null;
     knowledgeGaps.value = "";
     graphData.value = null;
+    isGraphFinalized.value = false;
   }
 });
 </script>

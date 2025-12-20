@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 import json
-from datetime import date
+from datetime import date, datetime
 
 from app.database import get_db
 from app.repositories.course_repository import CourseRepository
@@ -242,33 +242,20 @@ async def get_student_course_graph(
         
         # Если граф есть в базе данных
         if user_course.graph_json:
-            # Парсим JSON графа
-            if isinstance(user_course.graph_json, str):
-                graph_data = json.loads(user_course.graph_json)
-            else:
-                graph_data = user_course.graph_json
+            graph_dict = json.loads(user_course.graph_json)
             
-            # Только если у узлов нет статусов, устанавливаем по умолчанию
-            if "nodes" in graph_data:
-                for node in graph_data["nodes"]:
-                    if "group" not in node:
-                        # Проверяем, есть ли lesson_id у узла
-                        lesson_id = node.get("data", {}).get("lesson_id")
-                        if lesson_id:
-                            node["group"] = 2  # Доступен
-                        else:
-                            node["group"] = 3  # Недоступен
+            # Добавляем флаг финализации в ответ
+            graph_data = {
+                **graph_dict,
+                "is_finalized": graph_dict.get("is_finalized", False)
+            }
             
-            # Убедимся, что поле 'type' установлено для всех узлов (нужно для Vue Flow)
-            if "nodes" in graph_data:
-                for node in graph_data["nodes"]:
-                    if "type" not in node:
-                        node["type"] = "custom"
-            
-            return {"graph_data": graph_data}
+            return {"graph_data": graph_data, "is_finalized": graph_dict.get("is_finalized", False)}
         else:
-            # Если графа нет, возвращаем пустой
-            return {"graph_data": {"nodes": [], "edges": []}}
+            return {
+                "graph_data": {"nodes": [], "edges": []},
+                "is_finalized": False
+            }
             
     except Exception as e:
         print(f"Error getting student course graph: {e}")
@@ -306,11 +293,20 @@ async def update_student_course_graph(
             raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
         
         # Обновляем граф
-        student_course.graph_json = json.dumps(graph_data)
+        student_course.graph_json = json.dumps({
+            **graph_data,
+            "is_finalized": graph_data.get("is_finalized", False),
+            "last_updated": datetime.now().isoformat(),
+            "updated_by": current_user.user_id
+        })
         db.commit()
         db.refresh(student_course)
         
-        return {"message": "Граф успешно обновлен", "graph_data": graph_data}
+        return {
+            "message": "Граф успешно обновлен", 
+            "graph_data": json.loads(student_course.graph_json),
+            "is_finalized": graph_data.get("is_finalized", False)
+        }
         
     except Exception as e:
         db.rollback()
