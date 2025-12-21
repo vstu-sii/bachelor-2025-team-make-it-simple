@@ -77,19 +77,42 @@
       </div>
     </div>
 
-    <!-- Входное тестирование -->
+    <!-- Входное тестирование КУРСА - ТЕПЕРЬ ОБЩЕЕ ДЛЯ ВСЕХ УЧЕНИКОВ -->
     <div class="section">
-      <h1 class="title">Входное тестирование</h1>
+      <h1 class="title">Входное тестирование курса</h1>
       <div class="divider"></div>
       
       <div class="test-box">
-        <p>
-          Количество вопросов: 20<br />
-          Граф курса будет доступен после проверки репетитором<br />
-          входного тестирования
-        </p>
+        <!-- Отображаем правильное количество вопросов или информацию о том, что тест не сгенерирован -->
+        <div v-if="testStatus.is_test_generated" class="test-info">
+          <p class="test-status">
+            <strong>Статус:</strong> 
+            <span :class="testStatus.is_test_finalized ? 'status-finalized' : 'status-draft'">
+              {{ testStatus.is_test_finalized ? 'Опубликован для всех учеников' : 'Черновик' }}
+            </span>
+          </p>
+          <p class="test-questions">
+            <strong>Количество вопросов:</strong> {{ testStatus.questions_count || 0 }}
+          </p>
+          <p class="test-note">
+            Графы курса будут доступны ученикам после публикации теста
+          </p>
+        </div>
+        <div v-else class="test-info">
+          <p class="test-status">
+            <strong>Статус:</strong> 
+            <span class="status-not-generated">Не сгенерирован</span>
+          </p>
+          <p class="test-questions">
+            <strong>Количество вопросов:</strong> 0
+          </p>
+          <p class="test-note">
+            Создайте входное тестирование для всего курса
+          </p>
+        </div>
+        
         <button class="test-btn" @click="startTest">
-          {{ hasTakenTest ? 'Просмотреть результаты' : 'Перейти к тесту' }}
+          {{ testStatus.is_test_generated ? 'Редактировать тест' : 'Создать тест' }}
         </button>
       </div>
     </div>
@@ -123,7 +146,7 @@
       </h1>
       <div class="divider"></div>
       
-      <div v-if="!isGraphFinalized" class="form-group">
+      <div v-if="!isGraphFinalized && testStatus.is_test_finalized" class="form-group">
         <div class="row">
           <input 
             v-model="graphChanges" 
@@ -153,13 +176,16 @@
           <div class="spinner"></div>
           <p>Загрузка графа курса...</p>
         </div>
+        <div v-else-if="!testStatus.is_test_finalized" class="no-graph">
+          <p>Граф курса будет доступен после публикации входного теста</p>
+        </div>
         <div v-else class="no-graph">
           <p>Граф курса еще не сгенерирован для этого ученика</p>
         </div>
       </div>
 
       <button 
-        v-if="!isGraphFinalized"
+        v-if="!isGraphFinalized && testStatus.is_test_finalized"
         class="save-btn graph-save-btn" 
         @click="saveGraph"
         :disabled="loading || !graphData || !selectedStudentId"
@@ -200,7 +226,11 @@ const graphChanges = ref("");
 const graphData = ref(null);
 const addSuccess = ref(false);
 const addError = ref("");
-const hasTakenTest = ref(false);
+const testStatus = ref({
+  is_test_generated: false,
+  is_test_finalized: false,
+  questions_count: 0
+});
 const isGraphFinalized = ref(false);
 
 // Вычисляемое свойство для получения courseId как числа
@@ -232,74 +262,13 @@ async function loadTutorCourseData() {
       }
     }
     
+    // Загружаем статус теста КУРСА (теперь общий для всех)
+    await loadTestStatus();
+    
   } catch (error) {
     console.error("Ошибка загрузки данных репетитора:", error);
     // Для демонстрации создаем тестовых учеников
     createDemoStudents();
-  }
-}
-
-// Функция добавления ученика в курс
-async function addStudent() {
-  if (!newStudentEmail.value) {
-    addError.value = "Введите email ученика";
-    return;
-  }
-  
-  try {
-    loading.value = true;
-    addError.value = "";
-    addSuccess.value = false;
-    
-    // Проверяем валидность email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newStudentEmail.value)) {
-      addError.value = "Введите корректный email адрес";
-      loading.value = false;
-      return;
-    }
-    
-    // Вызываем API для добавления ученика
-    const response = await api.post(`/courses/${courseId.value}/add-student`, {
-      email: newStudentEmail.value
-    });
-    
-    addSuccess.value = true;
-    newStudentEmail.value = "";
-    
-    // Обновляем список учеников
-    await loadTutorCourseData();
-    
-    // Сбрасываем успешное сообщение через 3 секунды
-    setTimeout(() => {
-      addSuccess.value = false;
-    }, 3000);
-    
-  } catch (error) {
-    console.error("Ошибка добавления ученика:", error);
-    
-    // Обрабатываем различные ошибки
-    if (error.response?.status === 404) {
-      if (error.response?.data?.detail?.includes("не найден")) {
-        addError.value = "Ученик с указанным email не найден в системе";
-      } else {
-        addError.value = "Курс не найден";
-      }
-    } else if (error.response?.status === 400) {
-      if (error.response?.data?.detail?.includes("уже записан")) {
-        addError.value = "Ученик уже записан на курс или на другой курс";
-      } else {
-        addError.value = error.response.data.detail || "Некорректные данные";
-      }
-    } else if (error.response?.status === 403) {
-      addError.value = "У вас нет прав для добавления учеников";
-    } else if (error.response?.status === 500) {
-      addError.value = "Ошибка сервера. Попробуйте позже";
-    } else {
-      addError.value = "Ошибка добавления ученика. Проверьте email и попробуйте снова";
-    }
-  } finally {
-    loading.value = false;
   }
 }
 
@@ -320,60 +289,125 @@ async function loadStudentData(studentId) {
   }
 }
 
+// Загрузка статуса теста КУРСА
+async function loadTestStatus() {
+  try {
+    // Используем новый маршрут для получения статуса теста КУРСА
+    const response = await api.get(`/tests/courses/${courseId.value}/entry-test/status`);
+    
+    if (response.data) {
+      testStatus.value = {
+        is_test_generated: response.data.is_test_generated || false,
+        is_test_finalized: response.data.is_test_finalized || false,
+        questions_count: response.data.questions_count || 0
+      };
+      console.log("Статус теста курса загружен:", testStatus.value);
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки статуса теста курса:", error);
+    testStatus.value = {
+      is_test_generated: false,
+      is_test_finalized: false,
+      questions_count: 0
+    };
+  }
+}
+
 // Загрузка графа ученика
 async function loadStudentGraph(studentId = null) {
   const targetStudentId = studentId || selectedStudentId.value;
   
   if (!targetStudentId || !courseId.value) {
     console.error("Нет studentId или courseId для загрузки графа");
-    console.log("studentId:", targetStudentId);
-    console.log("courseId:", courseId.value);
     return;
   }
   
   try {
     loadingGraph.value = true;
-    console.log(`Загрузка графа для студента ${targetStudentId}, курс ${courseId.value}`);
     
     const response = await api.get(
       `/courses/${courseId.value}/student/${targetStudentId}/graph`
     );
     
-    console.log("Ответ от сервера при загрузке графа:", response.data);
-    
     if (response.data && response.data.graph_data) {
       graphData.value = response.data.graph_data;
-      
-      // Проверяем, финализирован ли граф
       isGraphFinalized.value = response.data.is_finalized || false;
-      console.log("Граф финализирован:", isGraphFinalized.value);
     }
   } catch (error) {
     console.error("Ошибка загрузки графа:", error);
     graphData.value = null;
     isGraphFinalized.value = false;
-    
-    if (error.response) {
-      console.error("Детали ошибки:", error.response.data);
-    }
   } finally {
     loadingGraph.value = false;
   }
 }
 
 // Обработчик выбора ученика
-function onStudentSelected() {
+async function onStudentSelected() {
   if (selectedStudentId.value) {
     const student = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
     if (student) {
       currentStudent.value = student;
       knowledgeGaps.value = student.knowledge_gaps || "";
-      loadStudentGraph(selectedStudentId.value);
+      // Загружаем граф выбранного ученика
+      await loadStudentGraph(selectedStudentId.value);
     }
   } else {
     currentStudent.value = null;
     knowledgeGaps.value = "";
     graphData.value = null;
+  }
+}
+
+// Функция добавления ученика в курс
+async function addStudent() {
+  if (!newStudentEmail.value) {
+    addError.value = "Введите email ученика";
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    addError.value = "";
+    addSuccess.value = false;
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStudentEmail.value)) {
+      addError.value = "Введите корректный email адрес";
+      loading.value = false;
+      return;
+    }
+    
+    const response = await api.post(`/courses/${courseId.value}/add-student`, {
+      email: newStudentEmail.value
+    });
+    
+    addSuccess.value = true;
+    newStudentEmail.value = "";
+    
+    // Обновляем список учеников
+    await loadTutorCourseData();
+    
+    setTimeout(() => {
+      addSuccess.value = false;
+    }, 3000);
+    
+  } catch (error) {
+    console.error("Ошибка добавления ученика:", error);
+    
+    if (error.response?.status === 404) {
+      addError.value = "Ученик с указанным email не найден в системе";
+    } else if (error.response?.status === 400) {
+      addError.value = "Ученик уже записан на курс или на другой курс";
+    } else if (error.response?.status === 403) {
+      addError.value = "У вас нет прав для добавления учеников";
+    } else if (error.response?.status === 500) {
+      addError.value = "Ошибка сервера. Попробуйте позже";
+    } else {
+      addError.value = "Ошибка добавления ученика. Проверьте email и попробуйте снова";
+    }
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -384,7 +418,6 @@ async function removeSelectedStudent() {
     return;
   }
   
-  // Подтверждение удаления
   const student = courseStudents.value.find(s => s.student_id === selectedStudentId.value);
   const studentName = student ? student.student_name : "выбранного ученика";
   
@@ -395,28 +428,22 @@ async function removeSelectedStudent() {
   try {
     loading.value = true;
     
-    // Вызываем API для удаления ученика
     const response = await api.delete(`/courses/${courseId.value}/students/${selectedStudentId.value}`);
     
     console.log("Ответ сервера при удалении:", response.data);
     
-    // Обновляем список учеников
     await loadTutorCourseData();
     
-    // Сбрасываем выбранного ученика
     selectedStudentId.value = "";
     currentStudent.value = null;
     knowledgeGaps.value = "";
     graphData.value = null;
     
-    // Показываем уведомление
     alert(`Ученик ${studentName} успешно удален из курса`);
     
   } catch (error) {
     console.error("Ошибка удаления ученика:", error);
-    console.error("Детали ошибки:", error.response?.data);
     
-    // Обрабатываем различные ошибки
     let errorMessage = "Не удалось удалить ученика из курса";
     
     if (error.response?.status === 404) {
@@ -474,11 +501,8 @@ async function generateGraph() {
   try {
     loading.value = true;
     
-    // Здесь должен быть API вызов для генерации графа
-    // Пока используем демо-данные
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Создаем демо-граф на основе изменений
     createDemoGraph();
     
     graphChanges.value = "";
@@ -496,7 +520,6 @@ async function generateGraph() {
 function createDemoGraph() {
   if (!currentStudent.value) return;
   
-  // Базовый граф курса
   const baseGraph = {
     "nodes": [
       {"id": "1", "label": "Present Simple", "data": {"lesson_id": 1}, "position": {"x": 200, "y": 150}, "group": 0},
@@ -514,27 +537,18 @@ function createDemoGraph() {
     ]
   };
   
-  // Клонируем граф
   graphData.value = JSON.parse(JSON.stringify(baseGraph));
-  
-  // Снимаем флаг финализации при создании нового графа
   isGraphFinalized.value = false;
 }
 
 // Сохранение графа
 async function saveGraph() {
-  console.log("Начинаем сохранение графа...");
-  console.log("graphData:", graphData.value);
-  console.log("selectedStudentId:", selectedStudentId.value);
-  console.log("courseId:", courseId.value);
-
   if (!graphData.value || !graphData.value.nodes || graphData.value.nodes.length === 0) {
     alert("Граф не может быть пустым");
     return;
   }
 
   try {
-    // Проверяем необходимые данные
     if (!selectedStudentId.value) {
       alert("Выберите ученика");
       return;
@@ -545,50 +559,33 @@ async function saveGraph() {
       return;
     }
 
-    // Подготовка данных для отправки
     const saveData = {
       ...graphData.value,
-      is_finalized: true, // Добавляем флаг финализации
+      is_finalized: true,
       saved_at: new Date().toISOString(),
-      saved_by: auth.user?.user_id // ID пользователя, который сохранил
+      saved_by: auth.user?.user_id
     };
 
-    console.log("Отправляемые данные:", saveData);
-
-    // Отправляем на сервер
     const response = await api.put(
       `/courses/${courseId.value}/student/${selectedStudentId.value}/graph`,
       saveData
     );
 
-    console.log("Ответ сервера:", response.data);
-
     if (response.data) {
-      // Помечаем граф как финализированный
       isGraphFinalized.value = true;
-      
-      // Очищаем поле для редактирования
       graphChanges.value = "";
-      
       alert("Граф курса успешно сохранен как окончательный!");
-      
-      // Перезагружаем граф, чтобы получить обновленные данные с сервера
       await loadStudentGraph(selectedStudentId.value);
     }
     
   } catch (error) {
     console.error("Ошибка сохранения графа:", error);
     
-    // Более детальная информация об ошибке
     if (error.response) {
-      console.error("Статус ошибки:", error.response.status);
-      console.error("Данные ошибки:", error.response.data);
       alert(`Ошибка сервера: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
     } else if (error.request) {
-      console.error("Нет ответа от сервера:", error.request);
       alert("Не удалось подключиться к серверу");
     } else {
-      console.error("Ошибка настройки запроса:", error.message);
       alert(`Ошибка: ${error.message}`);
     }
   }
@@ -610,22 +607,21 @@ function onGraphNodeClick({ node, lessonId }) {
     }
 }
 
-// Начало тестирования
-function startTest() 
-{
-  // Репетитор может просматривать входные тесты
+// Начало тестирования КУРСА (теперь тест общий для всех)
+function startTest() {
   console.log("Переход к входному тесту курса");
   
   router.push({
     name: "input-test",
     params: { courseId: courseId.value },
     query: {
+      courseTitle: "Входное тестирование курса",
       testData: JSON.stringify({
         test_type: "placement",
-        questions: 20,
+        questions: testStatus.value.questions_count || 20,
         time_limit: 20
       }),
-      isTutor: true // Флаг для режима просмотра репетитором
+      isTutor: true
     }
   });
 }
@@ -644,7 +640,6 @@ function getStudentShortName(fullName) {
 
 // Демо-функции
 function createDemoStudents() {
-  // Для демонстрации, если API недоступен
   courseStudents.value = [
     { student_id: 1, student_name: "Matokhin Ilya", knowledge_gaps: "Need practice with Past Simple" },
     { student_id: 6, student_name: "Z Z", knowledge_gaps: "Difficulty with vocabulary" }
@@ -663,14 +658,14 @@ onMounted(() => {
 });
 
 // Отслеживание изменения выбранного ученика
-watch(selectedStudentId, (newStudentId) => {
+watch(selectedStudentId, async (newStudentId) => {
   console.log("Выбран новый ученик:", newStudentId);
   if (newStudentId) {
     const student = courseStudents.value.find(s => s.student_id === newStudentId);
     if (student) {
       currentStudent.value = student;
       knowledgeGaps.value = student.knowledge_gaps || "";
-      loadStudentGraph(newStudentId);
+      await loadStudentGraph(newStudentId);
     }
   } else {
     currentStudent.value = null;
@@ -682,6 +677,7 @@ watch(selectedStudentId, (newStudentId) => {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .section {
   background: #fedac4;
   border-radius: 15px;
@@ -889,15 +885,45 @@ textarea {
   border: 2px solid #F4886D;
   border-radius: 15px;
   padding: 20px;
-  text-align: center;
+  text-align: left;
   color: #592012;
   font-family: 'Arial', Georgia, serif;
 }
 
+.test-info {
+  margin-bottom: 15px;
+}
+
+.test-status,
+.test-questions,
+.test-note {
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+.status-not-generated {
+  color: #F44336;
+  font-weight: bold;
+}
+
+.status-draft {
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.status-finalized {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
 .test-btn {
-  margin-top: 15px;
+  display: block;
+  margin: 15px auto 0 auto;
   padding: 15px 30px;
   font-size: 16px;
+  text-align: center;
+  width: 100%;
+  max-width: 250px;
 }
 
 .centered-save-btn {
@@ -972,18 +998,21 @@ textarea {
 }
 
 /* Сообщения для пользователя */
-.no-students-message {
+.no-students-message,
+.no-student-selected-message {
   text-align: center;
   padding: 30px 20px;
 }
 
-.no-students-message h3 {
+.no-students-message h3,
+.no-student-selected-message h3 {
   color: #592012;
   margin-bottom: 10px;
   font-size: 20px;
 }
 
-.no-students-message p {
+.no-students-message p,
+.no-student-selected-message p {
   color: #666;
   font-size: 16px;
   line-height: 1.5;
@@ -1049,6 +1078,10 @@ textarea {
     width: 100%;
     margin-top: 5px;
   }
+  
+  .test-btn {
+    max-width: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1075,12 +1108,18 @@ textarea {
     min-height: 250px;
   }
   
-  .no-students-message {
+  .no-students-message,
+  .no-student-selected-message {
     padding: 20px 15px;
   }
   
-  .no-students-message h3 {
+  .no-students-message h3,
+  .no-student-selected-message h3 {
     font-size: 18px;
+  }
+  
+  .test-info p {
+    font-size: 14px;
   }
 }
 

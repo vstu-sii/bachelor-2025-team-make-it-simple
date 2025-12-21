@@ -6,7 +6,7 @@
 
 import json
 from typing import Optional
-from ai_tutor import AITutor
+from app.ml.ai_tutor import AITutor
 
 def run_demo():
     """Запуск демонстрации работы всех функций."""

@@ -8,7 +8,7 @@ import logging
 import re
 import requests
 from typing import Dict, Optional, Any
-from config import *
+from app.ml.config import *
 
 # Настройка логирования
 logging.basicConfig(
@@ -432,7 +432,7 @@ class AITutor:
         if feedback:
             logger.info(f"Учитываются замечания: {feedback}")
 
-        from prompt_templates import PromptTemplates
+        from app.ml.prompt_templates import PromptTemplates
         
         # Выводим входной JSON
         print("\n" + "="*60)
@@ -487,7 +487,7 @@ class AITutor:
         if feedback:
             logger.info(f"Учитываются замечания: {feedback}")
         
-        from prompt_templates import PromptTemplates
+        from app.ml.prompt_templates import PromptTemplates
         
         # Выводим входной JSON
         print("\n" + "="*60)
@@ -545,7 +545,7 @@ class AITutor:
         if feedback:
             logger.info(f"Учитываются замечания: {feedback}")
 
-        from prompt_templates import PromptTemplates
+        from app.ml.prompt_templates import PromptTemplates
         
         # Выводим входной JSON
         print("\n" + "="*60)
@@ -637,7 +637,7 @@ class AITutor:
         if feedback:
             logger.info(f"Учитываются замечания: {feedback}")
 
-        from prompt_templates import PromptTemplates
+        from app.ml.prompt_templates import PromptTemplates
         
         prompt = PromptTemplates.LESSON_TEST_PROMPT.format(
             topic=lesson_data["lesson_parameters"]["topic"],
@@ -689,7 +689,7 @@ class AITutor:
         if feedback:
             logger.info(f"Учитываются замечания: {feedback}")
         
-        from prompt_templates import PromptTemplates
+        from app.ml.prompt_templates import PromptTemplates
         
         # Выводим входной JSON
         print("\n" + "="*60)
