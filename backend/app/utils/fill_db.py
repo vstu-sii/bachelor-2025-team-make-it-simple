@@ -128,15 +128,6 @@ def create_tables(cursor):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_title ON course(title)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_created_at ON course(created_at)")
     
-    # Таблица материалов
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS material (
-            material_id SERIAL PRIMARY KEY,
-            file_path VARCHAR(1000) UNIQUE NOT NULL
-        )
-    """)
-    print("Таблица material создана")
-    
     # Таблица тем
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS topic (
@@ -185,19 +176,6 @@ def create_tables(cursor):
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_user_id ON user_course(user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_course_course_id ON user_course(course_id)")
-    
-    # Таблица связи курс-материал
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS course_material (
-            course_id INTEGER NOT NULL REFERENCES course(course_id) ON DELETE CASCADE,
-            material_id INTEGER NOT NULL REFERENCES material(material_id) ON DELETE CASCADE,
-            PRIMARY KEY (course_id, material_id)
-        )
-    """)
-    print("Таблица course_material создана")
-    
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_course_id ON course_material(course_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_course_material_material_id ON course_material(material_id)")
     
     # Таблица связи курс-тема
     cursor.execute("""
@@ -288,10 +266,8 @@ def fill_database():
         print("\n2. Очистка таблиц перед заполнением...")
         
         tables_to_clear = [
-            "course_material",
             "course_topic", 
             "user_course",
-            "material",
             "topic",
             "lesson", 
             "course"
@@ -308,7 +284,6 @@ def fill_database():
         sequences = [
             "course_course_id_seq",
             "user_course_user_course_id_seq",
-            "material_material_id_seq",
             "topic_topic_id_seq", 
             "lesson_lesson_id_seq"
         ]
@@ -620,45 +595,7 @@ def fill_database():
         
         conn.commit()
         
-        print("\n5. Создание материалов для курсов...")
-        
-        materials = [
-            '/materials/beginner/grammar_basics.pdf',
-            '/materials/beginner/vocabulary_a1.zip',
-            '/materials/conversational/dialogues_mp3.zip',
-            '/materials/business/presentations.pptx',
-            '/materials/business/emails_templates.docx',
-            '/materials/ielts/writing_samples.pdf',
-            '/materials/ielts/listening_tests.zip',
-            '/materials/it/technical_terms.pdf',
-            '/materials/travel/phrasebook.pdf',
-            '/materials/travel/airport_dialogues.mp3',
-            '/materials/common/irregular_verbs.pdf',
-            '/materials/common/prepositions_exercises.pdf'
-        ]
-        
-        for material in materials:
-            cursor.execute("INSERT INTO material (file_path) VALUES (%s)", (material,))
-        
-        print(f"Добавлено {len(materials)} материалов")
-        
-        # Связь курсов с материалами
-        course_materials = [
-            (1, 1), (1, 2), (1, 11), (1, 12),
-            (2, 3), (2, 11), (2, 12),
-            (3, 4), (3, 5), (3, 6),
-            (4, 6), (4, 7),
-            (5, 8), (5, 9),
-            (6, 9), (6, 10)
-        ]
-        
-        for course_id, material_id in course_materials:
-            cursor.execute("INSERT INTO course_material (course_id, material_id) VALUES (%s, %s)", 
-                          (course_id, material_id))
-        
-        print(f"Создано {len(course_materials)} связей курс-материал")
-        
-        print("\n6. Создание тем и связей...")
+        print("\n5. Создание тем и связей...")
         
         topics = [
             ('Present Simple', 'Basic present simple tense: rules and usage'),
@@ -696,7 +633,7 @@ def fill_database():
         
         print(f"Создано {len(course_topics)} связей курс-тема")
         
-        print("\n7. Создание уроков для графа (включая дополнительные для нового графа)...")
+        print("\n6. Создание уроков для графа (включая дополнительные для нового графа)...")
 
         # Сначала узнаем ID тем, которые мы создали
         print("Получение ID созданных тем...")
@@ -812,7 +749,7 @@ def fill_database():
         
         conn.commit()
         
-        # 8. ФИНАЛЬНАЯ ПРОВЕРКА
+        # 7. ФИНАЛЬНАЯ ПРОВЕРКА
         print("\n" + "=" * 60)
         print("ФИНАЛЬНАЯ ПРОВЕРКА ДАННЫХ С ИСПРАВЛЕННЫМИ НОМЕРАМИ УРОКОВ")
         print("=" * 60)
@@ -879,7 +816,6 @@ def fill_database():
             ("SELECT COUNT(*) FROM \"user\"", "Пользователи"),
             ("SELECT COUNT(*) FROM course", "Курсы"),
             ("SELECT COUNT(*) FROM user_course", "Связи пользователь-курс"),
-            ("SELECT COUNT(*) FROM material", "Материалы"),
             ("SELECT COUNT(*) FROM topic", "Темы"),
             ("SELECT COUNT(*) FROM lesson", "Уроки")
         ]

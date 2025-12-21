@@ -16,9 +16,7 @@ from app.schemas.course import (
 from app.utils.jwt import get_current_user
 from app.models.course import Course
 from app.models.topic import Topic
-from app.models.material import Material
 from app.models.course_topic import CourseTopic
-from app.models.course_material import CourseMaterial
 from app.models.user_course import UserCourse
 from app.models.user import User
 
@@ -136,20 +134,6 @@ def create_course(
         )
         db.add(course_topic)
     
-    # Связываем материалы с курсом
-    if course_data.materials_ids:
-        for material_id in course_data.materials_ids:
-            # Проверяем, что материал существует
-            material = db.query(Material).filter(Material.material_id == material_id).first()
-            if not material:
-                continue  # Пропускаем несуществующие материалы
-            
-            course_material = CourseMaterial(
-                course_id=new_course.course_id,
-                material_id=material_id
-            )
-            db.add(course_material)
-    
     # Связываем репетитора с курсом
     user_course = UserCourse(
         user_id=current_user.user_id,
@@ -164,7 +148,6 @@ def create_course(
     
     print(f"✅ Создан курс: ID={new_course.course_id}, Title={new_course.title}")
     print(f"   Тем: {len(course_data.topics_ids)}")
-    print(f"   Материалов: {len(course_data.materials_ids) if course_data.materials_ids else 0}")
     
     return new_course
 
@@ -425,35 +408,6 @@ async def get_course_topics(
     except Exception as e:
         print(f"Error getting course topics: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при получении тем курса")
-
-@router.get("/{course_id}/materials")
-async def get_course_materials(
-    course_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    try:
-        # Проверяем доступ к курсу
-        user_course = db.query(UserCourse).filter(
-            UserCourse.user_id == current_user.user_id,
-            UserCourse.course_id == course_id
-        ).first()
-        
-        if not user_course:
-            raise HTTPException(status_code=403, detail="Нет доступа к этому курсу")
-        
-        # Получаем материалы курса
-        materials = db.query(Material).join(
-            CourseMaterial, Material.material_id == CourseMaterial.material_id
-        ).filter(
-            CourseMaterial.course_id == course_id
-        ).all()
-        
-        return {"materials": materials}
-        
-    except Exception as e:
-        print(f"Error getting course materials: {e}")
-        raise HTTPException(status_code=500, detail="Ошибка при получении материалов курса")
 
 @router.post("/{course_id}/add-student", status_code=201)
 async def add_student_to_course(

@@ -23,7 +23,9 @@
               />
             </div>
           </div>
-          
+        </div>
+
+        <div class="section-container center-section">
           <div class="form-group center-input">
             <label>Введите название темы</label>
             <div class="input-wrapper">
@@ -36,138 +38,56 @@
               />
             </div>
           </div>
+
+          <div class="form-group center-input">
+            <label>Введите описание темы</label>
+            <div class="description-container">
+              <textarea 
+                placeholder="Введите подробное описание темы..."
+                class="description-textarea"
+                v-model="newTopicDescription"
+                :disabled="isAddingTopic"
+              ></textarea>
+            </div>
+            <button class="add-btn lesson-btn" @click="addTopic" :disabled="isAddingTopic">
+              <span v-if="isAddingTopic">Добавление...</span>
+              <span v-else>
+                Добавить новую тему
+                <img src="/src/assets/plus.svg" />
+              </span>
+            </button>
+            
+            <div v-if="topicErrorMessage" class="error-message">
+              {{ topicErrorMessage }}
+            </div>
+            <div v-if="topicSuccessMessage" class="success-message">
+              {{ topicSuccessMessage }}
+            </div>
+          </div>
         </div>
 
         <div class="section-container">
-          <div class="row">
-            <div class="column">
-              <div class="form-group">
-                <label>Введите описание темы</label>
-                <div class="description-container">
-                  <textarea 
-                    placeholder="Введите подробное описание темы..."
-                    class="description-textarea"
-                    v-model="newTopicDescription"
-                    :disabled="isAddingTopic"
-                  ></textarea>
-                </div>
-                <button class="add-btn lesson-btn" @click="addTopic" :disabled="isAddingTopic">
-                  <span v-if="isAddingTopic">Добавление...</span>
-                  <span v-else>
-                    Добавить новую тему
-                    <img src="/src/assets/plus.svg" />
-                  </span>
-                </button>
-                
-                <div v-if="topicErrorMessage" class="error-message">
-                  {{ topicErrorMessage }}
-                </div>
-                <div v-if="topicSuccessMessage" class="success-message">
-                  {{ topicSuccessMessage }}
-                </div>
-              </div>
-            </div>
-
-            <div class="column">
-              <div class="form-group">
-                <label>Добавить учебный материал (PDF)</label>
-                <div 
-                  class="dropzone" 
-                  @click="triggerFileInput"
-                  @dragover.prevent="handleDragOver"
-                  @drop.prevent="handleDrop"
-                  :class="{ 'dropzone-dragover': isDragOver }"
-                >
-                  <div class="dropzone-content">
-                    <img class="upload-icon" src="/src/assets/upload-arrow.svg" />
-                    <p class="dropzone-text">Перетащите сюда PDF файлы<br />или нажмите для загрузки</p>
-                    <p class="dropzone-hint">Поддерживается только PDF формат</p>
-                  </div>
-                </div>
-                <input 
-                  type="file" 
-                  ref="fileInput" 
-                  @change="handleFileSelect"
-                  accept=".pdf"
-                  style="display: none"
-                />
-                <button class="add-btn material-btn" @click="triggerFileInput" :disabled="isUploadingMaterial">
-                  <span v-if="isUploadingMaterial">Загрузка...</span>
-                  <span v-else>
-                    Добавить новый материал
-                    <img src="/src/assets/plus.svg" />
-                  </span>
-                </button>
-                
-                <div v-if="materialErrorMessage" class="error-message">
-                  {{ materialErrorMessage }}
-                </div>
-                <div v-if="materialSuccessMessage" class="success-message">
-                  {{ materialSuccessMessage }}
-                </div>
-                
-                <div v-if="uploadProgress > 0" class="upload-progress">
-                  <div class="progress-bar">
-                    <div 
-                      class="progress-fill" 
-                      :style="{ width: uploadProgress + '%' }"
-                    ></div>
-                  </div>
-                  <div class="progress-text">{{ uploadProgress }}%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="column">
-            <div class="list-container">
-              <div class="list-section">
-                <label>Список тем ({{ topics.length }})</label>
-                <ul>
-                  <li v-for="(topic, index) in topics" :key="topic.topic_id">
-                    <span>{{ index + 1 }}. {{ topic.title }}</span>
-                    <img 
-                      class="remove" 
-                      src="/src/assets/close.svg"
-                      @click="removeTopic(topic.topic_id)"
-                      alt="Удалить"
-                      :title="`Удалить тему: ${topic.title}`"
-                      :disabled="isDeletingTopic === topic.topic_id"
-                    />
-                  </li>
-                  <li v-if="topics.length === 0" class="empty-list">
-                    <span>Список тем пуст. Добавьте первую тему.</span>
-                  </li>
-                </ul>
-                <div v-if="isLoadingTopics" class="loading-message">
-                  Загрузка тем...
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="column">
-            <div class="list-container">
-              <div class="list-section">
-                <label>Список материалов ({{ courseMaterials.length }})</label>
-                <ul>
-                  <li v-for="(material, index) in courseMaterials" :key="material.id || index">
-                    <span>{{ index + 1 }}. {{ getFileName(material.file_path || material.name) }}</span>
-                    <img 
-                      class="remove" 
-                      src="/src/assets/close.svg"
-                      @click="removeCourseMaterial(material.material_id, index)"
-                      alt="Удалить"
-                      :title="`Удалить материал: ${getFileName(material.file_path || material.name)}`"
-                      :disabled="isDeletingMaterial === material.material_id"
-                    />
-                  </li>
-                  <li v-if="courseMaterials.length === 0" class="empty-list">
-                    <span>Список материалов пуст. Добавьте первый материал.</span>
-                  </li>
-                </ul>
+          <div class="list-container">
+            <div class="list-section">
+              <label>Список тем ({{ topics.length }})</label>
+              <ul>
+                <li v-for="(topic, index) in topics" :key="topic.topic_id">
+                  <span>{{ index + 1 }}. {{ topic.title }}</span>
+                  <img 
+                    class="remove" 
+                    src="/src/assets/close.svg"
+                    @click="removeTopic(topic.topic_id)"
+                    alt="Удалить"
+                    :title="`Удалить тему: ${topic.title}`"
+                    :disabled="isDeletingTopic === topic.topic_id"
+                  />
+                </li>
+                <li v-if="topics.length === 0" class="empty-list">
+                  <span>Список тем пуст. Добавьте первую тему.</span>
+                </li>
+              </ul>
+              <div v-if="isLoadingTopics" class="loading-message">
+                Загрузка тем...
               </div>
             </div>
           </div>
@@ -192,7 +112,6 @@ import { useAuthStore } from "../stores/auth";
 const router = useRouter();
 const authStore = useAuthStore();
 const API_BASE_URL = config.apiUrl;
-const fileInput = ref(null);
 
 // Состояние для формы
 const courseTitle = ref("");
@@ -201,7 +120,6 @@ const newTopicDescription = ref("");
 
 // Динамические списки
 const topics = ref([]);
-const courseMaterials = ref([]); // Материалы, добавленные к этому курсу
 
 // Состояния загрузки и ошибок для тем
 const isLoadingTopics = ref(false);
@@ -210,14 +128,8 @@ const isDeletingTopic = ref(null);
 const topicErrorMessage = ref("");
 const topicSuccessMessage = ref("");
 
-// Состояния загрузки и ошибок для материалов
-const isUploadingMaterial = ref(false);
+// Состояния загрузки и ошибок для создания курса
 const isCreatingCourse = ref(false);
-const isDeletingMaterial = ref(null);
-const materialErrorMessage = ref("");
-const materialSuccessMessage = ref("");
-const isDragOver = ref(false);
-const uploadProgress = ref(0);
 
 // Функция для выполнения авторизованных запросов
 const makeAuthRequest = async (url, options = {}) => {
@@ -256,46 +168,6 @@ const makeAuthRequest = async (url, options = {}) => {
     console.error("API Request error:", error);
     throw error;
   }
-};
-
-// Функция для загрузки файлов
-const makeFileUploadRequest = async (url, formData) => {
-  const token = localStorage.getItem("token");
-  
-  const headers = {};
-  
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
-  console.log(`File Upload Request: POST ${url}`);
-  
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`File Upload Error ${response.status}:`, errorData);
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log(`File Upload Response ${response.status}:`, data);
-    return data;
-  } catch (error) {
-    console.error("File Upload error:", error);
-    throw error;
-  }
-};
-
-// Извлечение имени файла из пути
-const getFileName = (filePath) => {
-  const parts = filePath.split('/');
-  return parts[parts.length - 1];
 };
 
 // Функция добавления темы в БД
@@ -400,149 +272,6 @@ const removeTopic = async (topicId) => {
   }
 };
 
-// Drag & Drop обработчики
-const handleDragOver = (event) => {
-  event.preventDefault();
-  isDragOver.value = true;
-};
-
-const handleDrop = (event) => {
-  event.preventDefault();
-  isDragOver.value = false;
-  
-  const files = event.dataTransfer.files;
-  if (files.length > 0) {
-    handleFiles(files[0]);
-  }
-};
-
-const triggerFileInput = () => {
-  fileInput.value.click();
-};
-
-const handleFileSelect = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    handleFiles(file);
-  }
-  // Сброс input для возможности загрузки того же файла снова
-  event.target.value = '';
-};
-
-// Обработка загрузки файла
-const handleFiles = async (file) => {
-  // Проверка типа файла
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    materialErrorMessage.value = "Поддерживается только PDF формат";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
-    return;
-  }
-
-  // Проверка размера файла (макс 10MB)
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  if (file.size > maxSize) {
-    materialErrorMessage.value = "Файл слишком большой (максимум 10MB)";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
-    return;
-  }
-
-  isUploadingMaterial.value = true;
-  uploadProgress.value = 0;
-  materialErrorMessage.value = "";
-  materialSuccessMessage.value = "";
-
-  try {
-    console.log(`Начало загрузки файла: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-    
-    // Симуляция прогресса загрузки
-    const progressInterval = setInterval(() => {
-      if (uploadProgress.value < 90) {
-        uploadProgress.value += 10;
-      }
-    }, 200);
-
-    // Загружаем файл на сервер
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    const response = await makeFileUploadRequest(`${API_BASE_URL}/materials/upload/`, formData);
-    
-    clearInterval(progressInterval);
-    uploadProgress.value = 100;
-    
-    console.log("Файл успешно загружен в БД:", response);
-    
-    // Добавляем материал в список материалов курса
-    courseMaterials.value.unshift(response);
-    
-    // Показываем сообщение об успехе
-    materialSuccessMessage.value = `Файл "${file.name}" успешно загружен!`;
-    
-    setTimeout(() => {
-      materialSuccessMessage.value = "";
-      uploadProgress.value = 0;
-    }, 3000);
-    
-  } catch (error) {
-    console.error("Ошибка при загрузке файла:", error);
-    materialErrorMessage.value = error.message || "Не удалось загрузить файл";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
-    uploadProgress.value = 0;
-  } finally {
-    isUploadingMaterial.value = false;
-  }
-};
-
-// Функция удаления материала из списка курса и из БД
-const removeCourseMaterial = async (materialId, index) => {
-  const materialToDelete = courseMaterials.value.find(m => m.material_id === materialId) || courseMaterials.value[index];
-  if (!materialToDelete) {
-    materialErrorMessage.value = "Материал не найден в списке";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
-    return;
-  }
-
-  const fileName = getFileName(materialToDelete.file_path || materialToDelete.name);
-  if (!confirm(`Удалить материал "${fileName}"?`)) {
-    return;
-  }
-
-  isDeletingMaterial.value = materialId;
-  materialErrorMessage.value = "";
-  materialSuccessMessage.value = "";
-
-  try {
-    console.log(`Удаление материала с ID: ${materialId} ("${fileName}")`);
-    
-    await makeAuthRequest(`${API_BASE_URL}/materials/${materialId}`, {
-      method: "DELETE"
-    });
-
-    console.log(`Материал с ID ${materialId} удален из БД`);
-    
-    // Удаляем материал из списка
-    const listIndex = courseMaterials.value.findIndex(m => m.material_id === materialId);
-    if (listIndex !== -1) {
-      courseMaterials.value.splice(listIndex, 1);
-    } else {
-      // Если не нашли по ID, удаляем по индексу
-      courseMaterials.value.splice(index, 1);
-    }
-    
-    materialSuccessMessage.value = `Материал "${fileName}" успешно удален!`;
-    setTimeout(() => {
-      materialSuccessMessage.value = "";
-    }, 3000);
-    
-  } catch (error) {
-    console.error("Ошибка при удалении материала:", error);
-    materialErrorMessage.value = error.message || "Не удалось удалить материал";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
-  } finally {
-    isDeletingMaterial.value = null;
-  }
-};
-
 // Функция создания курса
 const createCourse = async () => {
   if (!courseTitle.value.trim()) {
@@ -558,7 +287,6 @@ const createCourse = async () => {
   }
 
   isCreatingCourse.value = true;
-  materialErrorMessage.value = "";
   topicErrorMessage.value = "";
 
   try {
@@ -570,7 +298,7 @@ const createCourse = async () => {
       link_to_vector_db: `/static/vector_dbs/course_${Date.now()}`,
       input_test_json: {},
       topics_ids: topics.value.map(topic => topic.topic_id),
-      materials_ids: courseMaterials.value.map(material => material.material_id)
+      materials_ids: []  // Пустой массив материалов
     };
     
     console.log("Данные для создания курса:", courseData);
@@ -585,21 +313,19 @@ const createCourse = async () => {
     
     // Показываем сообщение об успехе
     alert(`Курс "${courseData.title}" успешно создан!\n\n` +
-          `Тем: ${topics.value.length}\n` +
-          `Материалов: ${courseMaterials.value.length}`);
+          `Тем: ${topics.value.length}`);
     
     // Очищаем форму после успешного создания
     courseTitle.value = "";
     topics.value = [];
-    courseMaterials.value = [];
     
     // Перенаправляем на страницу профиля
     router.push('/profile');
     
   } catch (error) {
     console.error("Ошибка при создании курса:", error);
-    materialErrorMessage.value = error.message || "Не удалось создать курс";
-    setTimeout(() => materialErrorMessage.value = "", 5000);
+    topicErrorMessage.value = error.message || "Не удалось создать курс";
+    setTimeout(() => topicErrorMessage.value = "", 5000);
   } finally {
     isCreatingCourse.value = false;
   }
@@ -614,7 +340,6 @@ onMounted(() => {
   if (!token) {
     const errorMsg = "Для создания курса необходимо авторизоваться";
     topicErrorMessage.value = errorMsg;
-    materialErrorMessage.value = errorMsg;
     console.warn("Пользователь не авторизован");
     router.push('/login');
   } else {
@@ -778,24 +503,14 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: 25px;
-}
-
-.column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .description-container {
   background: #FFFFFF;
   border: none;
   border-radius: 10px;
   overflow: hidden;
   height: 220px;
+  width: 100%;
+  max-width: 500px;
 }
 
 .description-textarea {
@@ -830,66 +545,6 @@ textarea:focus {
 
 .description-textarea::-webkit-scrollbar-thumb:hover {
   background: #A0A0A0;
-}
-
-.dropzone {
-  background: #FFFFFF;
-  border: 2px solid #F4886D;
-  border-radius: 10px;
-  height: 220px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.3s;
-  cursor: pointer;
-  position: relative;
-}
-
-.dropzone:hover {
-  border-color: #E0785D;
-  background: #FFF5F2;
-  transform: translateY(-2px);
-}
-
-.dropzone-dragover {
-  border-color: #4CAF50 !important;
-  background-color: #E8F5E9 !important;
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
-}
-
-.dropzone-content {
-  text-align: center;
-  padding: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.upload-icon {
-  width: 50px;
-  height: 50px;
-  margin-bottom: 15px;
-  opacity: 0.7;
-  transition: opacity 0.3s;
-}
-
-.dropzone:hover .upload-icon {
-  opacity: 1;
-}
-
-.dropzone-text {
-  color: #592012;
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.dropzone-hint {
-  color: #8A7D75;
-  font-size: 13px;
-  margin-top: 5px;
 }
 
 .add-btn {
@@ -1096,32 +751,6 @@ textarea:focus {
   font-family: 'Arial', serif;
 }
 
-.upload-progress {
-  margin-top: 15px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 5px;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #4CAF50;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  text-align: center;
-  font-size: 12px;
-  color: #592012;
-  font-family: 'Arial', serif;
-}
-
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -1175,6 +804,10 @@ textarea:focus {
     width: 80%;
   }
   
+  .description-container {
+    width: 80%;
+  }
+  
   .add-btn {
     max-width: 220px;
   }
@@ -1196,18 +829,13 @@ textarea:focus {
     gap: 20px;
   }
   
-  .row {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
   .title {
     font-size: 28px;
   }
   
-  .description-container,
-  .dropzone {
+  .description-container {
     height: 200px;
+    width: 90%;
   }
   
   .input-wrapper {
@@ -1249,17 +877,9 @@ textarea:focus {
     font-size: 24px;
   }
   
-  .description-container,
-  .dropzone {
+  .description-container {
     height: 180px;
-  }
-  
-  .dropzone-text {
-    font-size: 14px;
-  }
-  
-  .dropzone-hint {
-    font-size: 12px;
+    width: 95%;
   }
   
   .input-wrapper {

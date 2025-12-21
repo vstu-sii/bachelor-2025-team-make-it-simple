@@ -20,7 +20,6 @@ class CourseWithRelationsCreate(BaseModel):
     link_to_vector_db: Optional[str] = None
     input_test_json: Optional[Dict[str, Any]] = {}
     topics_ids: List[int]
-    materials_ids: Optional[List[int]] = None
 
 # Схема для курса с учениками
 class CourseWithStudentsResponse(CourseResponse):
