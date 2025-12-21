@@ -5,6 +5,7 @@
 """
 
 import json
+from typing import Optional
 from ai_tutor import AITutor
 
 def run_demo():
@@ -32,9 +33,12 @@ def run_demo():
         "topics": ["Present Simple", "Артикли a/an/the", "Базовая лексика"],
     }
     
+    feedback = "Сделать больше вопросов на Present Simple, меньше на артикли. Добавить вопросы по базовой лексике."
+
     try:
-        result = tutor.generate_entry_test(entry_test_input)
+        result = tutor.generate_entry_test(entry_test_input, feedback)
         print(f"\n✓ Сгенерирован тест с {len(result.get('questions', []))} вопросами")
+        print(f"✓ Учтены замечания: {feedback}")
         if result.get('questions'):
             for i, q in enumerate(result['questions'][:2], 1):  # Показываем первые 2 вопроса
                 q_text = q.get('question', 'Нет вопроса')
@@ -62,10 +66,13 @@ def run_demo():
         ]
     }
     
+    graph_feedback = "Сделать граф более детальным. Добавить связи между темами. Учесть, что ученик интересуется технологиями."
+
     try:
-        result = tutor.generate_course_graph(graph_input)
+        result = tutor.generate_course_graph(graph_input, graph_feedback)
         print(f"\n✓ Сгенерирован граф с {len(result.get('nodes', []))} узлами и {len(result.get('edges', []))} связями")
-        
+        print(f"✓ Учтены замечания: {graph_feedback}")
+
         # Покажем группы узлов
         groups = {}
         for node in result.get('nodes', []):
@@ -96,10 +103,13 @@ def run_demo():
         },
         "type": "theory"
     }
-    
+
+    theory_feedback = "Сделать объяснение более простым. Добавить больше примеров с играми и технологиями. Уделить внимание построению вопросов."
+
     try:
-        result = tutor.generate_lesson_plan(theory_input)
+        result = tutor.generate_lesson_plan(theory_input, theory_feedback)
         print(f"\n✓ Сгенерирована теория урока")
+        print(f"✓ Учтены замечания: {theory_feedback}")
         title = result.get('theory_section', {}).get('title', 'Нет заголовка')
         print(f"  Заголовок: {title}")
         content = result.get('theory_section', {}).get('content', '')
@@ -127,9 +137,12 @@ def run_demo():
         "type": "reading"
     }
     
+    reading_feedback = "Сделать текст про геймера, который учит английский. Добавить детали про технологичные игры. Вопросы должны проверять понимание временных форм."
+
     try:
-        result = tutor.generate_lesson_plan(reading_input)
+        result = tutor.generate_lesson_plan(reading_input, reading_feedback)
         print(f"\n✓ Сгенерировано задание на чтение")
+        print(f"✓ Учтены замечания: {reading_feedback}")
         title = result.get('reading_section', {}).get('title', 'Нет заголовка')
         print(f"  Заголовок: {title}")
         text = result.get('reading_section', {}).get('text', '')
@@ -159,9 +172,12 @@ def run_demo():
         "type": "speaking"
     }
     
+    speaking_feedback = "Тема: ежедневный распорядок геймера. Добавить подсказки по использованию наречий времени (usually, often, every day). Пример ответа должен быть развернутым."
+
     try:
-        result = tutor.generate_lesson_plan(speaking_input)
+        result = tutor.generate_lesson_plan(speaking_input, speaking_feedback)
         print(f"\n✓ Сгенерировано задание на говорение")
+        print(f"✓ Учтены замечания: {speaking_feedback}")        
         title = result.get('speaking_section', {}).get('title', 'Нет заголовка')
         print(f"  Заголовок: {title}")
         instructions = result.get('speaking_section', {}).get('instructions', '')
@@ -174,9 +190,45 @@ def run_demo():
     except Exception as e:
         print(f"✗ Ошибка: {e}")
     
-    # Пример 6: Оценка результатов
+    # Пример 6: Тест урока
     print("\n" + "=" * 80)
-    print("6. ОЦЕНКА РЕЗУЛЬТАТОВ УРОКА")
+    print("6. ГЕНЕРАЦИЯ ТЕСТА УРОКА")
+    print("=" * 80)
+    
+    test_input = {
+        "lesson_parameters": {
+            "topic": "Present Simple",
+            "student_profile": {
+                "interests": ["видеоигры", "футбол", "технологии"],
+                "knowledge_gaps": ["present_simple", "prepositions"]
+            }
+        },
+        "theory": "Present Simple используется для описания регулярных действий и привычек. Структура: I/You/We/They + глагол (I play), He/She/It + глагол + s (He plays)."
+    }
+    
+    test_feedback = "Сделать 5 вопросов: 2 на выбор правильной формы, 2 на заполнение пропусков, 1 открытый вопрос про игры."
+    
+    try:
+        result = tutor.generate_lesson_test(test_input, test_feedback)
+        print(f"\n✓ Сгенерирован тест урока")
+        print(f"✓ Учтены замечания: {test_feedback}")
+        
+        test_section = result.get('test_section', {})
+        questions = test_section.get('questions', [])
+        print(f"  Количество вопросов: {len(questions)}")
+        print(f"  Заголовок теста: {test_section.get('title', 'Нет заголовка')}")
+        
+        # Покажем первый вопрос
+        if questions:
+            first_q = questions[0]
+            q_text = first_q.get('question', 'Нет вопроса')
+            print(f"  Первый вопрос: {q_text[:60]}...")
+    except Exception as e:
+        print(f"✗ Ошибка: {e}")
+
+    # Пример 7: Оценка результатов
+    print("\n" + "=" * 80)
+    print("7. ОЦЕНКА РЕЗУЛЬТАТОВ УРОКА")
     print("=" * 80)
     
     evaluation_input = {
@@ -200,9 +252,12 @@ def run_demo():
         }
     }
     
+    evaluation_feedback = "Дать более строгую оценку за ошибки в тесте. Рекомендовать дополнительную практику с вопросами. Учесть, что ученик интересуется технологиями - предложить тематические упражнения."
+
     try:
-        result = tutor.evaluate_lesson_results(evaluation_input)
+        result = tutor.evaluate_lesson_results(evaluation_input, evaluation_feedback)
         print(f"\n✓ Оценка урока сгенерирована")
+        print(f"✓ Учтены замечания: {evaluation_feedback}")
         print(f"  Оценка: {result.get('lesson_score', 'Нет оценки')}/10")
         gaps = result.get('knowledge_gaps', [])
         print(f"  Пробелы: {', '.join(gaps) if gaps else 'Нет пробелов'}")
@@ -222,3 +277,123 @@ def run_demo():
 # Запуск демонстрации только если файл выполняется напрямую
 if __name__ == "__main__":
     run_demo()
+
+
+
+
+# Экспортируемые функции для внешнего использования
+def generate_entry_test(course_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация входного теста с учетом замечаний.
+    
+    Args:
+        course_data: Данные о курсе
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированный тест
+    """
+    tutor = AITutor()
+    return tutor.generate_entry_test(course_data, feedback)
+
+def generate_course_graph(student_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация графа курса с учетом замечаний.
+    
+    Args:
+        student_data: Данные о студенте и курсе
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированный граф
+    """
+    tutor = AITutor()
+    return tutor.generate_course_graph(student_data, feedback)
+
+def generate_lesson_theory(lesson_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация теории урока с учетом замечаний.
+    
+    Args:
+        lesson_data: Данные для урока
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированная теория
+    """
+    lesson_data["type"] = "theory"
+    tutor = AITutor()
+    return tutor.generate_lesson_plan(lesson_data, feedback)
+
+def generate_lesson_reading(lesson_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация задания на чтение с учетом замечаний.
+    
+    Args:
+        lesson_data: Данные для урока
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированное задание на чтение
+    """
+    lesson_data["type"] = "reading"
+    tutor = AITutor()
+    return tutor.generate_lesson_plan(lesson_data, feedback)
+
+def generate_lesson_speaking(lesson_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация задания на говорение с учетом замечаний.
+    
+    Args:
+        lesson_data: Данные для урока
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированное задание на говорение
+    """
+    lesson_data["type"] = "speaking"
+    tutor = AITutor()
+    return tutor.generate_lesson_plan(lesson_data, feedback)
+
+def generate_lesson_test(lesson_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация теста урока с учетом замечаний.
+    
+    Args:
+        lesson_data: Данные для урока (должно содержать theory поле)
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        Сгенерированный тест
+    """
+    tutor = AITutor()
+    return tutor.generate_lesson_test(lesson_data, feedback)
+
+def evaluate_lesson_results(results_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Оценка результатов урока с учетом замечаний.
+    
+    Args:
+        results_data: Данные с результатами
+        feedback: Замечания репетитора по оценке (опционально)
+        
+    Returns:
+        Оценка урока
+    """
+    tutor = AITutor()
+    return tutor.evaluate_lesson_results(results_data, feedback)
+
+# Функция для обратной совместимости
+def generate_lesson_plan(lesson_data: dict, feedback: Optional[str] = None) -> dict:
+    """
+    Генерация плана урока (для обратной совместимости).
+    
+    Args:
+        lesson_data: Данные для урока (должно содержать type поле)
+        feedback: Замечания репетитора по генерации (опционально)
+        
+    Returns:
+        План урока
+    """
+    tutor = AITutor()
+    return tutor.generate_lesson_plan(lesson_data, feedback)

@@ -7,7 +7,7 @@ import time
 import logging
 import re
 import requests
-from typing import Dict, Any
+from typing import Dict, Optional, Any
 from config import *
 
 # Настройка логирования
@@ -168,7 +168,8 @@ class MistralClient:
         
         # Логирование промпта
         logger.info(f"Отправка запроса к Mistral API")
-        
+        logger.debug(f"Промпт (первые 500 символов): {prompt[:500]}...")
+
         # Подготовка данных для запроса
         data = {
             "model": self.model,
@@ -416,18 +417,21 @@ class AITutor:
         self.llm_client = MistralClient()
         logger.info("AI-тьютор инициализирован")
     
-    def generate_entry_test(self, course_data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_entry_test(self, course_data: Dict[str, Any], feedback: Optional[str] = None) -> Dict[str, Any]:
         """
         Генерация входного теста.
         
         Args:
             course_data: Данные о курсе
-            
+            feedback: Замечания репетитора по генерации
+
         Returns:
             Сгенерированный тест в виде словаря
         """
         logger.info("Генерация входного теста")
-        
+        if feedback:
+            logger.info(f"Учитываются замечания: {feedback}")
+
         from prompt_templates import PromptTemplates
         
         # Выводим входной JSON
@@ -435,10 +439,13 @@ class AITutor:
         print("ВХОДНЫЕ ДАННЫЕ ДЛЯ ТЕСТА:")
         print("="*60)
         print(json.dumps(course_data, ensure_ascii=False, indent=2))
-        
+        if feedback:
+            print(f"ЗАМЕЧАНИЯ: {feedback}")
+    
         prompt = PromptTemplates.ENTRY_TEST_PROMPT.format(
             course_title=course_data.get("course_title", ""),
             topics=", ".join(course_data.get("topics", [])),
+            feedback=feedback or ""
         )
         
         response = self.llm_client.generate(prompt)
@@ -465,17 +472,20 @@ class AITutor:
                 "questions": []
             }
     
-    def generate_course_graph(self, student_data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_course_graph(self, student_data: Dict[str, Any], feedback: Optional[str] = None) -> Dict[str, Any]:
         """
         Генерация графа курса.
         
         Args:
             student_data: Данные о студенте и курсе
-            
+            feedback: Замечания репетитора по генерации
+
         Returns:
             Граф курса в виде словаря
         """
         logger.info("Генерация графа курса")
+        if feedback:
+            logger.info(f"Учитываются замечания: {feedback}")
         
         from prompt_templates import PromptTemplates
         
@@ -484,12 +494,15 @@ class AITutor:
         print("ВХОДНЫЕ ДАННЫЕ ДЛЯ ГРАФА КУРСА:")
         print("="*60)
         print(json.dumps(student_data, ensure_ascii=False, indent=2))
-        
+        if feedback:
+            print(f"ЗАМЕЧАНИЯ: {feedback}")
+
         prompt = PromptTemplates.COURSE_GRAPH_PROMPT.format(
             interests=", ".join(student_data["student_profile"]["interests"]),
             knowledge_gaps=", ".join(student_data["student_profile"]["knowledge_gaps"]),
             course_title=student_data["course_title"],
-            topics=", ".join(student_data["topics"])
+            topics=", ".join(student_data["topics"]),
+            feedback=feedback or ""
         )
         
         response = self.llm_client.generate(prompt)
@@ -517,18 +530,21 @@ class AITutor:
                 "edges": []
             }
     
-    def generate_lesson_plan(self, lesson_data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_lesson_plan(self, lesson_data: Dict[str, Any], feedback: Optional[str] = None) -> Dict[str, Any]:
         """
         Генерация плана урока.
         
         Args:
             lesson_data: Данные для урока
+            feedback: Замечания репетитора по генерации
             
         Returns:
             План урока в виде словаря
         """
         logger.info(f"Генерация плана урока типа: {lesson_data.get('type')}")
-        
+        if feedback:
+            logger.info(f"Учитываются замечания: {feedback}")
+
         from prompt_templates import PromptTemplates
         
         # Выводим входной JSON
@@ -536,7 +552,9 @@ class AITutor:
         print(f"ВХОДНЫЕ ДАННЫЕ ДЛЯ УРОКА ({lesson_data.get('type')}):")
         print("="*60)
         print(json.dumps(lesson_data, ensure_ascii=False, indent=2))
-        
+        if feedback:
+            print(f"ЗАМЕЧАНИЯ: {feedback}")
+
         lesson_type = lesson_data["type"]
         
         if lesson_type == "theory":
@@ -554,7 +572,8 @@ class AITutor:
         prompt = prompt_template.format(
             topic=lesson_data["lesson_parameters"]["topic"],
             interests=", ".join(lesson_data["lesson_parameters"]["student_profile"]["interests"]),
-            knowledge_gaps=", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"])
+            knowledge_gaps=", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"]),
+            feedback=feedback or ""
         )
         
         response = self.llm_client.generate(prompt)
@@ -603,25 +622,29 @@ class AITutor:
             else:
                 return {"error": "Не удалось сгенерировать план урока"}
     
-    def generate_lesson_test(self, lesson_data: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_lesson_test(self, lesson_data: Dict[str, Any], feedback: Optional[str] = None) -> Dict[str, Any]:
         """
         Генерация теста для урока.
         
         Args:
             lesson_data: Данные для урока
-            
+            feedback: Замечания репетитора по генерации
+
         Returns:
             Тест в виде словаря
         """
         logger.info("Генерация теста для урока")
-        
+        if feedback:
+            logger.info(f"Учитываются замечания: {feedback}")
+
         from prompt_templates import PromptTemplates
         
         prompt = PromptTemplates.LESSON_TEST_PROMPT.format(
             topic=lesson_data["lesson_parameters"]["topic"],
             theory=lesson_data.get("theory", ""),
             interests=", ".join(lesson_data["lesson_parameters"]["student_profile"]["interests"]),
-            knowledge_gaps=", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"])
+            knowledge_gaps=", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"]),
+            feedback=feedback or ""
         )
         
         response = self.llm_client.generate(prompt)
@@ -651,17 +674,20 @@ class AITutor:
                 }
             }
     
-    def evaluate_lesson_results(self, results_data: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_lesson_results(self, results_data: Dict[str, Any], feedback: Optional[str] = None) -> Dict[str, Any]:
         """
         Оценка результатов урока.
         
         Args:
             results_data: Данные с результатами
+            feedback: Замечания репетитора по оценке
             
         Returns:
             Оценка урока в виде словаря
         """
         logger.info("Оценка результатов урока")
+        if feedback:
+            logger.info(f"Учитываются замечания: {feedback}")
         
         from prompt_templates import PromptTemplates
         
@@ -670,7 +696,9 @@ class AITutor:
         print("ВХОДНЫЕ ДАННЫЕ ДЛЯ ОЦЕНКИ РЕЗУЛЬТАТОВ:")
         print("="*60)
         print(json.dumps(results_data, ensure_ascii=False, indent=2))
-        
+        if feedback:
+            print(f"ЗАМЕЧАНИЯ: {feedback}")
+
         # Подготовка данных для промпта
         speaking_notes = results_data.get("teachers_notes_about_speaking", "")
         reading_notes = results_data.get("teachers_notes_about_reading", "")
@@ -687,7 +715,8 @@ class AITutor:
         prompt = PromptTemplates.LESSON_EVALUATION_PROMPT.format(
             speaking_notes=speaking_notes,
             reading_notes=reading_notes,
-            test_results=test_results
+            test_results=test_results,
+            feedback=feedback or ""
         )
         
         response = self.llm_client.generate(prompt)
