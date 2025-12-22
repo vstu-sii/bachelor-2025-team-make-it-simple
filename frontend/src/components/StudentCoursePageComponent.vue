@@ -9,14 +9,42 @@
         <!-- Отображаем правильное количество вопросов или информацию о том, что тест не сформирован -->
         <div v-if="testStatus.is_test_generated && testStatus.is_test_finalized" class="test-info">
           <p class="test-status">
-            <strong>Статус:</strong> 
-            <span class="status-finalized">Доступен для прохождения</span>
+            <strong>Статус: </strong> 
+            <span :class="testResults ? 'status-completed' : 'status-available'">
+              {{ testResults ? 'Тест пройден' : 'Доступен для прохождения' }}
+            </span>
           </p>
           <p class="test-questions">
             <strong>Количество вопросов:</strong> {{ testStatus.questions_count || 0 }}
           </p>
+          
+          <!-- Краткие результаты теста -->
+          <div v-if="testResults" class="test-results-summary">
+            <div class="results-header">
+              <strong>Ваши результаты:</strong>
+            </div>
+            <div class="results-content">
+              <div class="result-item">
+                <span class="result-label">Набрано баллов:</span>
+                <span class="result-value">{{ testResults.score || 0 }}</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Максимум баллов:</span>
+                <span class="result-value">{{ testResults.max_score || testStatus.questions_count }}</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Процент выполнения:</span>
+                <span class="result-value">{{ testResults.percentage || 0 }}%</span>
+              </div>
+              <div class="result-item" v-if="testResults.completed_at">
+                <span class="result-label">Дата прохождения:</span>
+                <span class="result-value">{{ formatDate(testResults.completed_at) }}</span>
+              </div>
+            </div>
+          </div>
+          
           <p class="test-note">
-            Ваш прогресс будет доступен после проверки репетитором
+            Граф курса будет доступен после проверки репетитором
           </p>
         </div>
         <div v-else-if="testStatus.is_test_generated && !testStatus.is_test_finalized" class="test-info">
@@ -41,9 +69,12 @@
         <button 
           class="test-btn" 
           @click="startInputTest"
-          :disabled="!testStatus.is_test_generated || !testStatus.is_test_finalized"
+          :disabled="!testStatus.is_test_generated || !testStatus.is_test_finalized || testResults"
         >
-          {{ testStatus.is_test_generated && testStatus.is_test_finalized ? 'Пройти тест' : 'Тест не доступен' }}
+          {{ 
+            testResults ? 'Тест пройден' : 
+            (testStatus.is_test_generated && testStatus.is_test_finalized ? 'Пройти тест' : 'Тест не доступен')
+          }}
         </button>
       </div>
     </div>
@@ -134,6 +165,7 @@ const testStatus = ref({
   questions_count: 0
 });
 const courseData = ref({});
+const testResults = ref(null);
 
 // Вычисляемое свойство для получения courseId как числа
 const courseId = computed(() => {
@@ -177,6 +209,9 @@ async function loadStudentCourseData() {
     // Загружаем статус входного теста КУРСА (теперь из курса, а не из user_course)
     await loadTestStatus();
     
+    // Загружаем результаты теста ученика
+    await loadTestResults();
+    
     // Загружаем граф курса только если тест финализирован
     if (testStatus.value.is_test_finalized) {
       await loadGraphData();
@@ -208,6 +243,19 @@ async function loadTestStatus() {
       is_test_finalized: false,
       questions_count: 0
     };
+  }
+}
+
+// Загрузка результатов теста ученика
+async function loadTestResults() {
+  try {
+    const response = await api.get(`/tests/courses/${courseId.value}/student/${auth.user.user_id}/test-status`);
+    if (response.data && response.data.results) {
+      testResults.value = response.data.results;
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки результатов теста:", error);
+    testResults.value = null;
   }
 }
 
@@ -256,6 +304,11 @@ function startInputTest() {
     return;
   }
   
+  if (testResults.value) {
+    alert("Вы уже прошли входное тестирование.");
+    return;
+  }
+  
   console.log("Переход к входному тесту курса");
   
   router.push({
@@ -269,6 +322,17 @@ function startInputTest() {
         time_limit: 20
       })
     }
+  });
+}
+
+// Форматирование даты
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
 }
 
@@ -494,6 +558,60 @@ textarea:disabled {
   
   .test-info p {
     font-size: 14px;
+  }
+}
+
+.status-available {
+  color: #2196F3;
+  font-weight: bold;
+}
+
+.status-completed {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.test-results-summary {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.results-header {
+  margin-bottom: 10px;
+  color: #2E7D32;
+}
+
+.results-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #d4edda;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2E7D32;
+}
+
+@media (max-width: 768px) {
+  .results-content {
+    grid-template-columns: 1fr;
   }
 }
 </style>

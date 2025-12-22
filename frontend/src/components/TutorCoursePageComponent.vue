@@ -53,7 +53,7 @@
                 :key="student.student_id" 
                 :value="student.student_id"
               >
-                {{ student.student_name }}
+                {{ student.student_name }} 
               </option>
             </select>
             
@@ -77,26 +77,73 @@
       </div>
     </div>
 
-    <!-- Входное тестирование КУРСА - ТЕПЕРЬ ОБЩЕЕ ДЛЯ ВСЕХ УЧЕНИКОВ -->
+    <!-- Входное тестирование -->
     <div class="section">
       <h1 class="title">Входное тестирование курса</h1>
       <div class="divider"></div>
       
       <div class="test-box">
+        <!-- Результаты теста выбранного ученика -->
+        <div v-if="selectedStudentId && currentStudent && currentStudent.test_results" class="student-test-results">
+          <h3 class="student-results-header">
+            Результаты входного тестирования 
+            <span class="student-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
+          </h3>
+          <div class="student-results-content">
+            <div class="student-result-item">
+              <span class="student-result-label">Набрано баллов:</span>
+              <span class="student-result-value">{{ currentStudent.test_results.score || 0 }}</span>
+            </div>
+            <div class="student-result-item">
+              <span class="student-result-label">Максимум баллов:</span>
+              <span class="student-result-value">{{ currentStudent.test_results.max_score || testStatus.questions_count }}</span>
+            </div>
+            <div class="student-result-item">
+              <span class="student-result-label">Процент выполнения:</span>
+              <span class="student-result-value">{{ currentStudent.test_results.percentage || 0 }}%</span>
+            </div>
+            <div class="student-result-item" v-if="currentStudent.test_results.completed_at">
+              <span class="student-result-label">Дата прохождения:</span>
+              <span class="student-result-value">{{ formatDate(currentStudent.test_results.completed_at) }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Отображаем правильное количество вопросов или информацию о том, что тест не сгенерирован -->
         <div v-if="testStatus.is_test_generated" class="test-info">
           <p class="test-status">
             <strong>Статус:</strong> 
             <span :class="testStatus.is_test_finalized ? 'status-finalized' : 'status-draft'">
-              {{ testStatus.is_test_finalized ? 'Опубликован для всех учеников' : 'Черновик' }}
+              {{ testStatus.is_test_finalized ? 'Опубликован' : 'Черновик' }}
             </span>
           </p>
           <p class="test-questions">
             <strong>Количество вопросов:</strong> {{ testStatus.questions_count || 0 }}
           </p>
           <p class="test-note">
-            Графы курса будут доступны ученикам после публикации теста
+            Граф курса будет доступен после прохождения входного тестирования
           </p>
+          
+          <!-- Статистика прохождения теста учениками -->
+          <div v-if="testStatus.is_test_finalized && courseStudents.length > 0" class="test-stats">
+            <div class="stats-header">
+              <strong>Статистика прохождения:</strong>
+            </div>
+            <div class="stats-content">
+              <div class="stat-item">
+                <span class="stat-label">Всего учеников:</span>
+                <span class="stat-value">{{ courseStudents.length }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Прошли тест:</span>
+                <span class="stat-value">{{ completedTestsCount }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Ожидают прохождения:</span>
+                <span class="stat-value">{{ pendingTestsCount }}</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div v-else class="test-info">
           <p class="test-status">
@@ -112,7 +159,7 @@
         </div>
         
         <button class="test-btn" @click="startTest">
-          {{ testStatus.is_test_generated ? 'Редактировать тест' : 'Создать тест' }}
+          {{ testStatus.is_test_generated ? 'Перейти к тесту' : 'Создать тест' }}
         </button>
       </div>
     </div>
@@ -242,6 +289,15 @@ const courseId = computed(() => {
   return id || null;
 });
 
+// Вычисляемые свойства для статистики
+const completedTestsCount = computed(() => {
+  return courseStudents.value.filter(s => s.test_status === 'пройден').length;
+});
+
+const pendingTestsCount = computed(() => {
+  return courseStudents.value.filter(s => !s.test_status || s.test_status === 'не пройден').length;
+});
+
 // Загрузка данных для репетитора
 async function loadTutorCourseData() {
   try {
@@ -253,6 +309,9 @@ async function loadTutorCourseData() {
     if (response.data && response.data.students) {
       courseStudents.value = response.data.students;
       console.log("Загружены ученики:", courseStudents.value);
+      
+      // Для каждого ученика загружаем статус теста
+      await loadStudentsTestStatus();
       
       // Если есть ученики, выбираем первого
       if (courseStudents.value.length > 0) {
@@ -267,8 +326,22 @@ async function loadTutorCourseData() {
     
   } catch (error) {
     console.error("Ошибка загрузки данных репетитора:", error);
-    // Для демонстрации создаем тестовых учеников
-    createDemoStudents();
+  }
+}
+
+// Загрузка статуса теста для всех учеников
+async function loadStudentsTestStatus() {
+  for (const student of courseStudents.value) {
+    try {
+      const response = await api.get(`/tests/courses/${courseId.value}/student/${student.student_id}/test-status`);
+      if (response.data) {
+        student.test_status = response.data.test_status || 'не пройден';
+        student.test_results = response.data.results || null;
+      }
+    } catch (error) {
+      console.error(`Ошибка загрузки статуса теста для ученика ${student.student_id}:`, error);
+      student.test_status = 'не пройден';
+    }
   }
 }
 
@@ -611,18 +684,25 @@ function onGraphNodeClick({ node, lessonId }) {
 function startTest() {
   console.log("Переход к входному тесту курса");
   
+  const queryParams = {
+    courseTitle: "Входное тестирование курса",
+    testData: JSON.stringify({
+      test_type: "placement",
+      questions: testStatus.value.questions_count || 20,
+      time_limit: 20
+    }),
+    isTutor: true
+  };
+  
+  // Если выбран ученик, добавляем его ID для просмотра ответов
+  if (selectedStudentId.value && currentStudent.value?.test_status === 'пройден') {
+    queryParams.studentId = selectedStudentId.value;
+  }
+  
   router.push({
     name: "input-test",
     params: { courseId: courseId.value },
-    query: {
-      courseTitle: "Входное тестирование курса",
-      testData: JSON.stringify({
-        test_type: "placement",
-        questions: testStatus.value.questions_count || 20,
-        time_limit: 20
-      }),
-      isTutor: true
-    }
+    query: queryParams
   });
 }
 
@@ -638,17 +718,15 @@ function getStudentShortName(fullName) {
   return fullName;
 }
 
-// Демо-функции
-function createDemoStudents() {
-  courseStudents.value = [
-    { student_id: 1, student_name: "Matokhin Ilya", knowledge_gaps: "Need practice with Past Simple" },
-    { student_id: 6, student_name: "Z Z", knowledge_gaps: "Difficulty with vocabulary" }
-  ];
-  
-  if (courseStudents.value.length > 0) {
-    selectedStudentId.value = courseStudents.value[0].student_id;
-    currentStudent.value = courseStudents.value[0];
-  }
+// Форматирование даты
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }
 
 // Инициализация
@@ -1126,5 +1204,146 @@ textarea {
 .no-student {
   color: #F44336;
   font-style: italic;
+}
+
+.test-status-indicator {
+  font-size: 12px;
+  color: #4CAF50;
+  margin-left: 5px;
+  font-weight: normal;
+}
+
+.student-test-status {
+  font-size: 14px;
+  color: #4CAF50;
+  margin-left: 10px;
+  font-weight: normal;
+}
+
+.test-results-summary {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.results-header {
+  margin-bottom: 10px;
+  color: #2E7D32;
+}
+
+.results-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #d4edda;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2E7D32;
+}
+
+.test-stats {
+  background: #f0f8ff;
+  border: 1px solid #2196F3;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.stats-header {
+  margin-bottom: 10px;
+  color: #1976D2;
+}
+
+.stats-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1976D2;
+}
+
+@media (max-width: 768px) {
+  .results-content,
+  .stats-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.student-test-results {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.student-results-header {
+  margin-bottom: 10px;
+  color: #2E7D32;
+  font-size: 18px;
+  text-align: center;
+}
+
+.student-name {
+  color: #1976D2;
+  font-weight: bold;
+}
+
+.student-results-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.student-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #d4edda;
+}
+
+.student-result-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.student-result-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2E7D32;
 }
 </style>

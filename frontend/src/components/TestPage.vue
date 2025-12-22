@@ -59,12 +59,26 @@
                   v-model="task.userAnswer"
                   class="answer-input" 
                   :placeholder="`Введите ответ (максимум ${task.max_length} символов)`"
-                  :readonly="isTutorMode || isSaved"
+                  :readonly="isTutorMode || isSaved || isReadonlyMode"
                   :maxlength="task.max_length"
-                  :class="{ 'readonly-input': isTutorMode || isSaved }"
+                  :class="{ 'readonly-input': isTutorMode || isSaved || isReadonlyMode }"
+                  @input="onAnswerInput"
                 ></textarea>
                 <div class="char-counter" v-if="task.max_length">
                   {{ task.userAnswer?.length || 0 }}/{{ task.max_length }} символов
+                </div>
+                <div v-if="!isTutorMode && !isTaskCompleted(task)" class="validation-error">
+                  Это поле обязательно для заполнения
+                </div>
+                
+                <!-- Ответ ученика (только в режиме просмотра репетитора) -->
+                <div v-if="isReadonlyMode && task.userAnswer" class="student-answer-display" :class="{'answer-correct': task.student_correct, 'answer-incorrect': !task.student_correct}">
+                  <div class="student-answer-label">
+                    {{ task.student_correct ? '✓ Правильный ответ ученика' : '✗ Ответ ученика' }}
+                  </div>
+                  <div class="student-answer-text">
+                    {{ task.userAnswer }}
+                  </div>
                 </div>
               </div>
               
@@ -72,16 +86,40 @@
               <div v-else-if="task.type === 'single_choice'" class="task-type">
                 <p class="task-subtitle">Выберите один подходящий вариант ответа</p>
                 <div class="options">
-                  <label v-for="(option, optIndex) in task.options" :key="optIndex">
+                  <label 
+                    v-for="(option, optIndex) in task.options" 
+                    :key="optIndex"
+                    :class="{'selected-option': isReadonlyMode && String(task.userAnswer) === String(optIndex)}"
+                  >
                     <input 
                       type="radio" 
                       :name="'q' + index"
                       :value="optIndex"
                       v-model="task.userAnswer"
-                      :disabled="isTutorMode || isSaved"
+                      :disabled="isTutorMode || isSaved || isReadonlyMode"
+                      @change="onAnswerInput"
                     />
                     {{ option }}
                   </label>
+                </div>
+                <div v-if="!isTutorMode && !isTaskCompleted(task)" class="validation-error">
+                  Выберите один вариант ответа
+                </div>
+                
+                <!-- Ответ ученика (только в режиме просмотра репетитора) -->
+                <div v-if="isReadonlyMode && task.userAnswer !== ''" class="student-answer-display" :class="{'answer-correct': task.student_correct, 'answer-incorrect': !task.student_correct}">
+                  <div class="student-answer-label">
+                    {{ task.student_correct ? '✓ Правильный ответ ученика' : '✗ Ответ ученика' }}
+                  </div>
+                  <div class="student-answer-text">
+                    <strong>Выбрано:</strong> 
+                    <span v-if="task.userAnswer !== '' && task.options[task.userAnswer]">
+                      {{ task.options[task.userAnswer] }}
+                    </span>
+                    <span v-else>
+                      Не выбрано
+                    </span>
+                  </div>
                 </div>
               </div>
               
@@ -89,15 +127,38 @@
               <div v-else-if="task.type === 'multiple_choice'" class="task-type">
                 <p class="task-subtitle">Выберите все подходящие варианты ответа</p>
                 <div class="options">
-                  <label v-for="(option, optIndex) in task.options" :key="optIndex">
+                  <label 
+                    v-for="(option, optIndex) in task.options" 
+                    :key="optIndex"
+                    :class="{'selected-checkbox': isReadonlyMode && task.userAnswer && task.userAnswer.includes(String(optIndex))}"
+                  >
                     <input 
                       type="checkbox" 
-                      :checked="task.userAnswer?.includes(optIndex)"
+                      :checked="task.userAnswer?.includes(String(optIndex))"
                       @change="updateCheckbox(task, optIndex, $event.target.checked)"
-                      :disabled="isTutorMode || isSaved"
+                      :disabled="isTutorMode || isSaved || isReadonlyMode"
                     />
                     {{ option }}
                   </label>
+                </div>
+                <div v-if="!isTutorMode && !isTaskCompleted(task)" class="validation-error">
+                  Выберите хотя бы один вариант ответа
+                </div>
+                
+                <!-- Ответ ученика (только в режиме просмотра репетитора) -->
+                <div v-if="isReadonlyMode && task.userAnswer" class="student-answer-display" :class="{'answer-correct': task.student_correct, 'answer-incorrect': !task.student_correct}">
+                  <div class="student-answer-label">
+                    {{ task.student_correct ? '✓ Правильный ответ ученика' : '✗ Ответ ученика' }}
+                  </div>
+                  <div class="student-answer-text">
+                    <strong>Выбраны варианты:</strong>
+                    <ul>
+                      <li v-for="index in task.userAnswer" :key="index">
+                        {{ task.options[index] }}
+                      </li>
+                      <li v-if="task.userAnswer.length === 0">Не выбрано ни одного варианта</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
               
@@ -112,8 +173,10 @@
                     <label class="gap-label">Пропуск [{{ gap.gap_id }}]:</label>
                     <select 
                       v-model="gap.userAnswer"
-                      :disabled="isTutorMode || isSaved"
+                      :disabled="isTutorMode || isSaved || isReadonlyMode"
                       class="gap-select"
+                      :class="{'selected-gap': isReadonlyMode && gap.userAnswer !== ''}"
+                      @change="onAnswerInput"
                     >
                       <option value="">Выберите вариант</option>
                       <option 
@@ -124,6 +187,28 @@
                         {{ option }}
                       </option>
                     </select>
+                  </div>
+                </div>
+                <div v-if="!isTutorMode && !isTaskCompleted(task)" class="validation-error">
+                  Заполните все пропуски
+                </div>
+                
+                <!-- Ответ ученика (только в режиме просмотра репетитора) -->
+                <div v-if="isReadonlyMode && task.gaps" class="student-answer-display" :class="{'answer-correct': task.student_correct, 'answer-incorrect': !task.student_correct}">
+                  <div class="student-answer-label">
+                    {{ task.student_correct ? '✓ Правильный ответ ученика' : '✗ Ответ ученика' }}
+                  </div>
+                  <div class="student-answer-text">
+                    <strong>Ответы ученика:</strong>
+                    <div v-for="gap in task.gaps" :key="gap.gap_id" class="gap-answer">
+                      Пропуск [{{ gap.gap_id }}]: 
+                      <span v-if="gap.userAnswer !== '' && gap.options[gap.userAnswer]">
+                        {{ gap.options[gap.userAnswer] }}
+                      </span>
+                      <span v-else>
+                        Не выбран
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -151,11 +236,12 @@
         <div class="action-buttons">
           <!-- Для ученика ВСЕГДА показываем кнопку "Завершить тест" -->
           <button 
-            v-if="!isTutorMode" 
+            v-if="!isTutorMode && !isReadonlyMode" 
             @click="saveTest" 
             class="save-btn"
+            :disabled="!isAllTasksCompleted || saving"
           >
-            Завершить тест
+            {{ saving ? 'Сохранение...' : 'Завершить тест' }}
           </button>
           
           <!-- Для репетитора показываем кнопку "Сохранить генерацию" только если есть вопросы и не сохранено -->
@@ -163,13 +249,20 @@
             v-if="isTutorMode && !isSaved && tasks.length > 0" 
             @click="saveTest" 
             class="save-btn"
+            :disabled="saving"
           >
-            Сохранить генерацию
+            {{ saving ? 'Сохранение...' : 'Сохранить генерацию' }}
           </button>
           
           <button @click="goBack" class="exit-btn">
-            Выйти
+            {{ isTutorMode && isSaved ? 'Вернуться к курсу' : 'Выйти' }}
           </button>
+        </div>
+
+        <!-- Сообщение о незаполненных ответах -->
+        <div v-if="showIncompleteMessage" class="incomplete-message">
+          <p>Пожалуйста, заполните все ответы перед завершением теста.</p>
+          <p>Незаполненных заданий: {{ incompleteTasksCount }}</p>
         </div>
 
       </div>
@@ -226,6 +319,11 @@ const props = defineProps({
       baseUrl: "http://localhost:8000",
       courseData: {}
     })
+  },
+  // Режим только для чтения (для репетитора при просмотре ответов ученика)
+  isReadonlyMode: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -238,17 +336,32 @@ const auth = useAuthStore();
 // Данные теста
 const feedbackComment = ref("");
 const generating = ref(false);
+const saving = ref(false);
 const tasks = ref([]);
 const isSaved = ref(false);
 const hasGenerated = ref(false);
 
 // Вычисляемое свойство для отображения вопросов
 const showTestQuestions = computed(() => {
-  // Для ученика всегда показываем вопросы
-  if (!props.isTutorMode) return true;
+  // Всегда показываем вопросы, если они есть
+  return tasks.value.length > 0;
+});
+
+// Проверка заполнения всех задач
+const isAllTasksCompleted = computed(() => {
+  if (props.isTutorMode || props.isReadonlyMode) return true; // Для репетитора проверка не нужна
   
-  // Для репетитора показываем вопросы только если они есть и тест еще не сохранен
-  return tasks.value.length > 0 && !isSaved.value;
+  return tasks.value.every(task => isTaskCompleted(task));
+});
+
+// Количество незаполненных задач
+const incompleteTasksCount = computed(() => {
+  return tasks.value.filter(task => !isTaskCompleted(task)).length;
+});
+
+// Показывать сообщение о незаполненных ответах
+const showIncompleteMessage = computed(() => {
+  return !props.isTutorMode && !props.isReadonlyMode && incompleteTasksCount.value > 0;
 });
 
 // Показывать правильные ответы репетитору
@@ -301,6 +414,34 @@ function initializeTasks(newTasks) {
   hasGenerated.value = true;
 }
 
+// Проверка заполнения задачи
+function isTaskCompleted(task) {
+  if (!task) return false;
+  
+  switch (task.type) {
+    case 'short_answer':
+      return task.userAnswer?.trim().length > 0;
+      
+    case 'single_choice':
+      return task.userAnswer !== '' && task.userAnswer !== null && task.userAnswer !== undefined;
+      
+    case 'multiple_choice':
+      return Array.isArray(task.userAnswer) && task.userAnswer.length > 0;
+      
+    case 'gaps_choice':
+      if (!task.gaps) return false;
+      return task.gaps.every(gap => gap.userAnswer !== '' && gap.userAnswer !== null && gap.userAnswer !== undefined);
+      
+    default:
+      return false;
+  }
+}
+
+// Обработчик ввода ответа
+function onAnswerInput() {
+  // Триггерим пересчет вычисляемых свойств
+}
+
 // Обновление checkbox ответов
 function updateCheckbox(task, optionIndex, checked) {
   if (!task.userAnswer) task.userAnswer = [];
@@ -311,6 +452,9 @@ function updateCheckbox(task, optionIndex, checked) {
     const index = task.userAnswer.indexOf(optionIndex);
     if (index > -1) task.userAnswer.splice(index, 1);
   }
+  
+  // Триггерим пересчет
+  onAnswerInput();
 }
 
 // Форматирование текста с пропусками
@@ -558,17 +702,14 @@ function generateDemoTest() {
   alert(`Демо-тест сгенерирован! Вопросов: ${questions.length}`);
 }
 
-// Регенерация теста
-function regenerateTest() {
-  if (confirm("Сгенерировать новый тест? Текущие изменения будут потеряны.")) {
-    feedbackComment.value = "";
-    tasks.value = [];
-    hasGenerated.value = false;
-  }
-}
-
 // Сохранение теста
 async function saveTest() {
+  // Для ученика проверяем заполнение всех ответов
+  if (!props.isTutorMode && !isAllTasksCompleted.value) {
+    alert(`Пожалуйста, заполните все ответы перед завершением теста. Осталось заполнить: ${incompleteTasksCount.value} заданий.`);
+    return;
+  }
+  
   if (props.isTutorMode) {
     // Для репетитора - финализация теста
     if (!confirm("Сохранить тест окончательно? После сохранения изменения будут недоступны.")) {
@@ -576,6 +717,8 @@ async function saveTest() {
     }
     
     try {
+      saving.value = true;
+      
       const response = await fetch(`${props.apiConfig.baseUrl}/tests/courses/${route.params.courseId}/entry-test/finalize`, {
         method: 'PUT',
         headers: {
@@ -603,9 +746,13 @@ async function saveTest() {
     } catch (error) {
       console.error("Ошибка сохранения теста:", error);
       alert("Ошибка сохранения теста. Попробуйте снова.");
+    } finally {
+      saving.value = false;
     }
   } else {
     // Для ученика - завершение теста
+    saving.value = true;
+    
     const testData = {
       tasks: tasks.value,
       metadata: {
@@ -615,11 +762,87 @@ async function saveTest() {
       }
     };
     
-    emit('save', testData);
-    
-    alert("Тестирование завершено! Результаты отправлены на проверку.");
-    goBack();
+    try {
+      // Вычисляем результаты
+      const results = calculateTestResults(tasks.value);
+      testData.results = results;
+      
+      // Отправляем событие сохранения
+      emit('save', testData);
+      
+    } catch (error) {
+      console.error("Ошибка при расчете результатов:", error);
+    } finally {
+      saving.value = false;
+    }
   }
+}
+
+// Расчет результатов теста
+function calculateTestResults(tasks) {
+  let totalScore = 0;
+  let maxScore = 0;
+  const detailedResults = [];
+  
+  tasks.forEach((task, index) => {
+    maxScore += 1; // Каждый вопрос оценивается в 1 балл
+    
+    let score = 0;
+    let isCorrect = false;
+    
+    switch (task.type) {
+      case 'short_answer':
+        isCorrect = task.userAnswer?.trim().toLowerCase() === task.correct_answer?.toLowerCase();
+        score = isCorrect ? 1 : 0;
+        break;
+        
+      case 'single_choice':
+        isCorrect = parseInt(task.userAnswer) === task.correct_answer;
+        score = isCorrect ? 1 : 0;
+        break;
+        
+      case 'multiple_choice':
+        const userAnswers = new Set(task.userAnswer || []);
+        const correctAnswers = new Set(task.correct_answers || []);
+        
+        // Проверяем, что все правильные выбраны и нет лишних
+        isCorrect = task.correct_answers.every(answer => userAnswers.has(answer)) && 
+                   userAnswers.size === correctAnswers.size;
+        score = isCorrect ? 1 : 0;
+        break;
+        
+      case 'gaps_choice':
+        const allGapsCorrect = task.gaps.every(gap => 
+          parseInt(gap.userAnswer) === gap.correct_answer
+        );
+        isCorrect = allGapsCorrect;
+        score = allGapsCorrect ? 1 : 0;
+        break;
+    }
+    
+    totalScore += score;
+    
+    detailedResults.push({
+      question_id: task.question_id || `q${index + 1}`,
+      question: task.question,
+      type: task.type,
+      user_answer: task.userAnswer,
+      correct_answer: task.correct_answer,
+      is_correct: isCorrect,
+      score: score,
+      max_score: 1
+    });
+  });
+  
+  const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  
+  return {
+    score: totalScore,
+    max_score: maxScore,
+    percentage: percentage,
+    completed_at: new Date().toISOString(),
+    detailed_results: detailedResults
+  };
 }
 
 // Навигация назад
@@ -1235,5 +1458,148 @@ function goBack() {
     align-items: flex-start;
     gap: 10px;
   }
+}
+
+.validation-error {
+  color: #F44336;
+  font-size: 14px;
+  margin-top: 5px;
+  padding: 5px 10px;
+  background: #ffebee;
+  border-radius: 4px;
+  border-left: 3px solid #F44336;
+}
+
+.incomplete-message {
+  background: #fff3e0;
+  border: 1px solid #FF9800;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
+  text-align: center;
+  color: #E65100;
+}
+
+.incomplete-message p {
+  margin: 5px 0;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #cccccc;
+}
+
+/* Стили для правильных ответов после прохождения теста */
+.correct-answer-display {
+  margin-top: 15px;
+  padding: 10px;
+  background: #e8f5e8;
+  border-radius: 5px;
+  border-left: 3px solid #4CAF50;
+}
+
+.correct-answer-display p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.answer-feedback {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.answer-correct {
+  background: #e8f5e8;
+  border-left: 3px solid #4CAF50;
+}
+
+.answer-incorrect {
+  background: #ffebee;
+  border-left: 3px solid #F44336;
+}
+
+.score-display {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Стили для отображения ответов ученика */
+.student-answer-display {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f0f7ff;
+  border-left: 3px solid #2196F3;
+}
+
+.student-answer-label {
+  font-weight: bold;
+  color: #1976D2;
+  margin-bottom: 5px;
+}
+
+.student-answer-text {
+  font-size: 14px;
+  color: #333;
+  padding: 5px;
+  background: white;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+}
+
+/* Стили для правильных/неправильных ответов */
+.answer-correct {
+  background-color: #e8f5e8 !important;
+  border-left-color: #4CAF50 !important;
+}
+
+.answer-correct .student-answer-label {
+  color: #2E7D32 !important;
+}
+
+.answer-incorrect {
+  background-color: #ffebee !important;
+  border-left-color: #F44336 !important;
+}
+
+.answer-incorrect .student-answer-label {
+  color: #C62828 !important;
+}
+
+/* Стили для отображения выбранного радио-чекбокса */
+.selected-option {
+  background-color: #e3f2fd;
+  border: 2px solid #2196F3 !important;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+.selected-checkbox {
+  background-color: #e3f2fd;
+  border: 2px solid #2196F3 !important;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+/* Стили для выбранного выпадающего списка */
+.selected-gap {
+  background-color: #e3f2fd;
+  border: 2px solid #2196F3 !important;
+}
+
+/* Стили для отображения ответов на gaps_choice */
+.gap-answer {
+  margin: 5px 0;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.gap-answer:last-child {
+  border-bottom: none;
 }
 </style>

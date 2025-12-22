@@ -14,6 +14,7 @@ from app.schemas.test import (
 )
 from app.utils.jwt import get_current_user
 from app.models.course import Course
+from app.models.user_course import UserCourse
 from app.ml.main import generate_entry_test
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
@@ -342,3 +343,277 @@ async def get_entry_test_questions_count(
     except Exception as e:
         print(f"Error getting test questions count: {e}")
         return {"questions_count": 0, "is_finalized": False}
+    
+@router.get("/courses/{course_id}/student/{student_id}/test-status")
+async def get_student_test_status(
+    course_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Получить статус прохождения теста для конкретного ученика
+    """
+    try:
+        # Проверяем доступ к данным
+        if current_user.user_id != student_id and current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Нет доступа к этим данным")
+        
+        # Находим запись ученика на курсе
+        user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not user_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на курсе")
+        
+        # Проверяем, есть ли результаты теста
+        test_status = "не пройден"
+        results = None
+        
+        if user_course.output_test_json:
+            try:
+                test_data = json.loads(user_course.output_test_json)
+                if test_data and test_data.get("results"):
+                    test_status = "пройден"
+                    results = test_data.get("results")
+            except:
+                pass
+        
+        return {
+            "student_id": student_id,
+            "course_id": course_id,
+            "test_status": test_status,
+            "results": results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting student test status: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при получении статуса теста")
+    
+@router.post("/courses/{course_id}/student/{student_id}/submit")
+async def submit_student_test(
+    course_id: int,
+    student_id: int,
+    test_data: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Сохранить результаты теста ученика
+    """
+    try:
+        # Проверяем, что ученик отправляет свои результаты
+        if current_user.user_id != student_id:
+            raise HTTPException(status_code=403, detail="Нельзя сохранять результаты за другого ученика")
+        
+        # Проверяем, что пользователь - ученик
+        if current_user.role != "Ученик":
+            raise HTTPException(status_code=403, detail="Только ученики могут отправлять результаты теста")
+        
+        # Находим запись ученика на курсе
+        user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not user_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на курсе")
+        
+        # Получаем тест курса для проверки правильных ответов
+        course_test = TestRepository.get_generated_test(db, course_id)
+        if not course_test or not course_test.get("questions"):
+            raise HTTPException(status_code=400, detail="Тест курса не найден")
+        
+        # Вычисляем результаты
+        results = calculate_test_results(
+            student_answers=test_data.get("tasks", []),
+            correct_answers=course_test.get("questions", [])
+        )
+        
+        # Сохраняем результаты в user_course
+        user_course.output_test_json = json.dumps({
+            "submitted_at": datetime.now().isoformat(),
+            "test_data": test_data,
+            "results": results
+        })
+        
+        db.commit()
+        
+        return {
+            "message": "Результаты теста успешно сохранены",
+            "results": results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error submitting student test: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при сохранении результатов теста")
+
+def calculate_test_results(student_answers, correct_answers):
+    """
+    Вычисляет результаты теста на основе ответов ученика и правильных ответов
+    """
+    total_score = 0
+    max_score = len(correct_answers)
+    detailed_results = []
+    
+    # Создаем словарь для быстрого поиска правильных ответов
+    correct_answers_dict = {q.get("question_id"): q for q in correct_answers}
+    
+    for student_answer in student_answers:
+        question_id = student_answer.get("question_id")
+        correct_answer = correct_answers_dict.get(question_id)
+        
+        if not correct_answer:
+            continue
+        
+        score = 0
+        is_correct = False
+        user_answer_to_store = None
+        
+        # Проверяем ответ в зависимости от типа вопроса
+        if student_answer.get("type") == "short_answer":
+            user_answer = student_answer.get("userAnswer", "").strip().lower()
+            correct = correct_answer.get("correct_answer", "").strip().lower()
+            is_correct = user_answer == correct
+            score = 1 if is_correct else 0
+            user_answer_to_store = user_answer
+            
+        elif student_answer.get("type") == "single_choice":
+            user_answer = student_answer.get("userAnswer")
+            # Приводим к строке для сравнения
+            user_answer_str = str(user_answer) if user_answer is not None else ""
+            correct = str(correct_answer.get("correct_answer"))
+            is_correct = user_answer_str == correct
+            score = 1 if is_correct else 0
+            user_answer_to_store = user_answer_str
+            
+        elif student_answer.get("type") == "multiple_choice":
+            user_answers = student_answer.get("userAnswer", [])
+            # Приводим все к строкам для сравнения
+            user_answers_set = set(map(str, user_answers))
+            correct_answers_set = set(map(str, correct_answer.get("correct_answers", [])))
+            is_correct = user_answers_set == correct_answers_set
+            score = 1 if is_correct else 0
+            user_answer_to_store = list(user_answers_set)
+            
+        elif student_answer.get("type") == "gaps_choice":
+            # Получаем ответы ученика для пропусков
+            gaps_user_answers = {}
+            if student_answer.get("gaps"):
+                for gap in student_answer.get("gaps", []):
+                    gap_id = gap.get("gap_id")
+                    gap_answer = gap.get("userAnswer", "")
+                    gaps_user_answers[gap_id] = str(gap_answer) if gap_answer is not None else ""
+            
+            # Сравниваем с правильными ответами
+            all_correct = True
+            if correct_answer.get("gaps"):
+                for gap in correct_answer.get("gaps", []):
+                    gap_id = gap.get("gap_id")
+                    correct_gap_answer = str(gap.get("correct_answer"))
+                    user_gap_answer = gaps_user_answers.get(gap_id, "")
+                    
+                    if correct_gap_answer != user_gap_answer:
+                        all_correct = False
+                        break
+            
+            is_correct = all_correct
+            score = 1 if is_correct else 0
+            user_answer_to_store = gaps_user_answers
+        
+        total_score += score
+        
+        detailed_results.append({
+            "question_id": question_id,
+            "question": correct_answer.get("question", ""),
+            "type": student_answer.get("type"),
+            "user_answer": user_answer_to_store,
+            "correct_answer": correct_answer.get("correct_answer") if student_answer.get("type") != "multiple_choice" else correct_answer.get("correct_answers"),
+            "is_correct": is_correct,
+            "score": score,
+            "max_score": 1
+        })
+    
+    percentage = round((total_score / max_score) * 100) if max_score > 0 else 0
+    
+    return {
+        "score": total_score,
+        "max_score": max_score,
+        "percentage": percentage,
+        "completed_at": datetime.now().isoformat(),
+        "detailed_results": detailed_results
+    }
+
+@router.get("/courses/{course_id}/student/{student_id}/test-answers")
+async def get_student_test_answers(
+    course_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Получить ответы ученика на тест
+    """
+    try:
+        # Проверяем, что пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут просматривать ответы учеников")
+        
+        # Получаем тест курса
+        course_test = TestRepository.get_generated_test(db, course_id)
+        if not course_test or not course_test.get("questions"):
+            raise HTTPException(status_code=404, detail="Тест курса не найден")
+        
+        # Получаем результаты теста ученика
+        user_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not user_course or not user_course.output_test_json:
+            # Если ученик еще не прошел тест, возвращаем тест без ответов
+            return {
+                "test_data": course_test,
+                "student_answers": None,
+                "has_answers": False
+            }
+        
+        # Получаем ответы ученика
+        student_data = json.loads(user_course.output_test_json)
+        student_answers = student_data.get("test_data", {}).get("tasks", [])
+        
+        # Объединяем вопросы теста с ответами ученика
+        combined_questions = []
+        for i, question in enumerate(course_test.get("questions", [])):
+            student_answer = next(
+                (sa for sa in student_answers if sa.get("question_id") == question.get("question_id")), 
+                None
+            )
+            
+            combined_question = {
+                **question,
+                "student_answer": student_answer.get("userAnswer") if student_answer else None
+            }
+            combined_questions.append(combined_question)
+        
+        return {
+            "test_data": {
+                **course_test,
+                "questions": combined_questions
+            },
+            "student_answers": student_answers,
+            "has_answers": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting student test answers: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при получении ответов ученика")
