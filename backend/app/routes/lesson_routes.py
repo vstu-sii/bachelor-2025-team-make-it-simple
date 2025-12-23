@@ -29,6 +29,12 @@ def get_lesson(
     if not lesson:
         raise HTTPException(status_code=404, detail="Урок не найден")
     
+    # ВАЖНОЕ ИСПРАВЛЕНИЕ: Если is_access не установлено, устанавливаем False
+    if lesson.is_access is None:
+        lesson.is_access = False
+        db.commit()
+        db.refresh(lesson)
+    
     # Проверяем доступ к уроку
     if not lesson.is_access and current_user.role != "Репетитор":
         raise HTTPException(status_code=403, detail="Урок недоступен")
@@ -40,7 +46,7 @@ def get_lesson(
         "reading_text": lesson.reading_text,
         "speaking_text": lesson.speaking_text,
         "lesson_notes": lesson.lesson_notes,
-        "is_access": lesson.is_access,
+        "is_access": lesson.is_access,  # Теперь всегда будет False или True
         "is_ended": lesson.is_ended
     }
     

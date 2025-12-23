@@ -643,41 +643,49 @@ async def generate_student_course_graph(
         # Устанавливаем группы для узлов
         if generated_graph.get("nodes"):
             for i, node in enumerate(generated_graph["nodes"]):
-                # Для репетитора: первая вершина всегда желтая (group=2), остальные серые (group=3)
-                # Для ученика: все вершины серые (group=3)
+                # Устанавливаем lesson_id если его нет
+                if not node.get("data"):
+                    node["data"] = {}
+                if not node["data"].get("lesson_id"):
+                    # Создаем новый урок или находим существующий
+                    lesson_title = node.get("label", f"Урок {i+1}")
+                    lesson = Lesson(
+                        theory_text=lesson_title,
+                        reading_text="",
+                        speaking_text="",
+                        is_access=False,  # ВАЖНО: ИЗНАЧАЛЬНО ЗАКРЫТ
+                        is_ended=False,
+                        topic_id=course_topics[0].topic_id if course_topics else None
+                    )
+                    db.add(lesson)
+                    db.commit()
+                    db.refresh(lesson)
+                    node["data"]["lesson_id"] = lesson.lesson_id
                 
-                # Получаем lesson_id из данных узла
                 lesson_id = node.get("data", {}).get("lesson_id")
-                lesson_data = None
                 
-                if lesson_id:
-                    # Получаем данные урока из базы
-                    lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-                    if lesson:
-                        lesson_data = {
-                            "is_access": lesson.is_access,
-                            "is_ended": lesson.is_ended
-                        }
-                        # ВАЖНО: При генерации графа устанавливаем все уроки как закрытые для ученика
-                        # кроме тех, которые уже были открыты ранее
-                        if not lesson_data["is_access"] and current_user.role == "Репетитор":
-                            # Репетитор генерирует граф - закрываем все уроки
-                            lesson.is_access = False
-                            db.commit()
+                # Получаем данные урока из базы
+                lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
+                
+                # ВАЖНОЕ ИСПРАВЛЕНИЕ: Всегда устанавливаем is_access=False при создании
+                # если репетитор генерирует граф
+                if lesson and current_user.role == "Репетитор":
+                    lesson.is_access = False  # ИЗНАЧАЛЬНО ЗАКРЫТ
+                    db.commit()
                 
                 # Для первой вершины
                 if i == 0:
                     node["is_first_lesson"] = True
                     node["tutor_access"] = True  # Репетитор всегда имеет доступ к первой вершине
                     
-                    # По умолчанию для ученика первая вершина серая
-                    node["group"] = 3  # Серая для ученика
-                    node["is_access_for_student"] = False
+                    # Первая вершина - желтая для репетитора, но серая для ученика
+                    node["group"] = 2  # Желтый для репетитора
+                    node["is_access_for_student"] = False  # НЕДОСТУПЕН для ученика
                     
                 else:
                     # Для остальных вершин
-                    node["group"] = 3  # Серые для ученика
-                    node["is_access_for_student"] = False
+                    node["group"] = 3  # Серые
+                    node["is_access_for_student"] = False  # НЕДОСТУПНЫ
                     node["tutor_access"] = False  # Репетитор не может кликать на серые вершины
         
         print(f"  Сгенерировано узлов: {len(generated_graph.get('nodes', []))}")

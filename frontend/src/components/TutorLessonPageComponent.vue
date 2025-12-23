@@ -378,23 +378,11 @@ async function toggleLessonAccess() {
     
     lessonData.value.is_access = newAccessState;
     
-    // ОБНОВЛЯЕМ ГРАФ УЧЕНИКА
-    if (studentIdRef.value && courseIdRef.value) {
-      try {
-        // Обновляем узел в графе ученика
-        await api.post(
-          `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph/update-access`,
-          {
-            node_id: lessonIdRef.value,  // Используем ID урока как ID узла
-            is_access: newAccessState
-          }
-        );
-        console.log(`Граф обновлен: доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'}`);
-      } catch (graphError) {
-        console.error("Ошибка обновления графа:", graphError);
-        // Не прерываем процесс из-за ошибки обновления графа
-      }
-    }
+    // Синхронизируем с графом ученика
+    await synchronizeWithGraph(newAccessState);
+    
+    // Двойное обновление для надежности
+    await updateGraphAccessState(newAccessState);
     
     alert(`Доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'} для ученика`);
     
@@ -451,6 +439,7 @@ async function loadLessonData() {
     const response = await api.get(`/lessons/${lessonIdRef.value}?include_topic=true`);
     lessonData.value = response.data;
 
+    // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем и устанавливаем is_access если undefined/null
     if (lessonData.value.is_access === undefined || lessonData.value.is_access === null) {
       // Обновляем урок, устанавливая его как закрытый
       await api.put(`/lessons/${lessonIdRef.value}/content`, {
@@ -459,6 +448,9 @@ async function loadLessonData() {
         content: ""
       });
       lessonData.value.is_access = false;
+    } else if (lessonData.value.is_access === true) {
+      // Если урок уже открыт, синхронизируем с графом
+      await synchronizeWithGraph(true);
     }
     
     // Загружаем контент урока
@@ -485,6 +477,24 @@ async function loadLessonData() {
     goBack();
   } finally {
     loading.value = false;
+  }
+}
+
+async function synchronizeWithGraph(isAccess) {
+  if (!courseIdRef.value || !studentIdRef.value) return;
+  
+  try {
+    // Обновляем узел в графе ученика
+    await api.post(
+      `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph/update-access`,
+      {
+        node_id: lessonIdRef.value,
+        is_access: isAccess
+      }
+    );
+    console.log(`Граф синхронизирован: доступ ${isAccess ? 'открыт' : 'закрыт'}`);
+  } catch (graphError) {
+    console.error("Ошибка синхронизации графа:", graphError);
   }
 }
 
