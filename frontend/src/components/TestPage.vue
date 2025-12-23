@@ -514,8 +514,11 @@ async function generateTest() {
   generating.value = true;
   
   try {
+    // Используем baseUrl из apiConfig
+    const baseUrl = props.apiConfig.baseUrl || "http://localhost:8000";
+    
     // Отправляем запрос на сервер для генерации теста
-    const response = await fetch(`${props.apiConfig.baseUrl}/tests/courses/${route.params.courseId}/entry-test/generate`, {
+    const response = await fetch(`${baseUrl}/tests/courses/${route.params.courseId}/entry-test/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -719,7 +722,10 @@ async function saveTest() {
     try {
       saving.value = true;
       
-      const response = await fetch(`${props.apiConfig.baseUrl}/tests/courses/${route.params.courseId}/entry-test/finalize`, {
+      // Используем baseUrl из apiConfig
+      const baseUrl = props.apiConfig.baseUrl || "http://localhost:8000";
+      
+      const response = await fetch(`${baseUrl}/tests/courses/${route.params.courseId}/entry-test/finalize`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -21,6 +21,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { config } from "../config.js"; // Импортируем конфиг
 import TestPage from "../components/TestPage.vue";
 
 const route = useRoute();
@@ -37,9 +38,9 @@ const courseData = ref({});
 const selectedStudentId = ref(null);
 const studentTestResults = ref(null);
 
-// Конфигурация API
+// Конфигурация API - используем URL из конфига
 const apiConfig = ref({
-  baseUrl: "http://localhost:8000",
+  baseUrl: config.apiUrl,
   courseData: {}
 });
 
@@ -81,7 +82,7 @@ onMounted(async () => {
   
   // Настраиваем API конфигурацию
   apiConfig.value = {
-    baseUrl: "http://localhost:8000",
+    baseUrl: config.apiUrl,
     courseData: courseData.value
   };
 });
@@ -89,7 +90,7 @@ onMounted(async () => {
 // Загрузка данных курса
 async function loadCourseData() {
   try {
-    const response = await fetch(`http://localhost:8000/courses/${courseId.value}`, {
+    const response = await fetch(`${config.apiUrl}/courses/${courseId.value}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
@@ -122,7 +123,7 @@ async function loadTest() {
     });
     
     // Используем новый маршрут для получения теста КУРСА
-    const response = await fetch(`http://localhost:8000/tests/courses/${courseId.value}/entry-test`, {
+    const response = await fetch(`${config.apiUrl}/tests/courses/${courseId.value}/entry-test`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
@@ -173,7 +174,7 @@ async function loadStudentTestResults() {
   try {
     console.log(`Загрузка результатов теста для ученика ${selectedStudentId.value}`);
     
-    const response = await fetch(`http://localhost:8000/tests/courses/${courseId.value}/student/${selectedStudentId.value}/test-status`, {
+    const response = await fetch(`${config.apiUrl}/tests/courses/${courseId.value}/student/${selectedStudentId.value}/test-status`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
@@ -403,7 +404,7 @@ function handleSave(testData) {
 
 async function saveStudentTestResults(testData) {
   try {
-    const response = await fetch(`http://localhost:8000/tests/courses/${courseId.value}/student/${auth.user.user_id}/submit`, {
+    const response = await fetch(`${config.apiUrl}/tests/courses/${courseId.value}/student/${auth.user.user_id}/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

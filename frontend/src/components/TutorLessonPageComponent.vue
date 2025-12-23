@@ -285,6 +285,10 @@ const props = defineProps({
   lessonLabel: {
     type: String,
     default: ""
+  },
+  studentId: {
+    type: Number,
+    default: null  // Добавляем studentId
   }
 });
 
@@ -295,6 +299,7 @@ const auth = useAuthStore();
 const lessonIdRef = ref(props.lessonId);
 const courseIdRef = ref(props.courseId);
 const lessonLabelFromGraph = ref(props.lessonLabel); // Используем label из графа
+const studentIdRef = ref(props.studentId);  // Используем studentId из props
 
 // Данные урока
 const lessonData = ref(null);
@@ -362,25 +367,72 @@ async function toggleLessonAccess() {
   if (!lessonData.value) return;
   
   try {
-      const newAccessState = !lessonData.value.is_access;
-  
-      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+    const newAccessState = !lessonData.value.is_access;
+    
+    // Обновляем доступ к уроку
+    await api.put(`/lessons/${lessonIdRef.value}/content`, {
       content_type: "access",
       is_access: newAccessState,
       content: ""
-      });
-      
-      lessonData.value.is_access = newAccessState;
-      
+    });
+    
+    lessonData.value.is_access = newAccessState;
+    
+    // Если есть studentId и courseId, обновляем граф
+    if (studentIdRef.value && courseIdRef.value) {
+      await updateGraphAccessState(newAccessState);
+    }
+    
+    alert(`Доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'} для ученика`);
+    
   } catch (error) {
-      console.error("Ошибка изменения доступа к уроку:", error);
-      
-      if (error.response) {
+    console.error("Ошибка изменения доступа к уроку:", error);
+    
+    if (error.response) {
       console.error("Детали ошибки:", error.response.data);
-      } else {
+    } else {
+      console.error("Network error:", error);
+    }
+    alert("Ошибка изменения доступа");
+  }
+}
+
+async function updateGraphAccessState(isAccess) {
+  if (!courseIdRef.value || !studentIdRef.value) return;
+  
+  try {
+    // Получаем текущий граф
+    const graphResponse = await api.get(
+      `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`
+    );
+    
+    if (graphResponse.data && graphResponse.data.graph_data) {
+      const graphData = graphResponse.data.graph_data;
+      
+      // Находим узел, соответствующий этому уроку
+      const lessonNode = graphData.nodes.find(node => 
+        node.data?.lesson_id === lessonIdRef.value
+      );
+      
+      if (lessonNode) {
+        // Обновляем состояние доступа
+        lessonNode.group = isAccess ? 2 : 3; // 2 - желтый, 3 - серый
+        lessonNode.is_access_for_student = isAccess;
+        
+        // Обновляем граф в базе данных
+        await api.put(
+          `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`,
+          graphData
+        );
+        
+        console.log(`Граф обновлен: урок ${lessonIdRef.value} - ${isAccess ? 'доступен' : 'недоступен'}`);
       }
+    }
+  } catch (error) {
+    console.error("Ошибка обновления графа:", error);
+    // Не алармим пользователя - это дополнительная операция
   }
-  }
+}
 
 async function loadLessonData() {
   if (!lessonIdRef.value) return;
@@ -685,6 +737,13 @@ watch(
   () => props.lessonLabel,
   (newLabel) => {
     lessonLabelFromGraph.value = newLabel;
+  }
+);
+
+watch(
+  () => props.studentId,
+  (newStudentId) => {
+    studentIdRef.value = newStudentId;
   }
 );
 </script>

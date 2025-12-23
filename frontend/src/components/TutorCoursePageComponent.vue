@@ -184,61 +184,72 @@
         {{ loading ? 'Сохранение...' : 'Сохранить' }}
       </button>
     </div>
-
+  </div>
     <!-- Граф курса - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ВЫБРАН УЧЕНИК -->
-    <div v-if="selectedStudentId && currentStudent" class="section graph-section">
-      <h1 class="title">
-        Граф курса
-        <span class="student-short-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
-      </h1>
-      <div class="divider"></div>
-      
-      <div v-if="!isGraphFinalized && testStatus.is_test_finalized" class="form-group">
-        <div class="row">
-          <input 
-            v-model="graphChanges" 
-            type="text" 
-            placeholder="Внесите изменения в граф (например: 'добавить узел Present Perfect')" 
-            :disabled="loading || !selectedStudentId"
-          />
-          <button 
-            class="generate-btn" 
-            @click="generateGraph"
-            :disabled="loading || !selectedStudentId"
-          >
-            {{ loading ? 'Обновление...' : 'Обновить граф' }}
-          </button>
-        </div>
+  <div v-if="selectedStudentId && currentStudent" class="section graph-section">
+    <h1 class="title">
+      Граф курса
+      <span class="student-short-name">{{ getStudentShortName(currentStudent.student_name) }}</span>
+    </h1>
+    <div class="divider"></div>
+    
+    <!-- Поле для ввода замечаний и кнопка обновления -->
+    <div v-if="showGraphGeneration" class="form-group">
+      <div class="graph-generation-panel">
+        <textarea 
+          v-model="graphChanges" 
+          placeholder="Введите замечания для генерации графа (например: 'Добавить узел Present Perfect, сделать связи более линейными')" 
+          :disabled="isGeneratingGraph"
+          class="graph-feedback-textarea"
+          rows="3"
+        ></textarea>
+        <button 
+          class="generate-btn" 
+          @click="generateGraph"
+          :disabled="isGeneratingGraph"
+        >
+          {{ isGeneratingGraph ? 'Генерация...' : 'Сгенерировать граф' }}
+        </button>
       </div>
-
-      <div class="graph-box">
-        <CourseGraph 
-          v-if="graphData && graphData.nodes && graphData.nodes.length > 0 && selectedStudentId"
-          :graphData="graphData"
-          :courseId="parseInt(courseId)"
-          :studentId="selectedStudentId"
-          @node-click="onGraphNodeClick"
-        />
-        <div v-else-if="loadingGraph" class="loading-graph">
-          <div class="spinner"></div>
-          <p>Загрузка графа курса...</p>
-        </div>
-        <div v-else-if="!testStatus.is_test_finalized" class="no-graph">
-          <p>Граф курса будет доступен после публикации входного теста</p>
-        </div>
-        <div v-else class="no-graph">
-          <p>Граф курса еще не сгенерирован для этого ученика</p>
-        </div>
+    </div>
+    
+    <!-- Сам граф -->
+    <div class="graph-box">
+      <CourseGraph 
+        v-if="graphData && graphData.nodes && graphData.nodes.length > 0"
+        :graphData="graphData"
+        :courseId="parseInt(courseId)"
+        :studentId="selectedStudentId"
+        @node-click="onGraphNodeClick"
+      />
+      <div v-else-if="loadingGraph" class="loading-graph">
+        <div class="spinner"></div>
+        <p>Загрузка графа курса...</p>
       </div>
-
-      <button 
-        v-if="!isGraphFinalized && testStatus.is_test_finalized"
-        class="save-btn graph-save-btn" 
-        @click="saveGraph"
-        :disabled="loading || !graphData || !selectedStudentId"
-      >
-        Сохранить граф курса
-      </button>
+      <div v-else-if="!testStatus.is_test_finalized" class="no-graph">
+        <p>Граф курса будет доступен после публикации входного теста</p>
+      </div>
+      <div v-else class="no-graph">
+        <p>Граф курса еще не сгенерирован для этого ученика</p>
+      </div>
+    </div>
+    
+    <!-- Кнопка сохранения графа (исчезает после сохранения) -->
+    <button 
+      v-if="showGraphGeneration && graphData && graphData.nodes && graphData.nodes.length > 0"
+      class="save-btn graph-save-btn" 
+      @click="saveGraph"
+      :disabled="isGraphFinalized"
+    >
+      Сохранить граф курса
+    </button>
+    
+    <!-- Сообщение после сохранения -->
+    <div v-if="isGraphFinalized" class="graph-saved-message">
+      <p>Граф курса сохранен окончательно</p>
+      <p class="graph-saved-hint">
+        Граф сохранен и больше не может быть изменен. Ученик будет видеть этот граф.
+      </p>
     </div>
   </div>
 </template>
@@ -269,7 +280,6 @@ const currentStudent = ref(null);
 const newStudentEmail = ref("");
 const selectedStudentId = ref("");
 const knowledgeGaps = ref("");
-const graphChanges = ref("");
 const graphData = ref(null);
 const addSuccess = ref(false);
 const addError = ref("");
@@ -279,6 +289,13 @@ const testStatus = ref({
   questions_count: 0
 });
 const isGraphFinalized = ref(false);
+const graphChanges = ref("");
+const isGeneratingGraph = ref(false);
+const showGraphGeneration = computed(() => {
+  return selectedStudentId.value && 
+         testStatus.value.is_test_finalized && 
+         !isGraphFinalized.value;
+});
 
 // Вычисляемое свойство для получения courseId как числа
 const courseId = computed(() => {
@@ -391,7 +408,6 @@ async function loadStudentGraph(studentId = null) {
   const targetStudentId = studentId || selectedStudentId.value;
   
   if (!targetStudentId || !courseId.value) {
-    console.error("Нет studentId или courseId для загрузки графа");
     return;
   }
   
@@ -404,7 +420,16 @@ async function loadStudentGraph(studentId = null) {
     
     if (response.data && response.data.graph_data) {
       graphData.value = response.data.graph_data;
-      isGraphFinalized.value = response.data.is_finalized || false;
+      isGraphFinalized.value = graphData.value.metadata?.is_finalized || false;
+      
+      // Гарантируем, что все вершины имеют group = 3 (серые) если не сохранены окончательно
+      if (graphData.value.nodes && !isGraphFinalized.value) {
+        graphData.value.nodes.forEach(node => {
+          if (node.group === undefined) {
+            node.group = 3;
+          }
+        });
+      }
     }
   } catch (error) {
     console.error("Ошибка загрузки графа:", error);
@@ -566,26 +591,39 @@ async function generateGraph() {
     return;
   }
   
-  if (!graphChanges.value.trim()) {
-    alert("Введите изменения для генерации графа");
-    return;
-  }
-  
   try {
-    loading.value = true;
+    isGeneratingGraph.value = true;
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const response = await api.post(
+      `/courses/${courseId.value}/student/${selectedStudentId.value}/generate-graph`,
+      {
+        feedback: graphChanges.value || "" // Теперь feedback не обязателен
+      }
+    );
     
-    createDemoGraph();
-    
-    graphChanges.value = "";
-    alert("Граф успешно обновлен");
-    
+    if (response.data && response.data.graph_data) {
+      graphData.value = response.data.graph_data;
+      
+      // Автоматически устанавливаем все вершины как недоступные (серые)
+      if (graphData.value.nodes) {
+        graphData.value.nodes.forEach(node => {
+          node.group = 3; // Серые, недоступные
+        });
+        
+        // Первую вершину помечаем как первую
+        if (graphData.value.nodes.length > 0) {
+          graphData.value.nodes[0].is_first_lesson = true;
+        }
+      }
+      
+      graphChanges.value = "";
+      alert("Граф успешно сгенерирован!");
+    }
   } catch (error) {
     console.error("Ошибка генерации графа:", error);
-    alert("Не удалось обновить граф");
+    alert(error.response?.data?.detail || "Ошибка генерации графа");
   } finally {
-    loading.value = false;
+    isGeneratingGraph.value = false;
   }
 }
 
@@ -621,46 +659,27 @@ async function saveGraph() {
     return;
   }
 
+  if (!confirm("Сохранить граф как окончательный? После сохранения редактирование будет недоступно.")) {
+    return;
+  }
+
   try {
-    if (!selectedStudentId.value) {
-      alert("Выберите ученика");
-      return;
-    }
-
-    if (!courseId.value) {
-      alert("ID курса не определен");
-      return;
-    }
-
-    const saveData = {
-      ...graphData.value,
-      is_finalized: true,
-      saved_at: new Date().toISOString(),
-      saved_by: auth.user?.user_id
-    };
-
-    const response = await api.put(
-      `/courses/${courseId.value}/student/${selectedStudentId.value}/graph`,
-      saveData
+    const response = await api.post(
+      `/courses/${courseId.value}/student/${selectedStudentId.value}/save-graph`,
+      graphData.value
     );
-
+    
     if (response.data) {
       isGraphFinalized.value = true;
       graphChanges.value = "";
       alert("Граф курса успешно сохранен как окончательный!");
+      
+      // Обновляем данные графа
       await loadStudentGraph(selectedStudentId.value);
     }
-    
   } catch (error) {
     console.error("Ошибка сохранения графа:", error);
-    
-    if (error.response) {
-      alert(`Ошибка сервера: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-    } else if (error.request) {
-      alert("Не удалось подключиться к серверу");
-    } else {
-      alert(`Ошибка: ${error.message}`);
-    }
+    alert(error.response?.data?.detail || "Ошибка сохранения графа");
   }
 }
 
@@ -1345,5 +1364,111 @@ textarea {
   font-size: 14px;
   font-weight: bold;
   color: #2E7D32;
+}
+
+.graph-generation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.graph-feedback-textarea {
+  width: 100%;
+  padding: 15px;
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 10px;
+  font-family: 'Arial', Georgia, serif;
+  font-size: 15px;
+  color: #592012;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.graph-feedback-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(244, 136, 109, 0.3);
+}
+
+.graph-feedback-textarea:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.generate-btn {
+  align-self: flex-start;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 30px;
+  cursor: pointer;
+  font-family: 'Arial', Georgia, serif;
+  font-weight: bold;
+  transition: all 0.3s;
+  font-size: 15px;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #3d8b40;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #cccccc;
+}
+
+.graph-hint {
+  background: #fff9de;
+  border: 1px solid #FFC107;
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #333;
+  margin-top: 15px;
+  font-family: 'Arial', Georgia, serif;
+}
+
+.graph-instruction {
+  color: #666;
+  font-size: 14px;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.graph-saved-message {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  margin-top: 20px;
+  font-family: 'Arial', Georgia, serif;
+  color: #2E7D32;
+}
+
+.graph-saved-message p {
+  margin: 5px 0;
+}
+
+.graph-saved-hint {
+  font-size: 14px;
+  color: #555;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .graph-generation-panel {
+    flex-direction: column;
+  }
+  
+  .generate-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 </style>

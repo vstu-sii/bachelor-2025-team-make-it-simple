@@ -265,17 +265,20 @@ async function loadGraphData() {
     loadingGraph.value = true;
     graphError.value = "";
     
-    // Используем тот же маршрут для графа, так как граф все еще индивидуален для ученика
-    const response = await api.get(`/courses/${courseId.value}/student/${auth.user.user_id}/graph`);
+    const response = await api.get(
+      `/courses/${courseId.value}/student/${auth.user.user_id}/graph`
+    );
     
     if (response.data && response.data.graph_data) {
       graphData.value = response.data.graph_data;
       console.log("Граф загружен:", graphData.value);
       
+      // Ученик видит узлы как есть
       if (graphData.value.nodes) {
         graphData.value.nodes.forEach(node => {
+          // Устанавливаем группу по умолчанию если не задана
           if (node.group === undefined) {
-            node.group = 2;
+            node.group = node.is_access_for_student ? 2 : 3;
           }
         });
       }

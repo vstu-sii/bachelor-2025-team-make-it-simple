@@ -68,11 +68,14 @@
   import { ref, onMounted, watch, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import { VueFlow } from '@vue-flow/core'
+  import { useAuthStore } from '../stores/auth'
   import '@vue-flow/core/dist/style.css'
   import '@vue-flow/core/dist/theme-default.css'
   import CustomNode from './CustomNode.vue'
   import ArrowEdge from './ArrowEdge.vue'
   
+  const auth = useAuthStore()
+
   const props = defineProps({
     graphData: {
       type: Object,
@@ -293,40 +296,74 @@
       console.warn('Нет данных графа для отображения', graphData)
       return elements
     }
-  
+
     console.log('Подготовка графа:', {
       nodesCount: graphData.nodes?.length,
-      edgesCount: graphData.edges?.length
+      edgesCount: graphData.edges?.length,
+      userRole: auth.user?.role,
+      graphDataPreview: graphData // Логируем структуру данных
     })
-  
+
     // Улучшенное расположение узлов
     const positionedNodes = calculateOptimalPositions(graphData.nodes, graphData.edges)
-  
+
     // Создаем узлы
     positionedNodes.forEach(node => {
-      const group = node.group || 3
+      let group = node.group !== undefined ? node.group : 3
       const label = node.label || node.data?.label || `Урок ${node.id}`
+      const lessonId = node.data?.lesson_id || node.lessonId || parseInt(node.id)
+      
+      // Особенная логика для первой вершины
+      const isFirstLesson = node.is_first_lesson || false
+      
+      // Определяем, доступен ли узел для текущего пользователя
+      let isClickable = false
+      
+      if (auth.user?.role === "Репетитор") {
+        // Репетитор видит первую вершину желтой, даже если для ученика она серая
+        if (isFirstLesson) {
+          group = 2  // Желтый для репетитора
+          isClickable = true  // Репетитор может кликнуть
+        } else {
+          // Для остальных вершин: если урок открыт - желтый, если нет - серый
+          isClickable = group === 0 || group === 1 || group === 2
+        }
+      } else if (auth.user?.role === "Ученик") {
+        // Ученик видит узлы как есть (2 - желтый, 3 - серый)
+        isClickable = group === 0 || group === 1 || group === 2
+      }
+      
+      // Убеждаемся, что позиции валидны
+      const position = {
+        x: Math.max(50, Math.min(750, node.position?.x || 100)),
+        y: Math.max(50, Math.min(550, node.position?.y || 100))
+      }
       
       elements.push({
         id: String(node.id),
         type: 'custom',
-        position: {
-          x: Math.max(50, Math.min(750, node.position?.x || 100)),
-          y: Math.max(50, Math.min(550, node.position?.y || 100))
-        },
+        position: position,
         data: {
           label: label,
           group: group,
-          lessonId: node.data?.lesson_id || node.lessonId,
-          isClickable: group === 0 || group === 1 || group === 2
+          lessonId: lessonId,
+          isClickable: isClickable,
+          isFirstLesson: isFirstLesson,
+          isAccessForStudent: node.is_access_for_student || false,
+          tutorAccess: node.tutor_access || (auth.user?.role === "Репетитор" && isFirstLesson)
         }
       })
     })
-  
+
     // Создаем связи
     const edgeElements = createOptimizedEdges(graphData.edges, positionedNodes)
     elements.push(...edgeElements)
-  
+
+    console.log('Создано элементов:', {
+      nodes: elements.filter(e => !e.source),
+      edges: elements.filter(e => e.source)
+    })
+
     return elements
   }
   
@@ -336,29 +373,41 @@
     
     const node = event.node;
     
-    if (!node || !node.data || !node.data.isClickable) {
-        console.log('Узел не кликабельный или отсутствует');
+    if (!node || !node.data) {
+        console.log('Узел отсутствует');
         return;
     }
-  
+    
+    // Проверяем, может ли пользователь кликнуть на этот узел
+    if (!node.data.isClickable) {
+        console.log('Узел не кликабельный для этой роли');
+        return;
+    }
+
     selectedNodeId.value = node.id;
     
     const lessonId = node.data.lessonId;
     
     if (lessonId) {
         const queryParams = {
-        courseId: props.courseId
+          courseId: props.courseId
         };
         
         if (props.studentId) {
-        queryParams.studentId = props.studentId;
+          queryParams.studentId = props.studentId;
         }
         
-        console.log('Переход к уроку:', { lessonId, queryParams });
+        console.log('Переход к уроку:', { 
+          lessonId, 
+          queryParams,
+          isFirstLesson: node.data.isFirstLesson,
+          isAccessForStudent: node.data.isAccessForStudent,
+          userRole: auth.user?.role
+        });
         
         router.push({
-        path: `/lesson/${lessonId}`,
-        query: queryParams
+          path: `/lesson/${lessonId}`,
+          query: queryParams
         });
     }
     

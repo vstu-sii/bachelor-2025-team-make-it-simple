@@ -176,6 +176,10 @@ const props = defineProps({
   lessonLabel: {
     type: String,
     default: ""  // Добавляем label из графа
+  },
+  studentId: {
+    type: Number,
+    default: null  // Добавляем studentId
   }
 });
 
@@ -185,7 +189,7 @@ const auth = useAuthStore();
 // Используем props вместо получения из route
 const lessonIdRef = ref(props.lessonId);
 const courseIdRef = ref(props.courseId);
-const studentId = ref(auth.user?.user_id);
+const studentIdRef = ref(props.studentId || auth.user?.user_id);  // Используем studentId из props или auth
 const lessonLabelFromGraph = ref(props.lessonLabel); // Используем label из графа
 
 // Данные урока
@@ -406,11 +410,16 @@ watch(
     lessonLabelFromGraph.value = newLabel;
   }
 );
+
+watch(
+  () => props.studentId,
+  (newStudentId) => {
+    studentIdRef.value = newStudentId;
+  }
+);
 </script>
 
 <style scoped>
-/* Существующие стили остаются без изменений */
-
 .lesson-page {
   width: 100%;
   min-height: 100vh;

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 import json
@@ -19,6 +19,8 @@ from app.models.topic import Topic
 from app.models.course_topic import CourseTopic
 from app.models.user_course import UserCourse
 from app.models.user import User
+
+from app.ml.main import generate_course_graph
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
 
@@ -555,3 +557,330 @@ async def remove_student_from_course(
         db.rollback()
         print(f"Error removing student from course: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при удалении ученика из курса")
+    
+
+@router.post("/{course_id}/student/{student_id}/generate-graph")
+async def generate_student_course_graph(
+    course_id: int,
+    student_id: int,
+    graph_request: Dict[str, Any] = Body(...),  # {"feedback": "текст замечаний"}
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Генерация/обновление графа курса для ученика с учетом замечаний репетитора
+    """
+    try:
+        # Проверяем, что пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут генерировать графы")
+        
+        # Проверяем, что репетитор ведет этот курс
+        tutor_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not tutor_course:
+            raise HTTPException(status_code=403, detail="Вы не ведете этот курс")
+        
+        # Находим запись ученика на курсе
+        student_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not student_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
+        
+        # Получаем данные ученика
+        student = db.query(User).filter(User.user_id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+        
+        # Получаем данные курса
+        course = db.query(Course).filter(Course.course_id == course_id).first()
+        if not course:
+            raise HTTPException(status_code=404, detail="Курс не найден")
+        
+        # Получаем темы курса
+        course_topics = db.query(Topic).join(
+            CourseTopic, Topic.topic_id == CourseTopic.topic_id
+        ).filter(
+            CourseTopic.course_id == course_id
+        ).all()
+        
+        # Подготавливаем данные для AI
+        ai_student_data = {
+            "student_profile": {
+                "interests": student.interests.split(",") if student.interests else [],
+                "knowledge_gaps": student_course.knowledge_gaps.split(",") if student_course.knowledge_gaps else []
+            },
+            "course_title": course.title,
+            "topics": [topic.title for topic in course_topics]
+        }
+        
+        feedback = graph_request.get("feedback", "")
+        
+        print(f"\n=== ГЕНЕРАЦИЯ ГРАФА ДЛЯ УЧЕНИКА ===")
+        print(f"  course_id: {course_id}")
+        print(f"  student_id: {student_id}")
+        print(f"  feedback: {feedback}")
+        print(f"  Данные для AI: {ai_student_data}")
+        
+        # Генерируем граф с помощью AI
+        try:
+            generated_graph = generate_course_graph(
+                student_data=ai_student_data,
+                feedback=feedback
+            )
+        except Exception as ai_error:
+            print(f"  Ошибка AI при генерации графа: {ai_error}")
+            # Используем демо-граф в случае ошибки
+            generated_graph = create_demo_graph()
+        
+        # Устанавливаем группы для узлов
+        if generated_graph.get("nodes"):
+            for i, node in enumerate(generated_graph["nodes"]):
+                # Проверяем, существует ли уже связанный урок
+                lesson_id = node.get("data", {}).get("lesson_id")
+                lesson_data = None
+                
+                if lesson_id:
+                    # Получаем данные урока из базы
+                    lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
+                    if lesson:
+                        lesson_data = {
+                            "is_access": lesson.is_access,
+                            "is_ended": lesson.is_ended
+                        }
+                
+                # Если это первая вершина (i == 0)
+                if i == 0:
+                    # Для первой вершины:
+                    # - Репетитор всегда видит ее желтой (group=2)
+                    # - Ученик видит ее серой (group=3) если урок закрыт
+                    # - Но у узла есть специальный флаг is_first_lesson
+                    node["is_first_lesson"] = True
+                    
+                    if lesson_data and lesson_data["is_access"]:
+                        # Если урок уже открыт - для ученика желтый
+                        node["group"] = 2
+                        node["is_access_for_student"] = True
+                    else:
+                        # По умолчанию урок закрыт для ученика
+                        node["group"] = 3  # Серая для ученика
+                        node["is_access_for_student"] = False
+                    
+                    # Добавляем информацию о доступе
+                    node["tutor_access"] = True  # Репетитор всегда имеет доступ
+                    
+                else:
+                    # Для остальных вершин
+                    if lesson_data and lesson_data["is_access"]:
+                        node["group"] = 2  # Желтый если открыт
+                        node["is_access_for_student"] = True
+                    else:
+                        node["group"] = 3  # Серый если закрыт
+                        node["is_access_for_student"] = False
+        
+        print(f"  Сгенерировано узлов: {len(generated_graph.get('nodes', []))}")
+        print(f"  Сгенерировано связей: {len(generated_graph.get('edges', []))}")
+        
+        # Добавляем метаданные в граф
+        graph_with_metadata = {
+            **generated_graph,
+            "metadata": {
+                "generated_at": datetime.now().isoformat(),
+                "generated_by": current_user.user_id,
+                "feedback_used": feedback,
+                "is_finalized": False,  # Граф еще не сохранен окончательно
+                "version": f"gen_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            }
+        }
+        
+        return {
+            "message": "Граф успешно сгенерирован",
+            "graph_data": graph_with_metadata,
+            "preview": {
+                "nodes_count": len(generated_graph.get("nodes", [])),
+                "edges_count": len(generated_graph.get("edges", [])),
+                "first_node_access": generated_graph.get("nodes", [{}])[0].get("is_access_for_student", False)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error generating course graph: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Ошибка при генерации графа")
+
+@router.post("/{course_id}/student/{student_id}/save-graph")
+async def save_final_graph(
+    course_id: int,
+    student_id: int,
+    graph_data: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Сохранить граф курса как окончательный
+    После этого кнопки генерации и обновления исчезают
+    """
+    try:
+        # Проверяем, что пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут сохранять графы")
+        
+        # Проверяем, что репетитор ведет этот курс
+        tutor_course = db.query(UserCourse).filter(
+            UserCourse.user_id == current_user.user_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not tutor_course:
+            raise HTTPException(status_code=403, detail="Вы не ведете этот курс")
+        
+        # Находим запись ученика на курсе
+        student_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not student_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
+        
+        # Проверяем, что граф содержит данные
+        if not graph_data.get("nodes") or len(graph_data.get("nodes", [])) == 0:
+            raise HTTPException(status_code=400, detail="Граф не может быть пустым")
+        
+        # Помечаем граф как окончательный
+        graph_data["metadata"] = {
+            **graph_data.get("metadata", {}),
+            "is_finalized": True,
+            "finalized_at": datetime.now().isoformat(),
+            "finalized_by": current_user.user_id,
+            "saved_at": datetime.now().isoformat()
+        }
+        
+        # Сохраняем граф в базу
+        student_course.graph_json = json.dumps(graph_data)
+        db.commit()
+        
+        print(f"Граф сохранен как окончательный для ученика {student_id}")
+        print(f"Узлов: {len(graph_data.get('nodes', []))}")
+        print(f"Связей: {len(graph_data.get('edges', []))}")
+        
+        return {
+            "message": "Граф курса успешно сохранен как окончательный",
+            "is_finalized": True,
+            "nodes_count": len(graph_data.get("nodes", [])),
+            "edges_count": len(graph_data.get("edges", []))
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving final graph: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при сохранении графа")
+
+def create_demo_graph():
+    """Создание демо-графа при ошибке AI"""
+    return {
+        "nodes": [
+            {"id": "1", "label": "Present Simple", "data": {"lesson_id": 1}, "position": {"x": 200, "y": 150}},
+            {"id": "2", "label": "Past Simple", "data": {"lesson_id": 2}, "position": {"x": 400, "y": 150}},
+            {"id": "3", "label": "Future Tenses", "data": {"lesson_id": 3}, "position": {"x": 200, "y": 350}},
+            {"id": "4", "label": "Articles", "data": {"lesson_id": 4}, "position": {"x": 400, "y": 350}},
+            {"id": "5", "label": "Basic Vocabulary", "data": {"lesson_id": 5}, "position": {"x": 300, "y": 500}}
+        ],
+        "edges": [
+            {"id": "e1-2", "source": "1", "target": "2", "label": "Next"},
+            {"id": "e1-3", "source": "1", "target": "3", "label": "Alternative"},
+            {"id": "e2-4", "source": "2", "target": "4", "label": "Next"},
+            {"id": "e3-5", "source": "3", "target": "5", "label": "Next"},
+            {"id": "e4-5", "source": "4", "target": "5", "label": "Next"}
+        ]
+    }
+
+@router.put("/{course_id}/student/{student_id}/graph/node/{node_id}")
+async def update_graph_node_access(
+    course_id: int,
+    student_id: int,
+    node_id: str,
+    access_data: Dict[str, bool] = Body(...),  # {"is_access": true/false}
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Обновить состояние доступа для конкретного узла в графе
+    """
+    try:
+        # Проверяем, что пользователь - репетитор
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут обновлять доступ")
+        
+        # Находим запись ученика на курсе
+        student_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not student_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
+        
+        # Получаем текущий граф
+        if not student_course.graph_json:
+            raise HTTPException(status_code=404, detail="Граф не найден")
+        
+        graph_data = json.loads(student_course.graph_json)
+        nodes = graph_data.get("nodes", [])
+        
+        # Находим нужный узел
+        node_to_update = None
+        for node in nodes:
+            if str(node.get("id")) == node_id:
+                node_to_update = node
+                break
+        
+        if not node_to_update:
+            raise HTTPException(status_code=404, detail="Узел не найден в графе")
+        
+        # Обновляем состояние доступа
+        is_access = access_data.get("is_access", False)
+        
+        if is_access:
+            node_to_update["group"] = 2  # Желтый - доступен
+            node_to_update["is_access_for_student"] = True
+        else:
+            node_to_update["group"] = 3  # Серый - недоступен
+            node_to_update["is_access_for_student"] = False
+        
+        # Если это первый узел, также обновляем урок в базе данных
+        if node_to_update.get("is_first_lesson") and node_to_update.get("data", {}).get("lesson_id"):
+            lesson_id = node_to_update["data"]["lesson_id"]
+            lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
+            if lesson:
+                lesson.is_access = is_access
+                db.commit()
+        
+        # Сохраняем обновленный граф
+        student_course.graph_json = json.dumps(graph_data)
+        db.commit()
+        
+        return {
+            "message": f"Доступ к узлу обновлен: {'открыт' if is_access else 'закрыт'}",
+            "node_id": node_id,
+            "is_access": is_access,
+            "group": node_to_update["group"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating graph node access: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при обновлении доступа")

@@ -6,11 +6,13 @@
     v-else-if="isStudent" 
     :lesson-id="lessonId" 
     :course-id="courseId"
+    :student-id="studentId"
   />
   <TutorLessonPageComponent 
     v-else-if="isTutor" 
     :lesson-id="lessonId" 
     :course-id="courseId"
+    :student-id="studentId"
   />
   <div v-else class="unauthorized">
     <h2>Доступ запрещен</h2>
@@ -39,6 +41,11 @@ const lessonId = computed(() => {
 
 const courseId = computed(() => {
   const id = route.query.courseId;
+  return id ? parseInt(id) : null;
+});
+
+const studentId = computed(() => {
+  const id = route.query.studentId;
   return id ? parseInt(id) : null;
 });
 
