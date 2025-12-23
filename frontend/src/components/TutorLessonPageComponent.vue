@@ -378,21 +378,28 @@ async function toggleLessonAccess() {
     
     lessonData.value.is_access = newAccessState;
     
-    // Если есть studentId и courseId, обновляем граф
+    // ОБНОВЛЯЕМ ГРАФ УЧЕНИКА
     if (studentIdRef.value && courseIdRef.value) {
-      await updateGraphAccessState(newAccessState);
+      try {
+        // Обновляем узел в графе ученика
+        await api.post(
+          `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph/update-access`,
+          {
+            node_id: lessonIdRef.value,  // Используем ID урока как ID узла
+            is_access: newAccessState
+          }
+        );
+        console.log(`Граф обновлен: доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'}`);
+      } catch (graphError) {
+        console.error("Ошибка обновления графа:", graphError);
+        // Не прерываем процесс из-за ошибки обновления графа
+      }
     }
     
     alert(`Доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'} для ученика`);
     
   } catch (error) {
     console.error("Ошибка изменения доступа к уроку:", error);
-    
-    if (error.response) {
-      console.error("Детали ошибки:", error.response.data);
-    } else {
-      console.error("Network error:", error);
-    }
     alert("Ошибка изменения доступа");
   }
 }
@@ -443,6 +450,16 @@ async function loadLessonData() {
     // Загружаем информацию об уроке с темой
     const response = await api.get(`/lessons/${lessonIdRef.value}?include_topic=true`);
     lessonData.value = response.data;
+
+    if (lessonData.value.is_access === undefined || lessonData.value.is_access === null) {
+      // Обновляем урок, устанавливая его как закрытый
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "access",
+        is_access: false,  // ЗАКРЫТ по умолчанию
+        content: ""
+      });
+      lessonData.value.is_access = false;
+    }
     
     // Загружаем контент урока
     theoryText.value = lessonData.value.theory_text || "";

@@ -19,6 +19,7 @@ from app.models.topic import Topic
 from app.models.course_topic import CourseTopic
 from app.models.user_course import UserCourse
 from app.models.user import User
+from app.models.lesson import Lesson
 
 from app.ml.main import generate_course_graph
 
@@ -642,7 +643,10 @@ async def generate_student_course_graph(
         # Устанавливаем группы для узлов
         if generated_graph.get("nodes"):
             for i, node in enumerate(generated_graph["nodes"]):
-                # Проверяем, существует ли уже связанный урок
+                # Для репетитора: первая вершина всегда желтая (group=2), остальные серые (group=3)
+                # Для ученика: все вершины серые (group=3)
+                
+                # Получаем lesson_id из данных узла
                 lesson_id = node.get("data", {}).get("lesson_id")
                 lesson_data = None
                 
@@ -654,35 +658,27 @@ async def generate_student_course_graph(
                             "is_access": lesson.is_access,
                             "is_ended": lesson.is_ended
                         }
+                        # ВАЖНО: При генерации графа устанавливаем все уроки как закрытые для ученика
+                        # кроме тех, которые уже были открыты ранее
+                        if not lesson_data["is_access"] and current_user.role == "Репетитор":
+                            # Репетитор генерирует граф - закрываем все уроки
+                            lesson.is_access = False
+                            db.commit()
                 
-                # Если это первая вершина (i == 0)
+                # Для первой вершины
                 if i == 0:
-                    # Для первой вершины:
-                    # - Репетитор всегда видит ее желтой (group=2)
-                    # - Ученик видит ее серой (group=3) если урок закрыт
-                    # - Но у узла есть специальный флаг is_first_lesson
                     node["is_first_lesson"] = True
+                    node["tutor_access"] = True  # Репетитор всегда имеет доступ к первой вершине
                     
-                    if lesson_data and lesson_data["is_access"]:
-                        # Если урок уже открыт - для ученика желтый
-                        node["group"] = 2
-                        node["is_access_for_student"] = True
-                    else:
-                        # По умолчанию урок закрыт для ученика
-                        node["group"] = 3  # Серая для ученика
-                        node["is_access_for_student"] = False
-                    
-                    # Добавляем информацию о доступе
-                    node["tutor_access"] = True  # Репетитор всегда имеет доступ
+                    # По умолчанию для ученика первая вершина серая
+                    node["group"] = 3  # Серая для ученика
+                    node["is_access_for_student"] = False
                     
                 else:
                     # Для остальных вершин
-                    if lesson_data and lesson_data["is_access"]:
-                        node["group"] = 2  # Желтый если открыт
-                        node["is_access_for_student"] = True
-                    else:
-                        node["group"] = 3  # Серый если закрыт
-                        node["is_access_for_student"] = False
+                    node["group"] = 3  # Серые для ученика
+                    node["is_access_for_student"] = False
+                    node["tutor_access"] = False  # Репетитор не может кликать на серые вершины
         
         print(f"  Сгенерировано узлов: {len(generated_graph.get('nodes', []))}")
         print(f"  Сгенерировано связей: {len(generated_graph.get('edges', []))}")
@@ -884,3 +880,65 @@ async def update_graph_node_access(
         db.rollback()
         print(f"Error updating graph node access: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при обновлении доступа")
+    
+
+@router.post("/{course_id}/student/{student_id}/graph/update-access")
+async def update_graph_access(
+    course_id: int,
+    student_id: int,
+    access_data: Dict[str, Any] = Body(...),  # {"node_id": "1", "is_access": true}
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """
+    Обновить доступ к узлу в графе
+    """
+    try:
+        if current_user.role != "Репетитор":
+            raise HTTPException(status_code=403, detail="Только репетиторы могут обновлять доступ")
+        
+        student_course = db.query(UserCourse).filter(
+            UserCourse.user_id == student_id,
+            UserCourse.course_id == course_id
+        ).first()
+        
+        if not student_course:
+            raise HTTPException(status_code=404, detail="Ученик не найден на этом курсе")
+        
+        if not student_course.graph_json:
+            raise HTTPException(status_code=404, detail="Граф не найден")
+        
+        graph_data = json.loads(student_course.graph_json)
+        nodes = graph_data.get("nodes", [])
+        
+        node_id = str(access_data.get("node_id"))
+        is_access = access_data.get("is_access", False)
+        
+        # Находим и обновляем узел
+        for node in nodes:
+            if str(node.get("id")) == node_id:
+                if is_access:
+                    node["group"] = 2  # Желтый
+                    node["is_access_for_student"] = True
+                else:
+                    node["group"] = 3  # Серый
+                    node["is_access_for_student"] = False
+                
+                # Если это первый урок, обновляем tutor_access для репетитора
+                if node.get("is_first_lesson"):
+                    node["tutor_access"] = True  # Первый урок всегда доступен репетитору
+        
+        # Сохраняем обновленный граф
+        student_course.graph_json = json.dumps(graph_data)
+        db.commit()
+        
+        return {
+            "message": "Доступ обновлен",
+            "node_id": node_id,
+            "is_access": is_access
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating graph access: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка обновления доступа")

@@ -313,27 +313,21 @@
       const label = node.label || node.data?.label || `Урок ${node.id}`
       const lessonId = node.data?.lesson_id || node.lessonId || parseInt(node.id)
       
-      // Особенная логика для первой вершины
       const isFirstLesson = node.is_first_lesson || false
       
-      // Определяем, доступен ли узел для текущего пользователя
       let isClickable = false
+      let tutorAccess = node.tutor_access || false
       
       if (auth.user?.role === "Репетитор") {
-        // Репетитор видит первую вершину желтой, даже если для ученика она серая
-        if (isFirstLesson) {
-          group = 2  // Желтый для репетитора
-          isClickable = true  // Репетитор может кликнуть
-        } else {
-          // Для остальных вершин: если урок открыт - желтый, если нет - серый
-          isClickable = group === 0 || group === 1 || group === 2
-        }
+        // Репетитор может кликать только если tutor_access = true
+        isClickable = tutorAccess
+        // Для отображения: если tutor_access = true, то желтый, иначе серый
+        group = tutorAccess ? 2 : 3
       } else if (auth.user?.role === "Ученик") {
-        // Ученик видит узлы как есть (2 - желтый, 3 - серый)
-        isClickable = group === 0 || group === 1 || group === 2
+        // Ученик может кликать только на желтые узлы (group=2)
+        isClickable = group === 2
       }
       
-      // Убеждаемся, что позиции валидны
       const position = {
         x: Math.max(50, Math.min(750, node.position?.x || 100)),
         y: Math.max(50, Math.min(550, node.position?.y || 100))
@@ -350,7 +344,7 @@
           isClickable: isClickable,
           isFirstLesson: isFirstLesson,
           isAccessForStudent: node.is_access_for_student || false,
-          tutorAccess: node.tutor_access || (auth.user?.role === "Репетитор" && isFirstLesson)
+          tutorAccess: tutorAccess
         }
       })
     })

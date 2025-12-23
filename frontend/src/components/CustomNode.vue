@@ -28,8 +28,12 @@ const nodeStyle = computed(() => {
   let backgroundColor = getBackgroundColor(props.data.group)
   let borderColor = getBorderColor(props.data.group)
   
-  if (auth.user?.role === "Репетитор" && props.data.isFirstLesson) {
-    // Репетитор всегда видит первую вершину желтой
+  // УЧИТЫВАЕМ tutor_access для репетитора
+  const isTutor = auth.user?.role === "Репетитор"
+  const isStudent = auth.user?.role === "Ученик"
+  
+  if (isTutor && props.data.tutorAccess) {
+    // Репетитор видит доступные ему узлы желтыми
     backgroundColor = getBackgroundColor(2)  // Желтый фон
     borderColor = getBorderColor(2)         // Желтая граница
   }
@@ -42,7 +46,7 @@ const nodeStyle = computed(() => {
     border: `${borderWidth}px solid ${borderColor}`,
     borderRadius: '50%',
     backgroundColor: backgroundColor,
-    cursor: props.data.group === 3 && !(auth.user?.role === "Репетитор" && props.data.isFirstLesson) 
+    cursor: (isTutor && !props.data.tutorAccess) || (isStudent && props.data.group === 3)
       ? 'not-allowed' : 'pointer',
     width: `${nodeSize}px`,
     height: `${nodeSize}px`,
@@ -114,9 +118,18 @@ function getStatusLabel(group) {
 }
 
 function onClick() {
-  if (props.data.group !== 3) {
-    emit('click')
+  const isTutor = auth.user?.role === "Репетитор"
+  const isStudent = auth.user?.role === "Ученик"
+  
+  if (isTutor && !props.data.tutorAccess) {
+    return; // Репетитор не может кликать на недоступные узлы
   }
+  
+  if (isStudent && props.data.group === 3) {
+    return; // Ученик не может кликать на серые узлы
+  }
+  
+  emit('click')
 }
 </script>
 
