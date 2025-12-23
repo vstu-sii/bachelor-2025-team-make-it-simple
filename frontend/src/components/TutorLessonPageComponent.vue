@@ -8,9 +8,9 @@
       <img src="/src/assets/arrow-back.svg" alt="back" />
     </button>
 
-    <!-- Название урока -->
+    <!-- **ИЗМЕНЕНИЕ: СТАТИЧЕСКИЙ ЗАГОЛОВОК** -->
     <div class="lesson-title-container">
-      <h1 class="lesson-title">Тема урока: «{{ lessonTitle }}»</h1>
+      <h1 class="lesson-title">Содержимое урока</h1>
       <div class="lesson-title-divider"></div>
     </div>
 
@@ -44,8 +44,9 @@
                 v-model="theoryComment" 
                 placeholder="Внесите замечания по генерации теории"
                 @keyup.enter="generateTheory"
+                :disabled="theoryGenerating"
               />
-              <button @click="generateTheory" class="btn-generate">
+              <button @click="generateTheory" class="btn-generate" :disabled="theoryGenerating">
                 {{ theoryGenerating ? 'Генерация...' : 'Отправить' }}
               </button>
             </div>
@@ -67,7 +68,7 @@
             <button 
               @click="saveTheory" 
               class="btn-save"
-              :disabled="!theoryText"
+              :disabled="!theoryText || theoryGenerating"
             >
               Подтвердить генерацию теории
             </button>
@@ -85,8 +86,9 @@
                 v-model="readingComment" 
                 placeholder="Внесите замечания по генерации задания на чтение"
                 @keyup.enter="generateReading"
+                :disabled="readingGenerating"
               />
-              <button @click="generateReading" class="btn-generate">
+              <button @click="generateReading" class="btn-generate" :disabled="readingGenerating">
                 {{ readingGenerating ? 'Генерация...' : 'Отправить' }}
               </button>
             </div>
@@ -108,7 +110,7 @@
             <button 
               @click="saveReading" 
               class="btn-save"
-              :disabled="!readingText"
+              :disabled="!readingText || readingGenerating"
             >
               Подтвердить генерацию задания на чтение
             </button>
@@ -126,8 +128,9 @@
                 v-model="speakingComment" 
                 placeholder="Внесите замечания по генерации задания на говорение"
                 @keyup.enter="generateSpeaking"
+                :disabled="speakingGenerating"
               />
-              <button @click="generateSpeaking" class="btn-generate">
+              <button @click="generateSpeaking" class="btn-generate" :disabled="speakingGenerating">
                 {{ speakingGenerating ? 'Генерация...' : 'Отправить' }}
               </button>
             </div>
@@ -149,7 +152,7 @@
             <button 
               @click="saveSpeaking" 
               class="btn-save"
-              :disabled="!speakingText"
+              :disabled="!speakingText || speakingGenerating"
             >
               Подтвердить генерацию задания на говорение
             </button>
@@ -203,7 +206,7 @@
 
         <!-- Результаты урока (изначально скрыт) -->
         <div v-if="showResultsSection" class="section-box results-section">
-          <h2 class="section-header">Результаты урока</h2>
+          <h2 class="section-header">Результаы урока</h2>
           <div class="section-divider"></div>
           
           <div class="results-content">
@@ -266,514 +269,534 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineProps } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "../stores/auth";
-import api from "../api/axios";
-import AppHeader from "../components/Header.vue";
-
-// Определяем props
-const props = defineProps({
-  lessonId: {
-    type: Number,
-    required: true
-  },
-  courseId: {
-    type: Number,
-    default: null
-  },
-  lessonLabel: {
-    type: String,
-    default: ""
-  },
-  studentId: {
-    type: Number,
-    default: null  // Добавляем studentId
-  }
-});
-
-const router = useRouter();
-const auth = useAuthStore();
-
-// Используем props вместо получения из route
-const lessonIdRef = ref(props.lessonId);
-const courseIdRef = ref(props.courseId);
-const lessonLabelFromGraph = ref(props.lessonLabel); // Используем label из графа
-const studentIdRef = ref(props.studentId);  // Используем studentId из props
-
-// Данные урока
-const lessonData = ref(null);
-const loading = ref(false);
-
-// Флаг отображения раздела результатов
-const showResultsSection = ref(false);
-
-// Данные урока
-const theoryText = ref("");
-const readingText = ref("");
-const speakingText = ref("");
-const lessonNotes = ref("");
-const lessonTest = ref(null);
-
-// Комментарии для генерации
-const theoryComment = ref("");
-const readingComment = ref("");
-const speakingComment = ref("");
-
-// Флаги генерации
-const theoryGenerating = ref(false);
-const readingGenerating = ref(false);
-const speakingGenerating = ref(false);
-
-// Прогресс учеников
-const studentsProgress = ref([]);
-const requiresRetry = ref(false);
-
-// Вычисляемые свойства
-const lessonTitle = computed(() => {
-  // Используем label из графа, если он есть, иначе тему урока
-  if (lessonLabelFromGraph.value) {
-    return lessonLabelFromGraph.value;
-  }
+  import { ref, computed, onMounted, watch, defineProps } from "vue";
+  import { useRouter } from "vue-router";
+  import { useAuthStore } from "../stores/auth";
+  import api from "../api/axios";
+  import AppHeader from "../components/Header.vue";
   
-  if (lessonData.value?.topic?.title) {
-    return lessonData.value.topic.title;
-  }
-  
-  if (lessonData.value?.theory_text) {
-    const title = lessonData.value.theory_text.length > 50 
-      ? lessonData.value.theory_text.substring(0, 50) + "..." 
-      : lessonData.value.theory_text;
-    return title;
-  }
-  
-  return "Урок";
-});
-
-// Методы
-function calculateStudentProgress(student) {
-  const total = 4;
-  let completed = 0;
-  
-  if (student.theory_completed) completed++;
-  if (student.reading_completed) completed++;
-  if (student.speaking_completed) completed++;
-  if (student.test_completed) completed++;
-  
-  return Math.round((completed / total) * 100);
-}
-
-async function toggleLessonAccess() {
-  if (!lessonData.value) return;
-  
-  try {
-    const newAccessState = !lessonData.value.is_access;
-    
-    // Обновляем доступ к уроку
-    await api.put(`/lessons/${lessonIdRef.value}/content`, {
-      content_type: "access",
-      is_access: newAccessState,
-      content: ""
-    });
-    
-    lessonData.value.is_access = newAccessState;
-    
-    // Синхронизируем с графом ученика
-    await synchronizeWithGraph(newAccessState);
-    
-    // Двойное обновление для надежности
-    await updateGraphAccessState(newAccessState);
-    
-    alert(`Доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'} для ученика`);
-    
-  } catch (error) {
-    console.error("Ошибка изменения доступа к уроку:", error);
-    alert("Ошибка изменения доступа");
-  }
-}
-
-async function updateGraphAccessState(isAccess) {
-  if (!courseIdRef.value || !studentIdRef.value) return;
-  
-  try {
-    // Получаем текущий граф
-    const graphResponse = await api.get(
-      `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`
-    );
-    
-    if (graphResponse.data && graphResponse.data.graph_data) {
-      const graphData = graphResponse.data.graph_data;
-      
-      // Находим узел, соответствующий этому уроку
-      const lessonNode = graphData.nodes.find(node => 
-        node.data?.lesson_id === lessonIdRef.value
-      );
-      
-      if (lessonNode) {
-        // Обновляем состояние доступа
-        lessonNode.group = isAccess ? 2 : 3; // 2 - желтый, 3 - серый
-        lessonNode.is_access_for_student = isAccess;
-        
-        // Обновляем граф в базе данных
-        await api.put(
-          `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`,
-          graphData
-        );
-        
-        console.log(`Граф обновлен: урок ${lessonIdRef.value} - ${isAccess ? 'доступен' : 'недоступен'}`);
-      }
-    }
-  } catch (error) {
-    console.error("Ошибка обновления графа:", error);
-    // Не алармим пользователя - это дополнительная операция
-  }
-}
-
-async function loadLessonData() {
-  if (!lessonIdRef.value) return;
-  
-  try {
-    loading.value = true;
-    
-    // Загружаем информацию об уроке с темой
-    const response = await api.get(`/lessons/${lessonIdRef.value}?include_topic=true`);
-    lessonData.value = response.data;
-
-    // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем и устанавливаем is_access если undefined/null
-    if (lessonData.value.is_access === undefined || lessonData.value.is_access === null) {
-      // Обновляем урок, устанавливая его как закрытый
-      await api.put(`/lessons/${lessonIdRef.value}/content`, {
-        content_type: "access",
-        is_access: false,  // ЗАКРЫТ по умолчанию
-        content: ""
-      });
-      lessonData.value.is_access = false;
-    } else if (lessonData.value.is_access === true) {
-      // Если урок уже открыт, синхронизируем с графом
-      await synchronizeWithGraph(true);
-    }
-    
-    // Загружаем контент урока
-    theoryText.value = lessonData.value.theory_text || "";
-    readingText.value = lessonData.value.reading_text || "";
-    speakingText.value = lessonData.value.speaking_text || "";
-    lessonNotes.value = lessonData.value.lesson_notes || "";
-    
-    // Загружаем тест урока
-    if (lessonData.value.lesson_plan_json) {
-      try {
-        lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
-          ? JSON.parse(lessonData.value.lesson_plan_json)
-          : lessonData.value.lesson_plan_json;
-      } catch (e) {
-        console.error("Error parsing lesson test:", e);
-        lessonTest.value = null;
-      }
-    }
-    
-  } catch (error) {
-    console.error("Ошибка загрузки данных урока:", error);
-    alert("Не удалось загрузить данные урока");
-    goBack();
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function synchronizeWithGraph(isAccess) {
-  if (!courseIdRef.value || !studentIdRef.value) return;
-  
-  try {
-    // Обновляем узел в графе ученика
-    await api.post(
-      `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph/update-access`,
-      {
-        node_id: lessonIdRef.value,
-        is_access: isAccess
-      }
-    );
-    console.log(`Граф синхронизирован: доступ ${isAccess ? 'открыт' : 'закрыт'}`);
-  } catch (graphError) {
-    console.error("Ошибка синхронизации графа:", graphError);
-  }
-}
-
-async function loadStudentsProgress() {
-  if (!lessonIdRef.value || !courseIdRef.value) return;
-  
-  try {
-    const response = await api.get(
-      `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
-    );
-    
-    studentsProgress.value = response.data.map(student => ({
-      ...student,
-      requires_retry: student.requires_retry || false
-    }));
-    
-    // Устанавливаем общий флаг повторного прохождения
-    if (studentsProgress.value.length > 0) {
-      requiresRetry.value = studentsProgress.value.some(student => student.requires_retry);
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки прогресса учеников:", error);
-    studentsProgress.value = [];
-  }
-}
-
-// Генерация контента
-async function generateTheory() {
-  if (!theoryComment.value.trim()) {
-    alert("Введите комментарий для генерации");
-    return;
-  }
-  
-  try {
-    theoryGenerating.value = true;
-    const response = await api.post(`/lessons/${lessonIdRef.value}/generate/theory`, {
-      comment: theoryComment.value
-    });
-    
-    theoryText.value = response.data.generated_content;
-    theoryComment.value = "";
-    alert("Теория успешно сгенерирована");
-    
-  } catch (error) {
-    console.error("Ошибка генерации теории:", error);
-    alert("Ошибка генерации теории");
-  } finally {
-    theoryGenerating.value = false;
-  }
-}
-
-async function generateReading() {
-  if (!readingComment.value.trim()) {
-    alert("Введите комментарий для генерации");
-    return;
-  }
-  
-  try {
-    readingGenerating.value = true;
-    const response = await api.post(`/lessons/${lessonIdRef.value}/generate/reading`, {
-      comment: readingComment.value
-    });
-    
-    readingText.value = response.data.generated_content;
-    readingComment.value = "";
-    alert("Задание на чтение успешно сгенерировано");
-    
-  } catch (error) {
-    console.error("Ошибка генерации задания:", error);
-    alert("Ошибка генерации задания");
-  } finally {
-    readingGenerating.value = false;
-  }
-}
-
-async function generateSpeaking() {
-  if (!speakingComment.value.trim()) {
-    alert("Введите комментарий для генерации");
-    return;
-  }
-  
-  try {
-    speakingGenerating.value = true;
-    const response = await api.post(`/lessons/${lessonIdRef.value}/generate/speaking`, {
-      comment: speakingComment.value
-    });
-    
-    speakingText.value = response.data.generated_content;
-    speakingComment.value = "";
-    alert("Задание на говорение успешно сгенерировано");
-    
-  } catch (error) {
-    console.error("Ошибка генерации задания:", error);
-    alert("Ошибка генерации задания");
-  } finally {
-    speakingGenerating.value = false;
-  }
-}
-
-// Сохранение контента
-async function saveTheory() {
-  try {
-    await api.put(`/lessons/${lessonIdRef.value}/content`, {
-      content_type: "theory",
-      content: theoryText.value
-    });
-    alert("Теоретическая часть подтверждена и сохранена");
-  } catch (error) {
-    console.error("Ошибка сохранения теории:", error);
-    alert("Ошибка сохранения теории");
-  }
-}
-
-async function saveReading() {
-  try {
-    await api.put(`/lessons/${lessonIdRef.value}/content`, {
-      content_type: "reading",
-      content: readingText.value
-    });
-    alert("Задание на чтение подтверждено и сохранено");
-  } catch (error) {
-    console.error("Ошибка сохранения задания:", error);
-    alert("Ошибка сохранения задания");
-  }
-}
-
-async function saveSpeaking() {
-  try {
-    await api.put(`/lessons/${lessonIdRef.value}/content`, {
-      content_type: "speaking",
-      content: speakingText.value
-    });
-    alert("Задание на говорение подтверждено и сохранено");
-  } catch (error) {
-    console.error("Ошибка сохранения задания:", error);
-    alert("Ошибка сохранения задания");
-  }
-}
-
-async function saveNotes() {
-  try {
-    await api.put(`/lessons/${lessonIdRef.value}/content`, {
-      content_type: "notes",
-      content: lessonNotes.value
-    });
-    alert("Заметки сохранены");
-  } catch (error) {
-    console.error("Ошибка сохранения заметок:", error);
-    alert("Ошибка сохранения заметок");
-  }
-}
-
-async function updateAllStudentsRetry() {
-  try {
-    // Обновляем все записи учеников (без уведомления)
-    const promises = studentsProgress.value.map(student =>
-      api.put(`/lessons/${lessonIdRef.value}/student/${student.student_id}/retry`, {
-        requires_retry: requiresRetry.value
-      })
-    );
-    
-    await Promise.all(promises);
-    // Уведомление удалено
-  } catch (error) {
-    console.error("Ошибка обновления настройки:", error);
-  }
-}
-
-async function approveAllResults() {
-  try {
-    // Утверждаем результаты всех учеников
-    const promises = studentsProgress.value.map(student =>
-      api.post(`/lessons/${lessonIdRef.value}/student/${student.student_id}/approve`, {
-        ...student
-      })
-    );
-    
-    await Promise.all(promises);
-    alert("Результаты всех учеников утверждены");
-  } catch (error) {
-    console.error("Ошибка утверждения результатов:", error);
-    alert("Ошибка утверждения результатов");
-  }
-}
-
-function editTest() 
-{
-  // Редактирование теста урока
-  router.push({
-    name: "lesson-test",
-    params: { lessonId: lessonIdRef.value },
-    query: {
-      courseId: courseIdRef.value,
-      lessonTitle: lessonTitle.value,
-      courseTitle: "Название курса",
-      testData: JSON.stringify(lessonTest.value),
-      editMode: true // Флаг режима редактирования для репетитора
+  // Определяем props
+  const props = defineProps({
+    lessonId: {
+      type: Number,
+      required: true
+    },
+    courseId: {
+      type: Number,
+      default: null
+    },
+    studentId: {
+      type: Number,
+      default: null
     }
   });
-}
-
-function showResults() {
-  // Переключаем видимость раздела результатов
-  showResultsSection.value = !showResultsSection.value;
   
-  // Если показываем раздел впервые, загружаем прогресс учеников
-  if (showResultsSection.value && courseIdRef.value) {
-    loadStudentsProgress();
+  const router = useRouter();
+  const auth = useAuthStore();
+  
+  // Используем props вместо получения из route
+  const lessonIdRef = ref(props.lessonId);
+  const courseIdRef = ref(props.courseId);
+  const studentIdRef = ref(props.studentId);
+  
+  // **ИЗМЕНЕНИЕ: Убираем lessonLabelFromGraph**
+  // const lessonLabelFromGraph = ref(props.lessonLabel);
+  
+  // Данные урока
+  const lessonData = ref(null);
+  const loading = ref(false);
+  
+  // Флаг отображения раздела результатов
+  const showResultsSection = ref(false);
+  
+  // Данные урока
+  const theoryText = ref("");
+  const readingText = ref("");
+  const speakingText = ref("");
+  const lessonNotes = ref("");
+  const lessonTest = ref(null);
+  
+  // Комментарии для генерации
+  const theoryComment = ref("");
+  const readingComment = ref("");
+  const speakingComment = ref("");
+  
+  // Флаги генерации
+  const theoryGenerating = ref(false);
+  const readingGenerating = ref(false);
+  const speakingGenerating = ref(false);
+  
+  // Флаги подтверждения
+  const theoryGenerated = ref(false);
+  const readingGenerated = ref(false);
+  const speakingGenerated = ref(false);
+  
+  const theoryConfirmed = ref(false);
+  const readingConfirmed = ref(false);
+  const speakingConfirmed = ref(false);
+  
+  // Прогресс учеников
+  const studentsProgress = ref([]);
+  const requiresRetry = ref(false);
+  
+  // **ИЗМЕНЕНИЕ: Убираем вычисляемое свойство lessonTitle**
+  // const lessonTitle = computed(() => {
+  //   return "Содержимое урока"; // Статический заголовок
+  // });
+  
+  // Методы
+  function calculateStudentProgress(student) {
+    const total = 4;
+    let completed = 0;
+    
+    if (student.theory_completed) completed++;
+    if (student.reading_completed) completed++;
+    if (student.speaking_completed) completed++;
+    if (student.test_completed) completed++;
+    
+    return Math.round((completed / total) * 100);
   }
   
-  console.log("Результаты урока:", showResultsSection.value ? "показаны" : "скрыты");
-}
-
-// Навигация
-function goBack() {
-  if (courseIdRef.value) {
-    router.push(`/course/${courseIdRef.value}`);
-  } else {
-    router.back();
-  }
-}
-
-// Инициализация
-onMounted(async () => {
-  // Проверяем аутентификацию
-  const token = localStorage.getItem("token");
-  if (!token) {
-    router.push("/login");
-    return;
-  }
-  
-  if (!auth.user) {
-    await auth.fetchMe();
-  }
-  
-  if (!auth.user) {
-    router.push("/login");
-    return;
-  }
-  
-  // Загружаем данные урока
-  await loadLessonData();
-  
-  // Раздел результатов изначально скрыт
-  showResultsSection.value = false;
-});
-
-// Следим за изменением props
-watch(
-  () => props.lessonId,
-  (newId) => {
-    if (newId) {
-      lessonIdRef.value = newId;
-      loadLessonData();
+  async function toggleLessonAccess() {
+    if (!lessonData.value) return;
+    
+    try {
+      const newAccessState = !lessonData.value.is_access;
+      
+      // Обновляем доступ к уроку
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "access",
+        is_access: newAccessState,
+        content: ""
+      });
+      
+      lessonData.value.is_access = newAccessState;
+      
+      // Синхронизируем с графом ученика
+      await synchronizeWithGraph(newAccessState);
+      
+      // Двойное обновление для надежности
+      await updateGraphAccessState(newAccessState);
+      
+      alert(`Доступ к уроку ${newAccessState ? 'открыт' : 'закрыт'} для ученика`);
+      
+    } catch (error) {
+      console.error("Ошибка изменения доступа к уроку:", error);
+      alert("Ошибка изменения доступа");
     }
   }
-);
-
-watch(
-  () => props.courseId,
-  (newCourseId) => {
-    courseIdRef.value = newCourseId;
+  
+  async function updateGraphAccessState(isAccess) {
+    if (!courseIdRef.value || !studentIdRef.value) return;
+    
+    try {
+      // Получаем текущий граф
+      const graphResponse = await api.get(
+        `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`
+      );
+      
+      if (graphResponse.data && graphResponse.data.graph_data) {
+        const graphData = graphResponse.data.graph_data;
+        
+        // Находим узел, соответствующий этому уроку
+        const lessonNode = graphData.nodes.find(node => 
+          node.data?.lesson_id === lessonIdRef.value
+        );
+        
+        if (lessonNode) {
+          // Обновляем состояние доступа
+          lessonNode.group = isAccess ? 2 : 3; // 2 - желтый, 3 - серый
+          lessonNode.is_access_for_student = isAccess;
+          
+          // Обновляем граф в базе данных
+          await api.put(
+            `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph`,
+            graphData
+          );
+          
+          console.log(`Граф обновлен: урок ${lessonIdRef.value} - ${isAccess ? 'доступен' : 'недоступен'}`);
+        }
+      }
+    } catch (error) {
+      console.error("Ошибка обновления графа:", error);
+    }
   }
-);
-
-watch(
-  () => props.lessonLabel,
-  (newLabel) => {
-    lessonLabelFromGraph.value = newLabel;
+  
+  async function loadLessonData() {
+    if (!lessonIdRef.value) return;
+    
+    try {
+      loading.value = true;
+      
+      // **ИЗМЕНЕНИЕ: Загружаем урок без информации о теме**
+      const response = await api.get(`/lessons/${lessonIdRef.value}`);
+      lessonData.value = response.data;
+  
+      // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем и устанавливаем is_access если undefined/null
+      if (lessonData.value.is_access === undefined || lessonData.value.is_access === null) {
+        // Обновляем урок, устанавливая его как закрытый
+        await api.put(`/lessons/${lessonIdRef.value}/content`, {
+          content_type: "access",
+          is_access: false,  // ЗАКРЫТ по умолчанию
+          content: ""
+        });
+        lessonData.value.is_access = false;
+      } else if (lessonData.value.is_access === true) {
+        // Если урок уже открыт, синхронизируем с графом
+        await synchronizeWithGraph(true);
+      }
+      
+      // Загружаем контент урока
+      theoryText.value = lessonData.value.theory_text || "";
+      readingText.value = lessonData.value.reading_text || "";
+      speakingText.value = lessonData.value.speaking_text || "";
+      lessonNotes.value = lessonData.value.lesson_notes || "";
+      
+      // Проверяем, есть ли уже сгенерированный контент
+      theoryConfirmed.value = !!theoryText.value;
+      readingConfirmed.value = !!readingText.value;
+      speakingConfirmed.value = !!speakingText.value;
+      
+      // Загружаем тест урока
+      if (lessonData.value.lesson_plan_json) {
+        try {
+          lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
+            ? JSON.parse(lessonData.value.lesson_plan_json)
+            : lessonData.value.lesson_plan_json;
+        } catch (e) {
+          console.error("Error parsing lesson test:", e);
+          lessonTest.value = null;
+        }
+      }
+      
+    } catch (error) {
+      console.error("Ошибка загрузки данных урока:", error);
+      alert("Не удалось загрузить данные урока");
+      goBack();
+    } finally {
+      loading.value = false;
+    }
   }
-);
-
-watch(
-  () => props.studentId,
-  (newStudentId) => {
-    studentIdRef.value = newStudentId;
+  
+  async function synchronizeWithGraph(isAccess) {
+    if (!courseIdRef.value || !studentIdRef.value) return;
+    
+    try {
+      // Обновляем узел в графе ученика
+      await api.post(
+        `/courses/${courseIdRef.value}/student/${studentIdRef.value}/graph/update-access`,
+        {
+          node_id: lessonIdRef.value,
+          is_access: isAccess
+        }
+      );
+      console.log(`Граф синхронизирован: доступ ${isAccess ? 'открыт' : 'закрыт'}`);
+    } catch (graphError) {
+      console.error("Ошибка синхронизации графа:", graphError);
+    }
   }
-);
-</script>
+  
+  async function loadStudentsProgress() {
+    if (!lessonIdRef.value || !courseIdRef.value) return;
+    
+    try {
+      const response = await api.get(
+        `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
+      );
+      
+      studentsProgress.value = response.data.map(student => ({
+        ...student,
+        requires_retry: student.requires_retry || false
+      }));
+      
+      // Устанавливаем общий флаг повторного прохождения
+      if (studentsProgress.value.length > 0) {
+        requiresRetry.value = studentsProgress.value.some(student => student.requires_retry);
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки прогресса учеников:", error);
+      studentsProgress.value = [];
+    }
+  }
+  
+  // Генерация контента
+  async function generateTheory() {
+    if (!courseIdRef.value) {
+      alert("Не указан ID курса");
+      return;
+    }
+    
+    try {
+      theoryGenerating.value = true;
+      
+      // Отправляем запрос на генерацию теории
+      const response = await api.post(`/lessons/${lessonIdRef.value}/generate/theory`, {
+        feedback: theoryComment.value || "",
+        course_id: courseIdRef.value
+      });
+      
+      // Заменяем текущий текст на сгенерированный
+      theoryText.value = response.data.generated_content;
+      theoryGenerated.value = true;
+      theoryConfirmed.value = false;
+      
+      theoryComment.value = "";
+      
+      alert("Теория успешно сгенерирована! Нажмите 'Подтвердить генерацию теории' для сохранения.");
+      
+    } catch (error) {
+      console.error("Ошибка генерации теории:", error);
+      alert("Ошибка генерации теории. Проверьте соединение с AI-сервисом.");
+    } finally {
+      theoryGenerating.value = false;
+    }
+  }
+  
+  async function generateReading() {
+    if (!courseIdRef.value) {
+      alert("Не указан ID курса");
+      return;
+    }
+    
+    try {
+      readingGenerating.value = true;
+      
+      // Отправляем запрос на генерацию задания на чтение
+      const response = await api.post(`/lessons/${lessonIdRef.value}/generate/reading`, {
+        feedback: readingComment.value || "",
+        course_id: courseIdRef.value
+      });
+      
+      // Заменяем текущий текст на сгенерированный
+      readingText.value = response.data.generated_content;
+      readingGenerated.value = true;
+      readingConfirmed.value = false;
+      
+      readingComment.value = "";
+      
+      alert("Задание на чтение успешно сгенерировано! Нажмите 'Подтвердить генерацию задания на чтение' для сохранения.");
+      
+    } catch (error) {
+      console.error("Ошибка генерации задания:", error);
+      alert("Ошибка генерации задания. Проверьте соединение с AI-сервисом.");
+    } finally {
+      readingGenerating.value = false;
+    }
+  }
+  
+  async function generateSpeaking() {
+    if (!courseIdRef.value) {
+      alert("Не указан ID курса");
+      return;
+    }
+    
+    try {
+      speakingGenerating.value = true;
+      
+      // Отправляем запрос на генерацию задания на говорение
+      const response = await api.post(`/lessons/${lessonIdRef.value}/generate/speaking`, {
+        feedback: speakingComment.value || "",
+        course_id: courseIdRef.value
+      });
+      
+      // Заменяем текущий текст на сгенерированный
+      speakingText.value = response.data.generated_content;
+      speakingGenerated.value = true;
+      speakingConfirmed.value = false;
+      
+      speakingComment.value = "";
+      
+      alert("Задание на говорение успешно сгенерировано! Нажмите 'Подтвердить генерацию задания на говорение' для сохранения.");
+      
+    } catch (error) {
+      console.error("Ошибка генерации задания:", error);
+      alert("Ошибка генерации задания. Проверьте соединение с AI-сервисом.");
+    } finally {
+      speakingGenerating.value = false;
+    }
+  }
+  
+  // Сохранение контента
+  async function saveTheory() {
+    try {
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "theory",
+        content: theoryText.value
+      });
+      
+      theoryConfirmed.value = true;
+      theoryGenerated.value = false;
+      alert("Теоретическая часть подтверждена и сохранена");
+    } catch (error) {
+      console.error("Ошибка сохранения теории:", error);
+      alert("Ошибка сохранения теории");
+    }
+  }
+  
+  async function saveReading() {
+    try {
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "reading",
+        content: readingText.value
+      });
+      
+      readingConfirmed.value = true;
+      readingGenerated.value = false;
+      alert("Задание на чтение подтверждено и сохранено");
+    } catch (error) {
+      console.error("Ошибка сохранения задания:", error);
+      alert("Ошибка сохранения задания");
+    }
+  }
+  
+  async function saveSpeaking() {
+    try {
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "speaking",
+        content: speakingText.value
+      });
+      
+      speakingConfirmed.value = true;
+      speakingGenerated.value = false;
+      alert("Задание на говорение подтверждено и сохранено");
+    } catch (error) {
+      console.error("Ошибка сохранения задания:", error);
+      alert("Ошибка сохранения задания");
+    }
+  }
+  
+  async function saveNotes() {
+    try {
+      await api.put(`/lessons/${lessonIdRef.value}/content`, {
+        content_type: "notes",
+        content: lessonNotes.value
+      });
+      alert("Заметки сохранены");
+    } catch (error) {
+      console.error("Ошибка сохранения заметок:", error);
+      alert("Ошибка сохранения заметок");
+    }
+  }
+  
+  async function updateAllStudentsRetry() {
+    try {
+      // Обновляем все записи учеников (без уведомления)
+      const promises = studentsProgress.value.map(student =>
+        api.put(`/lessons/${lessonIdRef.value}/student/${student.student_id}/retry`, {
+          requires_retry: requiresRetry.value
+        })
+      );
+      
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Ошибка обновления настройки:", error);
+    }
+  }
+  
+  async function approveAllResults() {
+    try {
+      // Утверждаем результаты всех учеников
+      const promises = studentsProgress.value.map(student =>
+        api.post(`/lessons/${lessonIdRef.value}/student/${student.student_id}/approve`, {
+          ...student
+        })
+      );
+      
+      await Promise.all(promises);
+      alert("Результаты всех учеников утверждены");
+    } catch (error) {
+      console.error("Ошибка утверждения результатов:", error);
+      alert("Ошибка утверждения результатов");
+    }
+  }
+  
+  function editTest() 
+  {
+    // Редактирование теста урока
+    router.push({
+      name: "lesson-test",
+      params: { lessonId: lessonIdRef.value },
+      query: {
+        courseId: courseIdRef.value,
+        lessonTitle: "Содержимое урока", // **ИЗМЕНЕНИЕ: Статический заголовок**
+        courseTitle: "Название курса",
+        testData: JSON.stringify(lessonTest.value),
+        editMode: true // Флаг режима редактирования для репетитора
+      }
+    });
+  }
+  
+  function showResults() {
+    // Переключаем видимость раздела результатов
+    showResultsSection.value = !showResultsSection.value;
+    
+    // Если показываем раздел впервые, загружаем прогресс учеников
+    if (showResultsSection.value && courseIdRef.value) {
+      loadStudentsProgress();
+    }
+    
+    console.log("Результаты урока:", showResultsSection.value ? "показаны" : "скрыты");
+  }
+  
+  // Навигация
+  function goBack() {
+    if (courseIdRef.value) {
+      router.push(`/course/${courseIdRef.value}`);
+    } else {
+      router.back();
+    }
+  }
+  
+  // Инициализация
+  onMounted(async () => {
+    // Проверяем аутентификацию
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    
+    if (!auth.user) {
+      await auth.fetchMe();
+    }
+    
+    if (!auth.user) {
+      router.push("/login");
+      return;
+    }
+    
+    // Загружаем данные урока
+    await loadLessonData();
+    
+    // Раздел результатов изначально скрыт
+    showResultsSection.value = false;
+  });
+  
+  // Следим за изменением props
+  watch(
+    () => props.lessonId,
+    (newId) => {
+      if (newId) {
+        lessonIdRef.value = newId;
+        loadLessonData();
+      }
+    }
+  );
+  
+  watch(
+    () => props.courseId,
+    (newCourseId) => {
+      courseIdRef.value = newCourseId;
+    }
+  );
+  
+  watch(
+    () => props.studentId,
+    (newStudentId) => {
+      studentIdRef.value = newStudentId;
+    }
+  );
+  </script>
 
 <style scoped>
 .lesson-page {
@@ -1022,12 +1045,12 @@ watch(
 }
 
 .btn-save {
-  background: #f4886d;
-  color: #592012;
+  background: #4CAF50;
+  color: white;
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #e0785d;
+  background: #45a049;
   transform: translateY(-2px);
 }
 
@@ -1038,13 +1061,18 @@ watch(
 
 .btn-generate {
   background: #f4886d;
-  color: #592012;
+  color: white;
   white-space: nowrap;
 }
 
-.btn-generate:hover {
-  background: #e0785d;
+.btn-generate:hover:not(:disabled) {
+  background: #F57C00;
   transform: translateY(-2px);
+}
+
+.btn-generate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-test {
@@ -1177,12 +1205,6 @@ watch(
   margin-bottom: 8px;
 }
 
-.template-subtitle {
-  font-size: 14px;
-  color: #718096;
-  font-style: italic;
-}
-
 .template-sections {
   display: flex;
   flex-direction: column;
@@ -1202,9 +1224,6 @@ watch(
   color: #2d3748;
   margin-top: 0;
   margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .template-section ul {
@@ -1217,20 +1236,6 @@ watch(
   font-size: 14px;
   line-height: 1.4;
   color: #4a5568;
-}
-
-.template-note {
-  background: #e6fffa;
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #81e6d9;
-  font-size: 13px;
-  color: #234e52;
-}
-
-.template-note p {
-  margin: 0;
-  line-height: 1.5;
 }
 
 /* Анимация появления раздела результатов */

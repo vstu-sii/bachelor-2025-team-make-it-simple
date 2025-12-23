@@ -37,6 +37,15 @@ class LessonTestSubmit(BaseModel):
 
 class LessonContentUpdate(BaseModel):
     content: str
-    content_type: str
+    content_type: str  # theory, reading, speaking, notes, test, access
     is_access: Optional[bool] = None
     is_ended: Optional[bool] = None
+
+class LessonGenerationRequest(BaseModel):
+    feedback: Optional[str] = ""
+    course_id: int
+
+class GeneratedContentResponse(BaseModel):
+    section: str  # theory, reading, speaking
+    generated_content: str
+    feedback: Optional[str] = ""

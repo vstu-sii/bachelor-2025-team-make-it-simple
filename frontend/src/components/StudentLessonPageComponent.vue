@@ -1,4 +1,4 @@
-<template>
+<<template>
   <div class="lesson-page">
     <!-- Хедер -->
     <AppHeader :show-back-button="true" />
@@ -8,9 +8,9 @@
       <img src="/src/assets/arrow-back.svg" alt="back" />
     </button>
 
-    <!-- Название урока -->
+    <!-- **ИЗМЕНЕНИЕ: СТАТИЧЕСКИЙ ЗАГОЛОВОК** -->
     <div class="lesson-title-container">
-      <h1 class="lesson-title">Тема урока: «{{ lessonTitle }}»</h1>
+      <h1 class="lesson-title">Содержимое урока</h1>
       <div class="lesson-title-divider"></div>
     </div>
 
@@ -23,11 +23,15 @@
           <h2 class="section-header">Теоретическая часть</h2>
           <div class="section-divider"></div>
           
+          <!-- **ИСПРАВЛЕНИЕ: Показываем текст если он есть, иначе placeholder** -->
+          <div v-if="!theoryText" class="placeholder">
+            Теория будет загружена...
+          </div>
           <textarea 
+            v-else
             v-model="theoryText" 
             class="textarea"
             readonly
-            placeholder="Теория будет загружена..."
           ></textarea>
           
           <div class="actions">
@@ -42,11 +46,15 @@
           <h2 class="section-header">Задание на чтение</h2>
           <div class="section-divider"></div>
           
+          <!-- **ИСПРАВЛЕНИЕ: Показываем текст если он есть, иначе placeholder** -->
+          <div v-if="!readingText" class="placeholder">
+            Задание на чтение будет загружено...
+          </div>
           <textarea 
+            v-else
             v-model="readingText" 
             class="textarea"
             readonly
-            placeholder="Задание будет загружено..."
           ></textarea>
           
           <div class="actions">
@@ -61,11 +69,15 @@
           <h2 class="section-header">Задание на говорение</h2>
           <div class="section-divider"></div>
           
+          <!-- **ИСПРАВЛЕНИЕ: Показываем текст если он есть, иначе placeholder** -->
+          <div v-if="!speakingText" class="placeholder">
+            Задание на говорение будет загружено...
+          </div>
           <textarea 
+            v-else
             v-model="speakingText" 
             class="textarea"
             readonly
-            placeholder="Задание будет загружено..."
           ></textarea>
           
           <div class="actions">
@@ -157,267 +169,238 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineProps } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "../stores/auth";
-import api from "../api/axios";
-import AppHeader from "../components/Header.vue";
-
-// Определяем props
-const props = defineProps({
-  lessonId: {
-    type: Number,
-    required: true
-  },
-  courseId: {
-    type: Number,
-    default: null
-  },
-  lessonLabel: {
-    type: String,
-    default: ""  // Добавляем label из графа
-  },
-  studentId: {
-    type: Number,
-    default: null  // Добавляем studentId
-  }
-});
-
-const router = useRouter();
-const auth = useAuthStore();
-
-// Используем props вместо получения из route
-const lessonIdRef = ref(props.lessonId);
-const courseIdRef = ref(props.courseId);
-const studentIdRef = ref(props.studentId || auth.user?.user_id);  // Используем studentId из props или auth
-const lessonLabelFromGraph = ref(props.lessonLabel); // Используем label из графа
-
-// Данные урока
-const lessonData = ref(null);
-const loading = ref(false);
-
-// Прогресс ученика
-const progress = ref({
-  theory_completed: false,
-  reading_completed: false,
-  speaking_completed: false,
-  test_completed: false,
-  test_score: 0
-});
-
-// Флаг повторного прохождения для ученика
-const requiresRetryStudent = ref(false);
-
-// Данные урока
-const theoryText = ref("");
-const readingText = ref("");
-const speakingText = ref("");
-const resultNotes = ref("");
-const lessonTest = ref(null);
-
-// Вычисляемые свойства
-const lessonTitle = computed(() => {
-  // Используем label из графа, если он есть, иначе тему урока
-  if (lessonLabelFromGraph.value) {
-    return lessonLabelFromGraph.value;
-  }
+  import { ref, computed, onMounted, watch, defineProps } from "vue";
+  import { useRouter } from "vue-router";
+  import { useAuthStore } from "../stores/auth";
+  import api from "../api/axios";
+  import AppHeader from "../components/Header.vue";
   
-  if (lessonData.value?.topic?.title) {
-    return lessonData.value.topic.title;
-  }
-  
-  if (lessonData.value?.theory_text) {
-    const title = lessonData.value.theory_text.length > 50 
-      ? lessonData.value.theory_text.substring(0, 50) + "..." 
-      : lessonData.value.theory_text;
-    return title;
-  }
-  
-  return "Урок";
-});
-
-async function loadLessonData() {
-  if (!lessonIdRef.value) return;
-  
-  try {
-    loading.value = true;
-    console.log(`Загрузка урока ID: ${lessonIdRef.value}`);
-    
-    // Загружаем информацию об уроке с темой
-    const response = await api.get(`/lessons/${lessonIdRef.value}?include_topic=true`);
-    lessonData.value = response.data;
-    console.log('Данные урока загружены:', lessonData.value);
-    
-    // Загружаем контент урока
-    theoryText.value = lessonData.value.theory_text || "";
-    readingText.value = lessonData.value.reading_text || "";
-    speakingText.value = lessonData.value.speaking_text || "";
-    resultNotes.value = lessonData.value.result_notes || "";
-    
-    // Загружаем тест урока
-    if (lessonData.value.lesson_plan_json) {
-      try {
-        lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
-          ? JSON.parse(lessonData.value.lesson_plan_json)
-          : lessonData.value.lesson_plan_json;
-        console.log('Тест урока загружен');
-      } catch (e) {
-        console.error("Error parsing lesson test:", e);
-        lessonTest.value = null;
-      }
+  // Определяем props
+  const props = defineProps({
+    lessonId: {
+      type: Number,
+      required: true
+    },
+    courseId: {
+      type: Number,
+      default: null
+    },
+    studentId: {
+      type: Number,
+      default: null  // Добавляем studentId
     }
+  });
+  
+  const router = useRouter();
+  const auth = useAuthStore();
+  
+  // Используем props вместо получения из route
+  const lessonIdRef = ref(props.lessonId);
+  const courseIdRef = ref(props.courseId);
+  const studentId = ref(props.studentId || auth.user?.user_id); // Используем studentId из props или auth
+  
+  // Данные урока
+  const lessonData = ref(null);
+  const loading = ref(false);
+  
+  // Прогресс ученика
+  const progress = ref({
+    theory_completed: false,
+    reading_completed: false,
+    speaking_completed: false,
+    test_completed: false,
+    test_score: 0
+  });
+  
+  // Флаг повторного прохождения для ученика
+  const requiresRetryStudent = ref(false);
+  
+  // Данные урока
+  const theoryText = ref("");
+  const readingText = ref("");
+  const speakingText = ref("");
+  const resultNotes = ref("");
+  const lessonTest = ref(null);
+  
+  async function loadLessonData() {
+    if (!lessonIdRef.value) return;
     
-    // Загружаем прогресс ученика (если есть)
-    await loadStudentProgress();
-    
-  } catch (error) {
-    console.error("Ошибка загрузки данных урока:", error);
-    
-    // Более информативное сообщение об ошибке
-    if (error.response) {
-      // Сервер ответил с кодом ошибки
-      console.error('Статус ошибки:', error.response.status);
-      console.error('Данные ошибки:', error.response.data);
+    try {
+      loading.value = true;
+      console.log(`Загрузка урока ID: ${lessonIdRef.value}`);
       
-      if (error.response.status === 403) {
-        alert("Урок недоступен. Возможно, у вас нет прав для просмотра этого урока.");
-      } else if (error.response.status === 404) {
-        alert("Урок не найден в системе.");
-      } else {
-        alert(`Ошибка сервера: ${error.response.status}`);
+      // **ИЗМЕНЕНИЕ: Загружаем урок без информации о теме**
+      const response = await api.get(`/lessons/${lessonIdRef.value}`);
+      lessonData.value = response.data;
+      console.log('Данные урока загружены:', lessonData.value);
+      
+      // **ИСПРАВЛЕНИЕ: Загружаем контент урока**
+      theoryText.value = lessonData.value.theory_text || "";
+      readingText.value = lessonData.value.reading_text || "";
+      speakingText.value = lessonData.value.speaking_text || "";
+      resultNotes.value = lessonData.value.result_notes || "";
+      
+      console.log('Теория:', theoryText.value ? 'загружена' : 'нет');
+      console.log('Чтение:', readingText.value ? 'загружено' : 'нет');
+      console.log('Говорение:', speakingText.value ? 'загружено' : 'нет');
+      
+      // Загружаем тест урока
+      if (lessonData.value.lesson_plan_json) {
+        try {
+          lessonTest.value = typeof lessonData.value.lesson_plan_json === 'string'
+            ? JSON.parse(lessonData.value.lesson_plan_json)
+            : lessonData.value.lesson_plan_json;
+          console.log('Тест урока загружен');
+        } catch (e) {
+          console.error("Error parsing lesson test:", e);
+          lessonTest.value = null;
+        }
       }
-    } else if (error.request) {
-      // Запрос был сделан, но нет ответа
-      console.error('Нет ответа от сервера:', error.request);
-      alert("Не удалось подключиться к серверу. Проверьте, запущен ли бэкенд на порту 8000.");
-    } else {
-      // Что-то пошло не так при настройке запроса
-      console.error('Ошибка настройки запроса:', error.message);
-      alert("Ошибка при загрузке данных урока.");
+      
+      // Загружаем прогресс ученика (если есть)
+      await loadStudentProgress();
+      
+    } catch (error) {
+      console.error("Ошибка загрузки данных урока:", error);
+      
+      // Более информативное сообщение об ошибке
+      if (error.response) {
+        // Сервер ответил с кодом ошибки
+        console.error('Статус ошибки:', error.response.status);
+        console.error('Данные ошибки:', error.response.data);
+        
+        if (error.response.status === 403) {
+          alert("Урок недоступен. Возможно, у вас нет прав для просмотра этого урока.");
+        } else if (error.response.status === 404) {
+          alert("Урок не найден в системе.");
+        } else {
+          alert(`Ошибка сервера: ${error.response.status}`);
+        }
+      } else if (error.request) {
+        // Запрос был сделан, но нет ответа
+        console.error('Нет ответа от сервера:', error.request);
+        alert("Не удалось подключиться к серверу. Проверьте, запущен ли бэкенд на порту 8000.");
+      } else {
+        // Что-то пошло не так при настройке запроса
+        console.error('Ошибка настройки запроса:', error.message);
+        alert("Ошибка при загрузке данных урока.");
+      }
+      
+      goBack();
+    } finally {
+      loading.value = false;
     }
-    
-    goBack();
-  } finally {
-    loading.value = false;
   }
-}
-
-async function loadStudentProgress() {
-  if (!lessonIdRef.value || !courseIdRef.value || !studentId.value) return;
   
-  try {
-    // Загружаем прогресс конкретного ученика
-    const response = await api.get(
-      `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
-    );
+  async function loadStudentProgress() {
+    if (!lessonIdRef.value || !courseIdRef.value || !studentId.value) return;
     
-    // Находим прогресс текущего ученика
-    if (response.data && Array.isArray(response.data)) {
-      const studentProgressData = response.data.find(
-        student => student.student_id === studentId.value
+    try {
+      // Загружаем прогресс конкретного ученика
+      const response = await api.get(
+        `/lessons/${lessonIdRef.value}/students-progress?course_id=${courseIdRef.value}`
       );
       
-      if (studentProgressData) {
-        progress.value = {
-          theory_completed: studentProgressData.theory_completed || false,
-          reading_completed: studentProgressData.reading_completed || false,
-          speaking_completed: studentProgressData.speaking_completed || false,
-          test_completed: studentProgressData.test_completed || false,
-          test_score: studentProgressData.test_score || 0
-        };
+      // Находим прогресс текущего ученика
+      if (response.data && Array.isArray(response.data)) {
+        const studentProgressData = response.data.find(
+          student => student.student_id === studentId.value
+        );
         
-        requiresRetryStudent.value = studentProgressData.requires_retry || false;
+        if (studentProgressData) {
+          progress.value = {
+            theory_completed: studentProgressData.theory_completed || false,
+            reading_completed: studentProgressData.reading_completed || false,
+            speaking_completed: studentProgressData.speaking_completed || false,
+            test_completed: studentProgressData.test_completed || false,
+            test_score: studentProgressData.test_score || 0
+          };
+          
+          requiresRetryStudent.value = studentProgressData.requires_retry || false;
+        }
       }
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки прогресса ученика:", error);
-    // Не показываем ошибку пользователю, просто оставляем пустой прогресс
-  }
-}
-
-function startTest()
-{
-  if (lessonTest.value) {
-    router.push({
-      name: "lesson-test",
-      params: { lessonId: lessonIdRef.value },
-      query: {
-        courseId: courseIdRef.value,
-        lessonTitle: lessonTitle.value,
-        courseTitle: "Название курса", // Здесь можно получить из данных курса
-        testData: JSON.stringify(lessonTest.value)
-      }
-    });
-  } else {
-    alert("Тест для этого урока еще не создан");
-  }
-}
-
-// Навигация
-function goBack() {
-  if (courseIdRef.value) {
-    router.push(`/course/${courseIdRef.value}`);
-  } else {
-    router.back();
-  }
-}
-
-// Инициализация
-onMounted(async () => {
-  // Проверяем аутентификацию
-  const token = localStorage.getItem("token");
-  if (!token) {
-    router.push("/login");
-    return;
-  }
-  
-  if (!auth.user) {
-    await auth.fetchMe();
-  }
-  
-  if (!auth.user) {
-    router.push("/login");
-    return;
-  }
-  
-  studentId.value = auth.user.user_id;
-  
-  // Загружаем данные урока
-  await loadLessonData();
-});
-
-// Следим за изменением props
-watch(
-  () => props.lessonId,
-  (newId) => {
-    if (newId) {
-      lessonIdRef.value = newId;
-      loadLessonData();
+    } catch (error) {
+      console.error("Ошибка загрузки прогресса ученика:", error);
+      // Не показываем ошибку пользователю, просто оставляем пустой прогресс
     }
   }
-);
-
-watch(
-  () => props.courseId,
-  (newCourseId) => {
-    courseIdRef.value = newCourseId;
+  
+  function startTest()
+  {
+    if (lessonTest.value) {
+      router.push({
+        name: "lesson-test",
+        params: { lessonId: lessonIdRef.value },
+        query: {
+          courseId: courseIdRef.value,
+          lessonTitle: "Содержимое урока", // **ИЗМЕНЕНИЕ: Статический заголовок**
+          courseTitle: "Название курса",
+          testData: JSON.stringify(lessonTest.value)
+        }
+      });
+    } else {
+      alert("Тест для этого урока еще не создан");
+    }
   }
-);
-
-watch(
-  () => props.lessonLabel,
-  (newLabel) => {
-    lessonLabelFromGraph.value = newLabel;
+  
+  // Навигация
+  function goBack() {
+    if (courseIdRef.value) {
+      router.push(`/course/${courseIdRef.value}`);
+    } else {
+      router.back();
+    }
   }
-);
-
-watch(
-  () => props.studentId,
-  (newStudentId) => {
-    studentIdRef.value = newStudentId;
-  }
-);
-</script>
+  
+  // Инициализация
+  onMounted(async () => {
+    // Проверяем аутентификацию
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    
+    if (!auth.user) {
+      await auth.fetchMe();
+    }
+    
+    if (!auth.user) {
+      router.push("/login");
+      return;
+    }
+    
+    studentId.value = auth.user.user_id;
+    
+    // Загружаем данные урока
+    await loadLessonData();
+  });
+  
+  // Следим за изменением props
+  watch(
+    () => props.lessonId,
+    (newId) => {
+      if (newId) {
+        lessonIdRef.value = newId;
+        loadLessonData();
+      }
+    }
+  );
+  
+  watch(
+    () => props.courseId,
+    (newCourseId) => {
+      courseIdRef.value = newCourseId;
+    }
+  );
+  
+  watch(
+    () => props.studentId,
+    (newStudentId) => {
+      studentId.value = newStudentId;
+    }
+  );
+  </script>
 
 <style scoped>
 .lesson-page {
@@ -814,6 +797,38 @@ watch(
   
   .template-section h4 {
     font-size: 14px;
+  }
+}
+
+.placeholder {
+  width: 100%;
+  height: 200px;
+  padding: 15px;
+  background: #ffffff;
+  border: 2px dashed #d67962;
+  border-radius: 10px;
+  font-family: 'Arial', Georgia, serif;
+  font-size: 14px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Адаптивные стили для placeholder */
+@media (max-width: 768px) {
+  .placeholder {
+    height: 150px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .placeholder {
+    height: 120px;
+    font-size: 12px;
   }
 }
 </style>

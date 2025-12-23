@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
+import json
 
 from app.database import get_db
 from app.repositories.lesson_repository import LessonRepository
@@ -8,16 +9,23 @@ from app.schemas.lesson import (
     LessonResponse, 
     CourseLessonsInfo,
     LessonTestSubmit,
-    LessonContentUpdate
+    LessonContentUpdate,
+    LessonGenerationRequest,
+    GeneratedContentResponse
 )
 from app.utils.jwt import get_current_user
-import json
+from app.ml.main import (
+    generate_lesson_theory,
+    generate_lesson_reading,
+    generate_lesson_speaking
+)
 
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 
 @router.get("/{lesson_id}", response_model=LessonResponse)
 def get_lesson(
     lesson_id: int,
+    include_topic: bool = Query(False, description="Включать ли информацию о теме"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -49,6 +57,17 @@ def get_lesson(
         "is_access": lesson.is_access,  # Теперь всегда будет False или True
         "is_ended": lesson.is_ended
     }
+    
+    # **ИЗМЕНЕНИЕ: Добавляем информацию о теме только если запрошено**
+    if include_topic and lesson.topic_id:
+        from app.models.topic import Topic
+        topic = db.query(Topic).filter(Topic.topic_id == lesson.topic_id).first()
+        if topic:
+            lesson_dict["topic"] = {
+                "topic_id": topic.topic_id,
+                "title": topic.title,
+                "description_text": topic.description_text
+            }
     
     # Обрабатываем JSON поля
     if lesson.lesson_plan_json:
@@ -186,16 +205,16 @@ def submit_lesson_test(
     
     return {"message": "Результаты сохранены", "score": test_data.score}
 
-@router.post("/{lesson_id}/generate/{section}")
-def generate_lesson_section(
+@router.post("/{lesson_id}/generate/{section}", response_model=GeneratedContentResponse)
+async def generate_lesson_section(
     lesson_id: int,
     section: str,  # theory, reading, speaking
-    comment: Optional[str] = None,
+    request: LessonGenerationRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
     """
-    Сгенерировать контент для раздела урока (через ИИ) - только для репетитора
+    Сгенерировать контент для раздела урока через AI (только для репетитора)
     """
     # Проверяем, что пользователь - репетитор
     if current_user.role != "Репетитор":
@@ -205,97 +224,83 @@ def generate_lesson_section(
     if not lesson:
         raise HTTPException(status_code=404, detail="Урок не найден")
     
+    # **ВОССТАНАВЛИВАЕМ получение темы урока - она нужна для AI-генератора**
+    topic = None
+    if lesson.topic_id:
+        from app.models.topic import Topic
+        topic = db.query(Topic).filter(Topic.topic_id == lesson.topic_id).first()
     
-    lesson_title = lesson.theory_text[:50] + "..." if lesson.theory_text and len(lesson.theory_text) > 50 else f"Урок {lesson_id}"
+    # Получаем профиль ученика из курса
+    from app.models.user_course import UserCourse
+    user_courses = db.query(UserCourse).filter(UserCourse.course_id == request.course_id).all()
     
-    generated_content = {
-        "theory": f"# Сгенерированная теоретическая часть\n\n**Тема:** {lesson_title}\n**Комментарий:** {comment or 'нет'}\n\n## Основные правила:\n\n1. **Правило 1:** Описание правила 1\n2. **Правило 2:** Описание правила 2\n3. **Примеры использования:**\n   - Пример 1\n   - Пример 2\n   - Пример 3\n\n## Упражнения:\n1. Упражнение 1\n2. Упражнение 2",
+    interests = []
+    knowledge_gaps = []
+    
+    for uc in user_courses:
+        # Получаем пользователя
+        from app.models.user import User
+        user = db.query(User).filter(User.user_id == uc.user_id).first()
+        if user and user.interests:
+            interests.append(user.interests)
+        if uc.knowledge_gaps:
+            knowledge_gaps.append(uc.knowledge_gaps)
+    
+    # Создаём данные для генерации
+    lesson_data = {
+        "lesson_parameters": {
+            "topic": topic.title if topic else "Общая тема",  # **ВОССТАНАВЛИВАЕМ тему**
+            "student_profile": {
+                "interests": interests[:3] if interests else ["общие интересы"],
+                "knowledge_gaps": knowledge_gaps[:3] if knowledge_gaps else ["базовая грамматика"]
+            }
+        },
+        "type": section
+    }
+    
+    try:
+        generated_content = ""
         
-        "reading": f"# Задание на чтение\n\n**Тема:** {lesson_title}\n**Комментарий:** {comment or 'нет'}\n\n## Текст для чтения:\n\nRead the following text carefully:\n\n\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\"\n\n## Вопросы:\n\n1. What is the main idea of the text?\n2. Find three key points in the text.\n3. What would be a good title for this text?",
+        if section == "theory":
+            # Генерация теоретической части
+            ai_response = generate_lesson_theory(lesson_data, request.feedback)
+            generated_content = ai_response.get("theory_section", {}).get("content", "")
+            
+        elif section == "reading":
+            # Генерация задания на чтение
+            ai_response = generate_lesson_reading(lesson_data, request.feedback)
+            reading_section = ai_response.get("reading_section", {})
+            text = reading_section.get("text", "")
+            questions = reading_section.get("comprehension_questions", [])
+            
+            # Форматируем для отображения
+            generated_content = f"{text}\n\nВопросы на понимание:\n"
+            for i, question in enumerate(questions, 1):
+                generated_content += f"{i}. {question}\n"
+                
+        elif section == "speaking":
+            # Генерация задания на говорение
+            ai_response = generate_lesson_speaking(lesson_data, request.feedback)
+            speaking_section = ai_response.get("speaking_section", {})
+            title = speaking_section.get("title", "")
+            instructions = speaking_section.get("instructions", "")
+            example = speaking_section.get("example_response", "")
+            
+            # Форматируем для отображения
+            generated_content = f"{title}\n\n{instructions}\n\nПример ответа:\n{example}"
         
-        "speaking": f"# Задание на говорение\n\n**Тема:** {lesson_title}\n**Комментарий:** {comment or 'нет'}\n\n## Упражнения для практики говорения:\n\n### Диалоговая практика:\n1. **Role-play:** Practice a conversation about daily routines.\n2. **Discussion:** Discuss your favorite hobbies and activities.\n\n### Монологи:\n1. **Describe:** Describe your last vacation in 2-3 minutes.\n2. **Explain:** Explain how to cook your favorite dish.\n\n### Вопросы для обсуждения:\n1. What are your plans for the weekend?\n2. How do you usually spend your free time?\n3. What was the best day of your life?"
-    }
-    
-    return {
-        "section": section,
-        "generated_content": generated_content.get(section, ""),
-        "comment": comment
-    }
-
-@router.get("/{lesson_id}/topic")
-def get_lesson_topic(
-    lesson_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """
-    Получить информацию о теме урока
-    """
-    from app.models.lesson import Lesson
-    from app.models.topic import Topic
-    
-    lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Урок не найден")
-    
-    if not lesson.topic_id:
-        raise HTTPException(status_code=404, detail="Урок не привязан к теме")
-    
-    topic = db.query(Topic).filter(Topic.topic_id == lesson.topic_id).first()
-    if not topic:
-        raise HTTPException(status_code=404, detail="Тема не найдена")
-    
-    # Находим курсы, к которым относится эта тема
-    from app.models.course_topic import CourseTopic
-    course_topics = db.query(CourseTopic).filter(
-        CourseTopic.topic_id == lesson.topic_id
-    ).all()
-    
-    courses = []
-    for ct in course_topics:
-        from app.models.course import Course
-        course = db.query(Course).filter(Course.course_id == ct.course_id).first()
-        if course:
-            courses.append({
-                "course_id": course.course_id,
-                "course_title": course.title
-            })
-    
-    return {
-        "topic_id": topic.topic_id,
-        "topic_title": topic.title,
-        "topic_description": topic.description_text,
-        "lesson_id": lesson.lesson_id,
-        "courses": courses
-    }
-
-@router.put("/{lesson_id}/content")
-def update_lesson_content(
-    lesson_id: int,
-    content_update: LessonContentUpdate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """
-    Обновить контент урока (только для репетитора)
-    Включает обновление статуса доступа (is_access)
-    """
-    # Проверяем, что пользователь - репетитор
-    if current_user.role != "Репетитор":
-        raise HTTPException(status_code=403, detail="Только репетиторы могут обновлять контент уроков")
-    
-    lesson = LessonRepository.update_lesson_content(
-        db, lesson_id, 
-        content_update.content_type,
-        content_update.content,
-        content_update.is_access,
-        content_update.is_ended
-    )
-    
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Урок не найден")
-    
-    return {"message": "Контент обновлен", "lesson": lesson}
+        else:
+            raise HTTPException(status_code=400, detail="Некорректный тип раздела")
+        
+        return GeneratedContentResponse(
+            section=section,
+            generated_content=generated_content,
+            feedback=request.feedback
+        )
+        
+    except Exception as e:
+        print(f"Ошибка генерации контента: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при генерации: {str(e)}")
 
 @router.get("/{lesson_id}/students-progress")
 def get_lesson_students_progress(

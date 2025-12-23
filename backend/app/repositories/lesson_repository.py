@@ -75,10 +75,10 @@ class LessonRepository:
                             node_status = node.get('group')
                             break
                 
+                # **ИЗМЕНЕНИЕ: Убираем заголовок из данных**
                 lesson_info.append({
                     "lesson_id": lesson.lesson_id,
                     "node_id": node_id,
-                    "title": lesson.theory_text[:50] + "..." if lesson.theory_text and len(lesson.theory_text) > 50 else (lesson.theory_text or f"Урок {lesson.lesson_id}"),
                     "theory_text": lesson.theory_text,
                     "reading_text": lesson.reading_text,
                     "speaking_text": lesson.speaking_text,
@@ -122,6 +122,13 @@ class LessonRepository:
             return None
         
         try:
+            # **ИСПРАВЛЕНИЕ: Автоматически открываем доступ при сохранении контента**
+            if content_type in ["theory", "reading", "speaking"] and content:
+                # Если сохраняем контент (теорию, чтение или говорение), 
+                # автоматически открываем доступ к уроку
+                lesson.is_access = True
+            
+            # Обновляем конкретный тип контента
             if content_type == "theory":
                 lesson.theory_text = content
             elif content_type == "reading":
@@ -132,7 +139,11 @@ class LessonRepository:
                 lesson.lesson_plan_json = content
             elif content_type == "notes":
                 lesson.lesson_notes = content
+            elif content_type == "access" and content:
+                # Для обновления только доступа без контента
+                pass
             
+            # Явное указание is_access имеет приоритет
             if is_access is not None:
                 lesson.is_access = is_access
             
@@ -203,46 +214,3 @@ class LessonRepository:
             db.rollback()
             print(f"Error saving test results: {e}")
             return False
-        
-    @staticmethod
-    def update_lesson_content(
-        db: Session,
-        lesson_id: int,
-        content_type: str,
-        content: str,
-        is_access: bool = None,
-        is_ended: bool = None
-    ) -> Optional[Lesson]:
-        """
-        Обновить контент урока
-        """
-        lesson = db.query(Lesson).filter(Lesson.lesson_id == lesson_id).first()
-        if not lesson:
-            return None
-        
-        try:
-            if content_type == "theory":
-                lesson.theory_text = content
-            elif content_type == "reading":
-                lesson.reading_text = content
-            elif content_type == "speaking":
-                lesson.speaking_text = content
-            elif content_type == "test":
-                lesson.lesson_plan_json = content
-            elif content_type == "notes":
-                lesson.lesson_notes = content
-            
-            if is_access is not None:
-                lesson.is_access = is_access
-            
-            if is_ended is not None:
-                lesson.is_ended = is_ended
-            
-            db.commit()
-            db.refresh(lesson)
-            return lesson
-            
-        except Exception as e:
-            db.rollback()
-            print(f"Ошибка обновления содержимого урока: {e}")
-            return None
