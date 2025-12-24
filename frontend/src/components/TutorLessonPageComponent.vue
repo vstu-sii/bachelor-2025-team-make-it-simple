@@ -161,25 +161,64 @@
 
         <!-- Тестовая часть -->
         <div class="section-box">
-          <h2 class="section-header">Тестовая часть</h2>
+          <h2 class="section-header">Тестовая часть урока</h2>
           <div class="section-divider"></div>
           
-          <div v-if="lessonTest" class="test-info">
-            <p>Тест урока содержит вопросы по пройденному материалу</p>
-            <div class="questions-preview">
-              <p><strong>Количество вопросов:</strong> {{ lessonTest.questions?.length || 0 }}</p>
+          <div class="test-box">
+            <!-- Отображаем правильное количество вопросов или информацию о том, что тест не сформирован -->
+            <div v-if="lessonTest && lessonTest.questions && lessonTest.questions.length > 0" class="test-info">
+              <p class="test-status">
+                <strong>Статус: </strong> 
+                <span :class="testStatus || 'status-finalized'">
+                  {{ testStatus || 'Опубликован' }}
+                </span>
+              </p>
+              <p class="test-questions">
+                <strong>Количество вопросов:</strong> {{ lessonTest.questions.length }}
+              </p>
+              <p class="test-note">
+                Граф курса будет доступен после прохождения тестирования
+              </p>
+              
+              <!-- Статистика прохождения теста учениками -->
+              <div v-if="studentsProgress.length > 0" class="test-stats">
+                <div class="stats-header">
+                  <strong>Статистика прохождения:</strong>
+                </div>
+                <div class="stats-content">
+                  <div class="stat-item">
+                    <span class="stat-label">Всего учеников:</span>
+                    <span class="stat-value">{{ studentsProgress.length }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Прошли тест:</span>
+                    <span class="stat-value">{{ completedTestsCount }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Ожидают прохождения:</span>
+                    <span class="stat-value">{{ pendingTestsCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="test-info">
+              <p class="test-status">
+                <strong>Статус: </strong> 
+                <span class="status-not-generated">Не сформирован</span>
+              </p>
+              <p class="test-questions">
+                <strong>Количество вопросов:</strong> 0
+              </p>
+              <p class="test-note">
+                Создайте тестовую часть для урока
+              </p>
             </div>
             
-            <div class="test-button-container">
-              <button 
-                @click="editTest" 
-                class="btn-test"
-              >
-                Перейти к тесту
-              </button>
-            </div>
+            <button class="test-btn" @click="editTest">
+              {{ lessonTest && lessonTest.questions && lessonTest.questions.length > 0 ? 'Перейти к тесту' : 'Создать тест' }}
+            </button>
           </div>
-        </div>
+      </div>
 
         <!-- Заметки по уроку -->
         <div class="section-box">
@@ -269,12 +308,12 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, watch, defineProps } from "vue";
-  import { useRouter } from "vue-router";
-  import { useAuthStore } from "../stores/auth";
-  import api from "../api/axios";
-  import AppHeader from "../components/Header.vue";
-  
+import { ref, onMounted, watch, defineProps, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import api from "../api/axios";
+import AppHeader from "../components/Header.vue";
+
   // Определяем props
   const props = defineProps({
     lessonId: {
@@ -339,11 +378,14 @@
   const studentsProgress = ref([]);
   const requiresRetry = ref(false);
   
-  // **ИЗМЕНЕНИЕ: Убираем вычисляемое свойство lessonTitle**
-  // const lessonTitle = computed(() => {
-  //   return "Содержимое урока"; // Статический заголовок
-  // });
-  
+  const completedTestsCount = computed(() => {
+    return studentsProgress.value.filter(s => s.test_completed).length;
+  });
+
+  const pendingTestsCount = computed(() => {
+    return studentsProgress.value.filter(s => !s.test_completed).length;
+  });
+
   // Методы
   function calculateStudentProgress(student) {
     const total = 4;
@@ -712,16 +754,15 @@
   
   function editTest() 
   {
-    // Редактирование теста урока
     router.push({
       name: "lesson-test",
       params: { lessonId: lessonIdRef.value },
       query: {
         courseId: courseIdRef.value,
-        lessonTitle: "Содержимое урока", // **ИЗМЕНЕНИЕ: Статический заголовок**
+        lessonTitle: "Содержимое урока",
         courseTitle: "Название курса",
         testData: JSON.stringify(lessonTest.value),
-        editMode: true // Флаг режима редактирования для репетитора
+        editMode: true
       }
     });
   }
@@ -1471,6 +1512,116 @@
   
   .template-section h4 {
     font-size: 14px;
+  }
+}
+
+.test-box {
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: left;
+  color: #592012;
+  font-family: 'Arial', Georgia, serif;
+  margin-top: 15px;
+}
+
+.test-info {
+  margin-bottom: 15px;
+}
+
+.test-status,
+.test-questions,
+.test-note {
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+.status-not-generated {
+  color: #F44336;
+  font-weight: bold;
+}
+
+.status-draft {
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.status-finalized {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.test-stats {
+  background: #f0f8ff;
+  border: 1px solid #2196F3;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.stats-header {
+  margin-bottom: 10px;
+  color: #1976D2;
+}
+
+.stats-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #1976D2;
+}
+
+.test-btn {
+  display: block;
+  background: #F4886D;
+  color: #592012;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Arial', Georgia, serif;
+  font-weight: bold;
+  transition: all 0.3s;
+  font-size: 15px;
+  margin: 15px auto 0 auto;
+  text-align: center;
+  width: 100%;
+  max-width: 250px;
+}
+
+.test-btn:hover:not(:disabled) {
+  background: #E0785D;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
+}
+
+.test-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .stats-content {
+    grid-template-columns: 1fr;
   }
 }
 </style>

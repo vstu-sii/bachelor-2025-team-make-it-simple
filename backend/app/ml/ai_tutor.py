@@ -639,11 +639,25 @@ class AITutor:
 
         from app.ml.prompt_templates import PromptTemplates
         
+        # Выводим входной JSON
+        print("\n" + "="*60)
+        print("ВХОДНЫЕ ДАННЫЕ ДЛЯ ТЕСТА УРОКА:")
+        print("="*60)
+        print(json.dumps(lesson_data, ensure_ascii=False, indent=2))
+        if feedback:
+            print(f"ЗАМЕЧАНИЯ: {feedback}")
+
+        # Подготавливаем данные для промпта
+        topic = lesson_data["lesson_parameters"]["topic"]
+        theory = lesson_data.get("theory", "")
+        interests = ", ".join(lesson_data["lesson_parameters"]["student_profile"]["interests"])
+        knowledge_gaps = ", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"])
+        
         prompt = PromptTemplates.LESSON_TEST_PROMPT.format(
-            topic=lesson_data["lesson_parameters"]["topic"],
-            theory=lesson_data.get("theory", ""),
-            interests=", ".join(lesson_data["lesson_parameters"]["student_profile"]["interests"]),
-            knowledge_gaps=", ".join(lesson_data["lesson_parameters"]["student_profile"]["knowledge_gaps"]),
+            topic=topic,
+            theory=theory,
+            interests=interests,
+            knowledge_gaps=knowledge_gaps,
             feedback=feedback or ""
         )
         
@@ -657,7 +671,7 @@ class AITutor:
             
             # Выводим полученный JSON
             print("\n" + "="*60)
-            print("ПОЛУЧЕННЫЙ ТЕСТ ОТ МОДЕЛИ:")
+            print("ПОЛУЧЕННЫЙ ТЕСТ УРОКА ОТ МОДЕЛИ:")
             print("="*60)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             
@@ -666,11 +680,31 @@ class AITutor:
             logger.error(f"Ошибка парсинга JSON: {e}")
             logger.error(f"Текст для парсинга: {json_text[:500]}...")
             
-            # Возвращаем заглушку
+            # Возвращаем заглушку для теста урока
             return {
                 "test_section": {
-                    "title": "Тест (демо)",
-                    "questions": []
+                    "title": "Тест по пройденному материалу",
+                    "questions": [
+                        {
+                            "question_id": "1",
+                            "type": "single_choice",
+                            "question": "Основная тема урока:",
+                            "options": [
+                                "Грамматика",
+                                "Лексика", 
+                                "Произношение",
+                                "Аудирование"
+                            ],
+                            "correct_answer": 0
+                        },
+                        {
+                            "question_id": "2",
+                            "type": "short_answer",
+                            "question": "Кратко опишите основные правила из теоретической части:",
+                            "max_length": 200,
+                            "correct_answer": "Основные правила включают..."
+                        }
+                    ]
                 }
             }
     

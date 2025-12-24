@@ -87,35 +87,82 @@
           </div>
         </div>
 
-        <!-- Тестовая часть -->
+        <!-- ТЕСТОВАЯ ЧАСТЬ (ДОБАВЛЕНА) -->
         <div class="section-box">
-          <h2 class="section-header">Тестовая часть</h2>
+          <h2 class="section-header">Тестовая часть урока</h2>
           <div class="section-divider"></div>
           
-          <div v-if="lessonTest" class="test-info">
-            <p>Тест урока содержит вопросы по пройденному материалу</p>
-            <div class="questions-preview">
-              <p><strong>Количество вопросов:</strong> {{ lessonTest.questions?.length || 0 }}</p>
+          <div class="test-box">
+            <!-- Отображаем правильное количество вопросов или информацию о том, что тест не сформирован -->
+            <div v-if="lessonTest && lessonTest.questions && lessonTest.questions.length > 0 && lessonData?.is_access" class="test-info">
+              <p class="test-status">
+                <strong>Статус: </strong> 
+                <span :class="progress.test_completed ? 'status-completed' : 'status-available'">
+                  {{ progress.test_completed ? 'Тест пройден' : 'Доступен для прохождения' }}
+                </span>
+              </p>
+              <p class="test-questions">
+                <strong>Количество вопросов:</strong> {{ lessonTest.questions.length }}
+              </p>
+              
+              <!-- Краткие результаты теста -->
+              <div v-if="progress.test_completed" class="test-results-summary">
+                <div class="results-header">
+                  <strong>Ваши результаты:</strong>
+                </div>
+                <div class="results-content">
+                  <div class="result-item">
+                    <span class="result-label">Набрано баллов:</span>
+                    <span class="result-value">{{ progress.test_score || 0 }}</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Максимум баллов:</span>
+                    <span class="result-value">{{ lessonTest.questions.length }}</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Процент выполнения:</span>
+                    <span class="result-value">{{ Math.round((progress.test_score / lessonTest.questions.length) * 100) || 0 }}%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <p class="test-note">
+                Пройдите тест для закрепления материала
+              </p>
+            </div>
+            <div v-else-if="!lessonData?.is_access" class="test-info">
+              <p class="test-status">
+                <strong>Статус:</strong> 
+                <span class="status-not-available">Не доступен</span>
+              </p>
+              <p class="test-note">
+                Тестовая часть будет доступна после открытия урока репетитором
+              </p>
+            </div>
+            <div v-else class="test-info">
+              <p class="test-status">
+                <strong>Статус:</strong> 
+                <span class="status-not-generated">Не сформирован</span>
+              </p>
+              <p class="test-note">
+                Тестовая часть для этого урока еще не создана репетитором.
+              </p>
             </div>
             
-            <div class="test-button-container">
-              <button 
-                v-if="lessonData?.is_access && !progress.test_completed" 
-                @click="startTest" 
-                class="btn-test"
-              >
-                Перейти к тесту
-              </button>
-              <button 
-                v-if="progress.test_completed" 
-                class="btn-test disabled"
-                disabled
-              >
-                Тест пройден ({{ progress.test_score }} баллов)
-              </button>
-            </div>
+            <button 
+              class="test-btn" 
+              @click="startTest"
+              :disabled="!lessonData?.is_access || !lessonTest || !lessonTest.questions || lessonTest.questions.length === 0 || progress.test_completed"
+            >
+              {{ 
+                !lessonData?.is_access ? 'Тест не доступен' :
+                progress.test_completed ? 'Тест пройден' : 
+                (lessonTest && lessonTest.questions && lessonTest.questions.length > 0 ? 'Пройти тест' : 'Тест не доступен')
+              }}
+            </button>
           </div>
         </div>
+
 
         <!-- Результаты урока (такие же как у репетитора) -->
         <div class="section-box results-section">
@@ -169,27 +216,26 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, watch, defineProps } from "vue";
-  import { useRouter } from "vue-router";
-  import { useAuthStore } from "../stores/auth";
-  import api from "../api/axios";
-  import AppHeader from "../components/Header.vue";
+import { ref, onMounted, watch, defineProps } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import api from "../api/axios";
+import AppHeader from "../components/Header.vue";
   
-  // Определяем props
-  const props = defineProps({
-    lessonId: {
-      type: Number,
-      required: true
-    },
-    courseId: {
-      type: Number,
-      default: null
-    },
-    studentId: {
-      type: Number,
-      default: null  // Добавляем studentId
-    }
-  });
+const props = defineProps({
+  lessonId: {
+    type: Number,
+    required: true
+  },
+  courseId: {
+    type: Number,
+    default: null
+  },
+  studentId: {
+    type: Number,
+    default: null
+  }
+});
   
   const router = useRouter();
   const auth = useAuthStore();
@@ -333,7 +379,7 @@
         params: { lessonId: lessonIdRef.value },
         query: {
           courseId: courseIdRef.value,
-          lessonTitle: "Содержимое урока", // **ИЗМЕНЕНИЕ: Статический заголовок**
+          lessonTitle: "Содержимое урока",
           courseTitle: "Название курса",
           testData: JSON.stringify(lessonTest.value)
         }
@@ -829,6 +875,125 @@
   .placeholder {
     height: 120px;
     font-size: 12px;
+  }
+}
+
+/* Добавляем стили для тестовой части */
+.test-box {
+  background: #FFFFFF;
+  border: 2px solid #F4886D;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: left;
+  color: #592012;
+  font-family: 'Arial', Georgia, serif;
+  margin-top: 15px;
+}
+
+.test-info {
+  margin-bottom: 15px;
+}
+
+.test-status,
+.test-questions,
+.test-note {
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+.status-not-available {
+  color: #F44336;
+  font-weight: bold;
+}
+
+.status-not-generated {
+  color: #FF9800;
+  font-weight: bold;
+}
+
+.status-available {
+  color: #2196F3;
+  font-weight: bold;
+}
+
+.status-completed {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.test-btn {
+  display: block;
+  background: #F4886D;
+  color: #592012;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Arial', Georgia, serif;
+  font-weight: bold;
+  transition: all 0.3s;
+  font-size: 15px;
+  margin: 15px auto 0 auto;
+  text-align: center;
+  width: 100%;
+  max-width: 250px;
+}
+
+.test-btn:hover:not(:disabled) {
+  background: #E0785D;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 136, 109, 0.3);
+}
+
+.test-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #cccccc;
+  color: #666666;
+}
+
+.test-results-summary {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.results-header {
+  margin-bottom: 10px;
+  color: #2E7D32;
+}
+
+.results-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #d4edda;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2E7D32;
+}
+
+@media (max-width: 768px) {
+  .results-content {
+    grid-template-columns: 1fr;
   }
 }
 </style>

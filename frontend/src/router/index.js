@@ -54,8 +54,8 @@ const routes = [
     props: true
   },
   { 
-    path: "/lesson/:lessonId(\\d+)/test", 
-    name: "lesson-test", 
+    path: '/lesson/:lessonId/test', 
+    name: 'lesson-test', 
     component: LessonTestPage,
     meta: { requiresAuth: true },
     props: true
