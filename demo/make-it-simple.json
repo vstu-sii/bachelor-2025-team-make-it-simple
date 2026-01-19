@@ -1,0 +1,214 @@
+{
+  "id": "make-it-simple",
+  "slug": "make-it-simple",
+  "title": "Формирование персональной траектории обучения",
+  "shortDescription": "AI‑платформа для персонализированных репетиторских занятий с детьми младших классов",
+  "fullDescription": "Формирование персональной траектории обучения — это интеллектуальная платформа для репетиторов младших классов, решающая такие проблемы как:\n- Нехватка времени на подготовку к занятию;\n- Отсутствие у ученика заинтересованности в занятиях;\n- Отсутствие индивидуального подхода к обучению учеников;\n- Тяжело запоминать прогресс разных учеников.\n\nПлатформа предоставляет репетиторам инструменты для:\n- Управления профилями учеников;\n- Генерации персонализированных входных тестов, выявляющих уровень знаний ученика;\n- Генерации плана обучения ученика и дальнейшая его коррекция с учётом темпа обучения ученика;\n- Генерация персонализированных заданий с учётом интересов и пробелов в знаниях ученика.\n",
+  "emoji": "📚",
+  "color": "bg-purple-500",
+
+  "product": {
+    "problem": "Репетиторы тратят значительное время на ручную подготовку заданий, испытывают трудности с наглядным отображением прогресса учеников для родителей и не всегда могут оперативно реагировать на пробелы в знаниях.",
+    "targetAudience": [
+      "Репетиторы студенты, подрабатывающие репетиторы - нехватка времени на подготовку к занятию",
+      "Нагруженные репетиторы - тяжело запоминать прогресс разных учеников"
+    ],
+    "valueProposition": "Получите готовый план персонализированного курса за минуты - наш сервис изучает интересы ученика, его недостатки и сильные стороны. На основе этой информации мы создаем персональный учебный план. Репетитор подбирает тематические задания и предлагает идеи для уроков. Это помогает вовлечь учеников, экономит время на подготовку к занятию и позволяет сохранить индивидуальный подход к каждому, даже при большой нагрузке.",
+    "useCases": [
+      "Регистрация и вход в систему",
+      "Изменение информации об интересах ученика",
+      "Составление отчёта по прогрессу ученика",
+      "Прохождение учеником тестирования",
+      "Формирование персональной траектории обучения",
+      "Генерация плана урока",
+      "Оценка результатов урока",
+      "Составление курса",
+      "Добавление ученика в курс"
+    ]
+  },
+
+  "category": "education",
+  "difficulty": "hard",
+  "tags": [
+    "LLM",
+    "Graph",
+    "AI",
+    "Web",
+    "AI assistant",
+    "Social",
+    "Learning",
+    "School"
+  ],
+
+  "team": [
+    {
+      "name": "Зенин Максим",
+      "role": "sa-po",
+      "github": "https://github.com/VirmLeed"
+    },
+    {
+      "name": "Матохин Илья",
+      "role": "fullstack",
+      "github": "https://github.com/Iklya"
+    },
+    {
+      "name": "Молчанова Лиана",
+      "role": "mlops",
+      "github": "https://github.com/lihimikoo"
+    },
+    {
+      "name": "Боков Святослав",
+      "role": "ai-engineer",
+      "github": "https://github.com/3pknai"
+    }
+  ],
+  "groupNumber": "ИВТ-463",
+
+  "links": {
+    "github": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple",
+    "documentation": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/tree/main/docs",
+    "prd": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple#product-requirements-document-d1",
+    "useCases": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/docs/use-cases.md",
+    "c4Diagrams": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/docs/architecture/c4-diagrams.md",
+    "apiSpec": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/api/openapi-current.json",
+    "adr": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/docs/requirements.md",
+    "roadmap": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/docs/roadmap.md"
+  },
+
+  "media": {
+    "cover": "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/cover.png",
+    "screenshots": [
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s1.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s2.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s3.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s4.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s5.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s6.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s7.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s8.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s9.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s10.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s11.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s12.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s13.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s14.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s15.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s16.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s17.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s18.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s19.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s20.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s21.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s22.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s23.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s24.png",
+      "https://github.com/vstu-sii/bachelor-2025-team-make-it-simple/blob/main/demo/screenshots/s25.png"
+    ]
+  },
+
+  "techStack": {
+    "frontend": ["VueJS", "TypeScript"],
+    "backend": ["FastAPI", "Python"],
+    "ai": ["Gemma", "Ollama", "Mistral"],
+    "infrastructure": ["Docker", "GitHub Actions"],
+    "databases": ["PostgreSQL"],
+    "other": ["Grafana", "Prometheus"]
+  },
+
+  "achievements": [],
+
+  "metrics": {
+    "scores": {
+      "functionality": 4,
+      "codeQuality": 5,
+      "documentation": 4,
+      "presentation": 5,
+      "innovation": 5
+    },
+    "totalScore": 23,
+    "techMetrics": {
+      "testCoverage": 20,
+      "uptime": 99.1298,
+      "responseTime": 2423,
+      "requestsPerDay": 687
+    }
+  },
+
+  "highlights": [
+    "Управления профилями учеников",
+    "Генерации персонализированных входных тестов, выявляющих уровень знаний ученика",
+    "Генерации плана обучения ученика и дальнейшая его коррекция с учётом темпа обучения ученика",
+    "Генерация персонализированных заданий с учётом интересов и пробелов в знаниях ученика"
+  ],
+
+  "sprints": [
+    {
+      "sprint": 1,
+      "name": "Инициация",
+      "score": 10,
+      "maxScore": 10,
+      "completed": true
+    },
+    {
+      "sprint": 2,
+      "name": "Архитектура",
+      "score": 10,
+      "maxScore": 10,
+      "completed": true
+    },
+    {
+      "sprint": 3,
+      "name": "MVP",
+      "score": 8,
+      "maxScore": 10,
+      "completed": true
+    },
+    {
+      "sprint": 4,
+      "name": "Infrastructure",
+      "score": 20,
+      "maxScore": 20,
+      "completed": true
+    },
+    {
+      "sprint": 5,
+      "name": "Тестирование",
+      "score": 10,
+      "maxScore": 10,
+      "completed": true
+    },
+    {
+      "sprint": 6,
+      "name": "Demo Day",
+      "score": 10,
+      "maxScore": 10,
+      "completed": true
+    },
+    {
+      "sprint": 7,
+      "name": "Рецензирование",
+      "score": 10,
+      "maxScore": 10,
+      "completed": true
+    }
+  ],
+
+  "northStarMetric": {
+    "name": "Среднее квадратическое количества запросов на генерацию задач на одного активного пользователя в месяц.",
+    "target": "≥ 1",
+    "achieved": "20",
+    "description": "Показывает ценность продукта через частоту использования и вовлечённость пользователей"
+  },
+
+  "peerReviews": [],
+
+  "totalCourseScore": 98,
+
+  "year": 2025,
+  "semester": "fall",
+  "status": "completed",
+  "featured": true,
+  "startDate": "2025-09-01",
+  "endDate": "2025-12-15",
+  "sourceProjectId": "ai-meeting-hero"
+}
