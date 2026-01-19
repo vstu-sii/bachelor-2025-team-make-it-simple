@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_API_URL: "http://127.0.0.1:2026"
+    container_name: "frontend"
+    restart: unless-stopped
+    ports:
+      - 2027:80

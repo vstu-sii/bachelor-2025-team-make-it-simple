@@ -1,0 +1,39 @@
+services:
+  aiserver:
+    build: .
+    container_name: "aiserver"
+    restart: unless-stopped
+    ports:
+      - 2025:8000
+    expose:
+      - 8000
+    environment:
+      PORT: 8000
+      OLLAMA_URL: "http://ollama:11434"
+      GENERATING_MODEL: "deepseek-r1:8b"
+    depends_on:
+      - ollama
+    networks:
+      - aiserver
+
+  ollama:
+    image: ollama/ollama:0.13.0
+    container_name: "ollama"
+    restart: unless-stopped
+    expose:
+      - 11434
+    volumes:
+      - ./.ollama_data:/root/.ollama
+    networks:
+      - aiserver
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #       - driver: nvidia
+    #         count: all
+    #         capabilities: [gpu]
+
+networks:
+    aiserver:
+        external: false
