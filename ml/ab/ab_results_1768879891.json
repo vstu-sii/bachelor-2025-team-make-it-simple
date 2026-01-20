@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-01-20T06:31:31.400062",
+  "experiments": [
+    "entry_test_generation",
+    "course_graph_generation",
+    "lesson_theory_generation"
+  ],
+  "results": [
+    {
+      "variant": "C",
+      "experiment_id": "entry_test_generation",
+      "timestamp": "2026-01-20T06:30:49.380992",
+      "metrics": {
+        "latency": 13.14519476890564,
+        "prompt_tokens": 132,
+        "completion_tokens": 602,
+        "total_tokens": 734,
+        "cost_usd": 0.001163,
+        "variant": "C",
+        "experiment_id": "entry_test_generation",
+        "user_id": "student_001",
+        "temperature": 0.7,
+        "max_tokens": 1500
+      },
+      "trace_id": "ab_test_entry_test_generation_C_1768879836",
+      "prompt_preview": "Ты AI-тьютор по английскому. Создай входной тест.\n\nИнформация:\n- Курс: Английский для начинающих\n- Охватываемые темы: Present Simple, Артикли, Базовая лексика\n\nТребования к тесту:\n• 10 вопросов разных...",
+      "response_preview": "Вот входной тест для курса **\"Английский для начинающих\"**, охватывающий **Present Simple, артикли и базовую лексику**. Вопросы практичные, с акцентом на повседневные ситуации.\n\n```json\n{\n  \"test_info..."
+    },
+    {
+      "variant": "A",
+      "experiment_id": "entry_test_generation",
+      "timestamp": "2026-01-20T06:31:02.272339",
+      "metrics": {
+        "latency": 12.612915992736816,
+        "prompt_tokens": 471,
+        "completion_tokens": 667,
+        "total_tokens": 1138,
+        "cost_usd": 0.001483,
+        "variant": "A",
+        "experiment_id": "entry_test_generation",
+        "user_id": "student_002",
+        "temperature": 0.7,
+        "max_tokens": 1500
+      },
+      "trace_id": "ab_test_entry_test_generation_A_1768879849",
+      "prompt_preview": "Сгенерируй входной тест по английскому языку. Возвращай ТОЛЬКО JSON в указанном формате.\n\nИНФОРМАЦИЯ О КУРСЕ:\n- Название курса: Деловой английский\n- Темы курса: Деловая переписка, Презентации, Перегов...",
+      "response_preview": "```json\n{\n  \"questions\": [\n    {\n      \"question_id\": \"1\",\n      \"type\": \"short_answer\",\n      \"question\": \"Write a formal phrase to request a meeting rescheduling due to a conflict. Limit your respon..."
+    },
+    {
+      "variant": "B",
+      "experiment_id": "course_graph_generation",
+      "timestamp": "2026-01-20T06:31:15.371217",
+      "metrics": {
+        "latency": 12.947136640548706,
+        "prompt_tokens": 107,
+        "completion_tokens": 535,
+        "total_tokens": 642,
+        "cost_usd": 0.001027,
+        "variant": "B",
+        "experiment_id": "course_graph_generation",
+        "user_id": "student_003",
+        "temperature": 0.7,
+        "max_tokens": 1500
+      },
+      "trace_id": "ab_test_course_graph_generation_B_1768879862",
+      "prompt_preview": "Создай граф зависимостей тем курса. JSON формат.\n\nСТУДЕНТ:\n- Интересы: видеоигры, технологии, футбол\n- Пробелы: present_simple, prepositions\n\nКУРС:\n- Название: Английский для геймеров\n- Темы: игровая ...",
+      "response_preview": "Вот JSON-граф зависимостей тем курса **\"Английский для геймеров\"**, учитывающий интересы студента (видеоигры, технологии, футбол) и его пробелы (`present_simple`, `prepositions`). Граф структурирован ..."
+    },
+    {
+      "variant": "B",
+      "experiment_id": "course_graph_generation",
+      "timestamp": "2026-01-20T06:31:31.399063",
+      "metrics": {
+        "latency": 15.880149126052856,
+        "prompt_tokens": 102,
+        "completion_tokens": 482,
+        "total_tokens": 584,
+        "cost_usd": 0.000929,
+        "variant": "B",
+        "experiment_id": "course_graph_generation",
+        "user_id": "student_004",
+        "temperature": 0.7,
+        "max_tokens": 1500
+      },
+      "trace_id": "ab_test_course_graph_generation_B_1768879875",
+      "prompt_preview": "Создай граф зависимостей тем курса. JSON формат.\n\nСТУДЕНТ:\n- Интересы: бизнес, финансы, путешествия\n- Пробелы: business_vocabulary, formal_writing\n\nКУРС:\n- Название: Деловой английский\n- Темы: деловая...",
+      "response_preview": "Вот JSON-граф зависимостей тем курса **\"Деловой английский\"**, учитывающий интересы студента (бизнес, финансы) и его пробелы (деловая лексика, формальное письмо). Граф структурирован так, чтобы сначал..."
+    }
+  ]
+}

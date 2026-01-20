@@ -1,0 +1,41 @@
+Возвращай ТОЛЬКО JSON в указанном формате.
+
+Создай граф зависимостей тем курса. JSON формат.
+
+СТУДЕНТ:
+- Интересы: {interests}
+- Пробелы: {knowledge_gaps}
+
+КУРС:
+- Название: {course_title}
+- Темы: {topics}
+
+СОЗДАЙ:
+1. Узлы (nodes) для каждой темы с id, label, group
+2. Связи (edges) между узлами, показывающие зависимости
+
+ФОРМАТ:
+{{
+  "metadata": {{
+    "course": "{course_title}",
+    "student_interests": "{interests}",
+    "topics_count": [число тем]
+  }},
+  "nodes": [
+    {{
+      "id": "1",
+      "label": "Название темы",
+      "group": 1,
+      "description": "Краткое описание"
+    }}
+  ],
+  "edges": [
+    {{
+      "from": "id_исходного_узла",
+      "to": "id_целевого_узла",
+      "type": "prerequisite"  # или "recommended", "corequisite"
+    }}
+  ]
+}}
+
+Сделай граф логичным и полезным для построения учебного плана.
