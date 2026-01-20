@@ -29,8 +29,7 @@ def run_demo():
     
     entry_test_input = {
         "course_title": "Английский язык для начинающих",
-        "topics": ["Present Simple", "Артикли a/an/the", "Базовая лексика"],
-        "materials": ["учебник Unit 1", "рабочая тетрадь Lesson 1"]
+        "topics": ["Present Simple", "Артикли a/an/the", "Базовая лексика"]
     }
     
     try:

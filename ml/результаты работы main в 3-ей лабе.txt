@@ -1,0 +1,648 @@
+============================================================
+🧠 AI-ТЬЮТОР: СВОДКА КОНФИГУРАЦИИ
+============================================================
+
+🔑 API Ключи:
+   Mistral API: ✅ Настроен
+   Модель: mistral-medium (см. model_selection.md)
+
+📊 Langfuse:
+   Статус: ✅ Включен
+   Хост: https://cloud.langfuse.com
+   Trace: ai_tutor_mistral
+
+⚙️ Настройки генерации:
+   Температура: 0.7
+   Макс. токенов: 2000
+   Таймаут: 30с
+
+🔄 Стратегия повторных попыток:
+   Макс. попыток: 5
+   Начальная задержка: 2.0с
+   Фактор увеличения: 1.5
+
+📈 Метрики и мониторинг:
+   Логирование метрик: ✅ Включено
+   Sample rate: 1.0
+
+============================================================
+📚 Подробнее в model_selection.md
+============================================================
+2026-01-20 05:40:03,320 - ai_tutor - INFO - AI-тьютор инициализирован
+================================================================================
+ДЕМОНСТРАЦИЯ РАБОТЫ AI-ТЬЮТОРА
+================================================================================
+2026-01-20 05:40:03,320 - ai_tutor - INFO - Инициализирован клиент Mistral с моделью mistral-medium
+2026-01-20 05:40:03,320 - ai_tutor - INFO - AI-тьютор инициализирован (классовый подход)
+
+================================================================================
+1. ГЕНЕРАЦИЯ ВХОДНОГО ТЕСТА
+================================================================================
+2026-01-20 05:40:03,320 - ai_tutor - INFO - Генерация входного теста
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ ТЕСТА:
+============================================================
+{
+  "course_title": "Английский язык для начинающих",
+  "topics": [
+    "Present Simple",
+    "Артикли a/an/the",
+    "Базовая лексика"
+  ]
+}
+2026-01-20 05:40:03,322 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054003_f16ea1d6  
+2026-01-20 05:40:03,322 - ai_tutor - INFO - Промпт токенов: 475, trace_id: mistral_20260120_054003_f16ea1d6
+✅ Langfuse клиент инициализирован
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:15,749 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: b57aa9a344371eabb7b742657bbd2f93
+2026-01-20 05:40:16,276 - ai_tutor - INFO - Запрос выполнен за 10.93 секунд (попытка 1), trace_id: mistral_20260120_054003_f16ea1d6
+2026-01-20 05:40:16,277 - ai_tutor - INFO - Сгенерировано токенов: 646, trace_id: mistral_20260120_054003_f16ea1d6      
+2026-01-20 05:40:16,277 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054003_f16ea1d6: latency=10.93s, prompt_tokens=475, generated_tokens=646
+
+============================================================
+ПОЛУЧЕННЫЙ ТЕСТ ОТ МОДЕЛИ:
+============================================================
+{
+  "questions": [
+    {
+      "question_id": "1",
+      "type": "short_answer",
+      "question": "Write a sentence using Present Simple about your daily routine (e.g., 'I wake up at 7 AM').",        
+      "max_length": 60,
+      "correct_answer": "I brush my teeth every morning"
+    },
+    {
+      "question_id": "2",
+      "type": "short_answer",
+      "question": "Fill in the blank with the correct article: 'She has ___ apple in her bag.' (Write only the article: a/an/the).",
+      "max_length": 3,
+      "correct_answer": "an"
+    },
+    {
+      "question_id": "3",
+      "type": "single_choice",
+      "question": "Which sentence is in Present Simple?",
+      "options": [
+        "She is reading a book now.",
+        "They will go to the park tomorrow.",
+        "He walks his dog every evening.",
+        "I was cooking dinner when you called."
+      ],
+      "correct_answer": 2
+    },
+    {
+      "question_id": "4",
+      "type": "single_choice",
+      "question": "Choose the correct article: 'I saw ___ elephant at ___ zoo yesterday.'",
+      "options": [
+        "a / the",
+        "an / the",
+        "the / a",
+        "an / a"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question_id": "5",
+      "type": "multiple_choice",
+      "question": "Select ALL the correct sentences in Present Simple:",
+      "options": [
+        "She don’t like coffee.",
+        "They plays tennis on Sundays.",
+        "We watch movies every Friday.",
+        "He work in a big company.",
+        "Cats sleep a lot during the day."
+      ],
+      "correct_answers": [
+        2,
+        4
+      ]
+    },
+    {
+      "question_id": "6",
+      "multiple_choice": true,
+      "type": "multiple_choice",
+      "question": "Which of these are COUNTABLE nouns? (Select all that apply)",
+      "options": [
+        "water",
+        "book",
+        "sugar",
+        "chair",
+        "milk",
+        "pen"
+      ],
+      "correct_answers": [
+        1,
+        3,
+        5
+      ]
+    },
+    {
+      "question_id": "7",
+      "type": "gaps_choice",
+      "question": "Every morning, I [1] up at 7 o’clock. First, I [2] my teeth and take a shower. Then, I [3] breakfast with my family. My sister usually [4] orange juice, but I prefer [5]. After breakfast, I [6] my bag and go to school.", 
+      "gaps": [
+        {
+          "gap_id": 1,
+          "options": [
+            "wakes",
+            "woke",
+            "wake",
+            "am waking"
+          ],
+          "correct_answer": 2
+        },
+        {
+          "gap_id": 2,
+          "options": [
+            "brushed",
+            "brush",
+            "am brushing",
+            "brushing"
+          ],
+          "correct_answer": 1
+        },
+        {
+          "gap_id": 3,
+          "options": [
+            "eat",
+            "eats",
+            "ate",
+            "am eating"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "gap_id": 4,
+          "options": [
+            "drink",
+            "drinks",
+            "drank",
+            "is drinking"
+          ],
+          "correct_answer": 1
+        },
+        {
+          "gap_id": 5,
+          "options": [
+            "a tea",
+            "tea",
+            "the tea",
+            "some tea"
+          ],
+          "correct_answer": 1
+        },
+        {
+          "gap_id": 6,
+          "options": [
+            "pack",
+            "packs",
+            "packing",
+            "am packing"
+          ],
+          "correct_answer": 0
+        }
+      ]
+    },
+    {
+      "question_id": "8",
+      "type": "gaps_choice",
+      "question": "Look at [1] woman over there! She is [2] famous actress. She always wears [3] expensive clothes and drives [4] red sports car. Many people want to take [5] photo with her, but she doesn’t like [6].",
+      "gaps": [
+        {
+          "gap_id": 1,
+          "options": [
+            "a",
+            "an",
+            "the",
+            "-"
+          ],
+          "correct_answer": 2
+        },
+        {
+          "gap_id": 2,
+          "options": [
+            "a",
+            "an",
+            "the",
+            "-"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "gap_id": 3,
+          "options": [
+            "a",
+            "an",
+            "the",
+            "-"
+          ],
+          "correct_answer": 3
+        },
+        {
+          "gap_id": 4,
+          "options": [
+            "a",
+            "an",
+            "the",
+            "-"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "gap_id": 5,
+          "options": [
+            "a",
+            "an",
+            "the",
+            "-"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "gap_id": 6,
+          "options": [
+            "it",
+            "them",
+            "that",
+            "this"
+          ],
+          "correct_answer": 1
+        }
+      ]
+    },
+    {
+      "question_id": "9",
+      "type": "short_answer",
+      "question": "Write the negative form of this sentence in Present Simple: 'They play football on weekends.' (Start with 'They...')",
+      "max_length": 30,
+      "correct_answer": "They do not play football on weekends"
+    },
+    {
+      "question_id": "10",
+      "type": "short_answer",
+      "question": "Complete the question in Present Simple: '___ she ___ to school by bus?' (Use 'do/does' and 'go')",  
+      "max_length": 20,
+      "correct_answer": "Does she go to school by bus"
+    },
+    {
+      "question_id": "11",
+      "type": "single_choice",
+      "question": "Which sentence is CORRECT?",
+      "options": [
+        "He don’t speak English well.",
+        "She doesn’t likes pizza.",
+        "They doesn’t watch TV in the morning.",
+        "We don’t eat meat."
+      ],
+      "correct_answer": 3
+    },
+    {
+      "question_id": "12",
+      "type": "multiple_choice",
+      "question": "Select ALL the sentences where articles are used CORRECTLY:",
+      "options": [
+        "I have a apple and the banana.",
+        "She is an honest person.",
+        "We visited the Eiffel Tower in Paris.",
+        "He wants to be a doctor when he grows up.",
+        "They live in an old house near the river.",
+        "She has a umbrella in her bag."
+      ],
+      "correct_answers": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}
+
+✓ Сгенерирован тест с 12 вопросами
+  Вопрос 1: Write a sentence using Present Simple about your daily routi...
+  Вопрос 2: Fill in the blank with the correct article: 'She has ___ app...
+
+================================================================================
+2. ГЕНЕРАЦИЯ ГРАФА КУРСА
+================================================================================
+2026-01-20 05:40:16,284 - ai_tutor - INFO - Генерация графа курса
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ ГРАФА КУРСА:
+============================================================
+{
+  "student_profile": {
+    "interests": [
+      "видеоигры",
+      "футбол",
+      "технологии"
+    ],
+    "knowledge_gaps": [
+      "present_simple",
+      "prepositions"
+    ]
+  },
+  "course_title": "Английский язык для начинающих",
+  "topics": [
+    "Present Simple",
+    "Артикли a/an/the",
+    "Базовая лексика: семья, работа, хобби",
+    "Предлоги места и времени",
+    "Вопросы с do/does"
+  ]
+}
+2026-01-20 05:40:16,286 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054016_ffd0ea47  
+2026-01-20 05:40:16,286 - ai_tutor - INFO - Промпт токенов: 205, trace_id: mistral_20260120_054016_ffd0ea47
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:18,148 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: f141a4175c86be8b4bf7966957b133f4
+2026-01-20 05:40:18,273 - ai_tutor - INFO - Запрос выполнен за 1.86 секунд (попытка 1), trace_id: mistral_20260120_054016_ffd0ea47
+2026-01-20 05:40:18,273 - ai_tutor - INFO - Сгенерировано токенов: 93, trace_id: mistral_20260120_054016_ffd0ea47       
+2026-01-20 05:40:18,273 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054016_ffd0ea47: latency=1.86s, prompt_tokens=205, generated_tokens=93
+
+============================================================
+ПОЛУЧЕННЫЙ ГРАФ ОТ МОДЕЛИ:
+============================================================
+{
+  "nodes": [
+    {
+      "id": "1",
+      "label": "Present Simple"
+    },
+    {
+      "id": "2",
+      "label": "Артикли a/an/the"
+    },
+    {
+      "id": "3",
+      "label": "Базовая лексика: семья, работа, хобби"
+    },
+    {
+      "id": "4",
+      "label": "Предлоги места и времени"
+    },
+    {
+      "id": "5",
+      "label": "Вопросы с do/does"
+    }
+  ],
+  "edges": [
+    {
+      "from": "1",
+      "to": "5"
+    },
+    {
+      "from": "3",
+      "to": "1"
+    },
+    {
+      "from": "3",
+      "to": "2"
+    },
+    {
+      "from": "3",
+      "to": "4"
+    },
+    {
+      "from": "1",
+      "to": "4"
+    },
+    {
+      "from": "2",
+      "to": "5"
+    },
+    {
+      "from": "4",
+      "to": "5"
+    }
+  ]
+}
+
+✓ Сгенерирован граф с 5 узлами и 7 связями
+  Распределение по группам: {3: 5}
+  Узлы графа:
+    - Present Simple (группа: ?)
+    - Артикли a/an/the (группа: ?)
+    - Базовая лексика: семья, работа, хобби (группа: ?)
+    - Предлоги места и времени (группа: ?)
+    - Вопросы с do/does (группа: ?)
+
+================================================================================
+3. ГЕНЕРАЦИЯ ТЕОРИИ УРОКА
+================================================================================
+2026-01-20 05:40:18,300 - ai_tutor - INFO - Генерация плана урока типа: theory
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ УРОКА (theory):
+============================================================
+{
+  "lesson_parameters": {
+    "topic": "Present Simple",
+    "student_profile": {
+      "interests": [
+        "видеоигры",
+        "футбол",
+        "технологии"
+      ],
+      "knowledge_gaps": [
+        "present_simple",
+        "prepositions"
+      ]
+    }
+  },
+  "type": "theory"
+}
+2026-01-20 05:40:18,300 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054018_a6b88e24  
+2026-01-20 05:40:18,300 - ai_tutor - INFO - Промпт токенов: 293, trace_id: mistral_20260120_054018_a6b88e24
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:32,865 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: d63af9fab645c93f3de2972707fb4398
+2026-01-20 05:40:33,024 - ai_tutor - INFO - Запрос выполнен за 14.56 секунд (попытка 1), trace_id: mistral_20260120_054018_a6b88e24
+2026-01-20 05:40:33,024 - ai_tutor - INFO - Сгенерировано токенов: 587, trace_id: mistral_20260120_054018_a6b88e24      
+2026-01-20 05:40:33,024 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054018_a6b88e24: latency=14.56s, prompt_tokens=293, generated_tokens=587
+
+============================================================
+ПОЛУЧЕННЫЙ УРОК (theory) ОТ МОДЕЛИ:
+============================================================
+{
+  "theory_section": {
+    "title": "Present Simple: как говорить о привычках, расписаниях и фактах с примерами из видеоигр, футбола и технологий",
+    "content": "**Present Simple** — это время, которое помогает рассказать о:  - **регулярных действиях** (что ты делаешь каждый день/неделю)  - **привычках** (что ты любишь/не любишь делать)  - **расписаниях** (когда начинаются матчи или выходят новые игры)  - **общих фактах** (как работают технологии, правила в футболе)   **Важно!** В Present Simple **НЕ** используется *am/is/are* (это Present Continuous). Здесь глагол стоит в **базовой форме** (инфинитив без *to*), но для *he/she/it* добавляется **-s/-es**.   --- ### **1. Структура предложений** #### **Утверждения (+)** - **I/You/We/They** + **глагол** (без изменений)  *I **play** FIFA with friends on weekends.* (Я играю в FIFA с друзьями по выходным.)  *They **watch** football matches every Saturday.* (Они смотрят футбольные матчи каждую субботу.)   - **He/She/It** + **глагол + s/es**  *My brother **loves** strategy games.* (Мой брат обожает стратегические игры.)  *This phone **charges** very fast.* (Этот телефон заряжается очень быстро.)   **Исключения для -s/-es:**  - Если глагол заканчивается на **-s, -sh, -ch, -x, -o**, добавляем **-es**:  *She **watches** eSports tournaments.* (Она смотрит турниры по киберспорту.)  *He **fixes** his computer himself.* (Он сам чинит свой компьютер.)   - Если глагол заканчивается на **согласную + y**, меняем **y → i + es**:  *The game **stories** are getting more complex.* (Сюжеты в играх становятся сложнее.)   --- ### **2. Отрицания (−)** Используем **do not (don’t)** или **does not (doesn’t)** + **глагол (без изменений!)**.  - *I **don’t play** football, but I **watch** it.* (Я не играю в футбол, но смотрю его.)  - *She **doesn’t like** mobile games.* (Ей не нравятся мобильные игры.)  - *This laptop **doesn’t support** new VR technologies.* (Этот ноутбук не поддерживает новые VR-технологии.)   --- ### **3. Вопросы (?)** Начинаем с **Do** или **Does**, затем подлежащее + глагол.  - ***Do you** follow tech news?* (Ты следишь за новостями технологий?)  - ***Does** Messi **score** in every match?* (Месси забивает в каждом матче?)  - ***Do** they **release** new games in December?* (Они выпускают новые игры в декабре?)   --- ### **4. Предлоги времени (prepositions) в Present Simple** Часто используются с Present Simple, чтобы указать **когда** происходит действие:  - **on** + дни недели:   *I train **on** Mondays and Fridays.* (Я тренируюсь по понедельникам и пятницам.)  - **at** + точное время:   *The match starts **at** 9 PM.* (Матч начинается в 9 вечера.)  - **in** + месяцы/времена года/части дня:   *New iPhones usually come out **in** September.* (Новые Айфоны обычно выходят в сентябре.)   *He streams **in** the evening.* (Он стримит вечером.)   --- ### **5. Маркеры Present Simple** Слова-подсказки, которые часто используются с этим временем:  - **always, usually, often, sometimes, rarely, never** (как часто)   *I **always** check game updates.* (Я всегда проверяю обновления игр.)  - **every day/week/month** (как часто)   *He **upgrades** his PC **every year**.* (Он апгрейдит свой ПК каждый год.)  - **on + дни недели, at + время** (когда)   *The server resets **on** Tuesdays.* (Сервер перезагружается по вторникам.)   --- ### **6. Примеры с интересами студента** 1. **Видеоигры:**    *She **doesn’t play** horror games because she **gets** scared easily.* (Она не играет в хорроры, потому что легко пугается.) 2. **Футбол:**    *Our team **trains** at the stadium **on** Wednesdays.* (Наша команда тренируется на стадионе по средам.) 3. **Технологии:**    *This smartphone **has** a great camera, but it **doesn’t support** 8K video.* (У этого смартфона отличная камера, но он не поддерживает видео 8K.) 4. **Расписание:**    *The new game **releases** **in** November, but the beta **starts** **at** midnight **on** October 30th.* (Новая игра выходит в ноябре, но бета начинается в полночь 30 октября.) 5. **Факт:**    *VR headsets **require** a powerful GPU to work smoothly.* (VR-шлемы требуют мощной видеокарты для плавной работы.)"
+  }
+}
+
+✓ Сгенерирована теория урока
+  Заголовок: Present Simple: как говорить о привычках, расписаниях и фактах с примерами из видеоигр, футбола и технологий
+  Длина контента: 3968 символов
+  Начало контента: **Present Simple** — это время, которое помогает рассказать о:  - **регулярных действиях** (что ты делаешь каждый день/неделю)  - **привычках** (что ты любишь/не любишь делать)  - **расписаниях** (ког...
+
+================================================================================
+4. ГЕНЕРАЦИЯ ЗАДАНИЯ НА ЧТЕНИЕ
+================================================================================
+2026-01-20 05:40:33,028 - ai_tutor - INFO - Генерация плана урока типа: reading
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ УРОКА (reading):
+============================================================
+{
+  "lesson_parameters": {
+    "topic": "Present Simple",
+    "student_profile": {
+      "interests": [
+        "видеоигры",
+        "футбол",
+        "технологии"
+      ],
+      "knowledge_gaps": [
+        "present_simple",
+        "prepositions"
+      ]
+    }
+  },
+  "type": "reading"
+}
+2026-01-20 05:40:33,029 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054033_45fc8694  
+2026-01-20 05:40:33,029 - ai_tutor - INFO - Промпт токенов: 322, trace_id: mistral_20260120_054033_45fc8694
+2026-01-20 05:40:36,359 - ai_tutor - WARNING - Ошибка при запросе к Mistral API: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Жду 2.0 секунд перед повторной попыткой..., trace_id: mistral_20260120_054033_45fc8694
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:42,904 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: c8cf871ca02f79ad7bc5fa27467599c6
+2026-01-20 05:40:43,593 - ai_tutor - INFO - Запрос выполнен за 4.54 секунд (попытка 2), trace_id: mistral_20260120_054033_45fc8694
+2026-01-20 05:40:43,594 - ai_tutor - INFO - Сгенерировано токенов: 270, trace_id: mistral_20260120_054033_45fc8694      
+2026-01-20 05:40:43,594 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054033_45fc8694: latency=4.54s, prompt_tokens=322, generated_tokens=270
+
+============================================================
+ПОЛУЧЕННЫЙ УРОК (reading) ОТ МОДЕЛИ:
+============================================================
+{
+  "reading_section": {
+    "title": "A Gamer’s Week: Balancing Football, Tech, and Studies",
+    "text": "Meet Dan, a 19-year-old student who loves football, video games, and new technology. His week always follows a clear routine because of his busy schedule.  On weekdays, Dan gets up at 6:45 AM. He plays *FIFA Mobile* on his phone for 15 minutes before breakfast—it helps him wake up! After a quick shower, he takes the bus to college, where he studies computer science. His favorite subject is **AI in Gaming**, and he dreams of creating his own football video game one day.  In the afternoon, Dan trains with his local football team. They practice three times a week at the stadium near his home. After training, he relaxes by streaming tech reviews on Twitch or testing new gaming gadgets. His latest purchase is a **VR headset**, which he uses to play immersive football simulations.  On weekends, Dan competes in online *eFootball* tournaments with his friends. They call their team *Tech Strikers* because they use data analytics to improve their strategies. Sometimes, Dan also visits tech expos to learn about gaming hardware. ‘The future of gaming is in AI and virtual reality,’ he often says. His goal? To combine his passions by working for a company like **EA Sports** or **NVIDIA** after graduation.",
+    "comprehension_questions": [
+      "What does Dan do *before breakfast* to wake up?",
+      "Why does Dan enjoy his ‘AI in Gaming’ class at college?",
+      "How does Dan’s football team use technology to get better at the game?",
+      "Which two companies does Dan want to work for in the future, and why?"
+    ]
+  }
+}
+
+✓ Сгенерировано задание на чтение
+  Заголовок: A Gamer’s Week: Balancing Football, Tech, and Studies
+  Длина текста: 1210 символов
+  Вопросов на понимание: 4
+  Первый вопрос: What does Dan do *before breakfast* to wake up?...
+
+================================================================================
+5. ГЕНЕРАЦИЯ ЗАДАНИЯ НА ГОВОРЕНИЕ
+================================================================================
+2026-01-20 05:40:43,596 - ai_tutor - INFO - Генерация плана урока типа: speaking
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ УРОКА (speaking):
+============================================================
+{
+  "lesson_parameters": {
+    "topic": "Present Simple",
+    "student_profile": {
+      "interests": [
+        "видеоигры",
+        "футбол",
+        "технологии"
+      ],
+      "knowledge_gaps": [
+        "present_simple",
+        "prepositions"
+      ]
+    }
+  },
+  "type": "speaking"
+}
+2026-01-20 05:40:43,597 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054043_dfb14b05  
+2026-01-20 05:40:43,597 - ai_tutor - INFO - Промпт токенов: 283, trace_id: mistral_20260120_054043_dfb14b05
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:50,057 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: aaae29af8bb2026984b604319c1d2c26
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Запрос выполнен за 6.46 секунд (попытка 1), trace_id: mistral_20260120_054043_dfb14b05
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Сгенерировано токенов: 270, trace_id: mistral_20260120_054043_dfb14b05      
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054043_dfb14b05: latency=6.46s, prompt_tokens=283, generated_tokens=270
+
+============================================================
+ПОЛУЧЕННЫЙ УРОК (speaking) ОТ МОДЕЛИ:
+============================================================
+{
+  "speaking_section": {
+    "title": "Расскажи о своих любимых видеоиграх и как они связаны с твоим расписанием",
+    "instructions": "Опиши свои привычки, связанные с видеоиграми и технологиями, используя **Present Simple**. Говори 2–3 минуты. Включи следующую информацию: 1) **Когда** и **как часто** ты играешь в видеоигры (утром, вечером, по выходным и т.д.). 2) Какие **жанры игр** (футбольные симуляторы, стратегии, шутеры) или **конкретные игры** (например, FIFA, Fortnite, Cyberpunk) ты предпочитаешь и почему. 3) Как технологии (ПК, консоли, мобильные устройства, стриминговые платформы) помогают тебе играть или следить за новостями о играх. 4) Делаешь ли ты что-то ещё, связанное с играми или футболом, **перед/во время/после** игры (например, смотришь стримы, обсуждаешь матчи с друзьями, читаешь новости о клубах).",     
+    "example_response": "I play video games almost every day, but my schedule changes depending on the week. On weekdays, I usually play for about one hour in the evening after finishing my homework. I prefer football simulators like FIFA 23 because I love football and enjoy managing my own team. I also watch real football matches on weekends, and sometimes I play online with my friends right after the game to try the same tactics we just saw. On Saturdays, I spend more time gaming—sometimes up to three hours. I like open-world games like GTA or Cyberpunk because I can explore and do missions at my own pace. Before playing, I often check gaming news on my phone or watch YouTube reviews of new updates. My PC is my main device, but I also use my PlayStation when friends come over. Technology helps me stay connected with other players and improve my skills by watching tutorials."
+  }
+}
+
+✓ Сгенерировано задание на говорение
+  Заголовок: Расскажи о своих любимых видеоиграх и как они связаны с твоим расписанием
+  Длина инструкций: 692 символов
+  Пример ответа: I play video games almost every day, but my schedule changes depending on the we...
+
+================================================================================
+6. ОЦЕНКА РЕЗУЛЬТАТОВ УРОКА
+================================================================================
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Оценка результатов урока
+
+============================================================
+ВХОДНЫЕ ДАННЫЕ ДЛЯ ОЦЕНКИ РЕЗУЛЬТАТОВ:
+============================================================
+{
+  "teachers_notes_about_speaking": "Студент хорошо описывал свой игровой распорядок, но делал ошибки в произношении окончаний -s для he/she/it. Испытывал трудности с построением вопросов.",
+  "teachers_notes_about_reading": "Текст прочитал уверенно, ответил на вопросы по содержанию правильно. Понимание базового материала хорошее.",
+  "test": {
+    "wrong_answer_questions": [
+      {
+        "question_id": "1",
+        "type": "single_choice",
+        "question": "Choose the correct sentence:",
+        "options": [
+          "I plays video games every day",
+          "I play video games every day",
+          "I playing video games every day"
+        ],
+        "correct_answer": 1,
+        "student_answer": 2
+      }
+    ]
+  }
+}
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Отправка запроса к Mistral API, trace_id: mistral_20260120_054050_4fe106cd  
+2026-01-20 05:40:50,211 - ai_tutor - INFO - Промпт токенов: 275, trace_id: mistral_20260120_054050_4fe106cd
+📊 Начинаю трассировку вызова LLM
+2026-01-20 05:40:53,952 - langfuse - WARNING - Context error: No active span in current context. Operations that depend on an active span will be skipped. Ensure spans are created with start_as_current_span() or that you're operating within an active span context.
+✅ Трассировка завершена, trace_id: 4a1b78aa187448354b97120dabf9496d
+2026-01-20 05:40:54,115 - ai_tutor - INFO - Запрос выполнен за 3.74 секунд (попытка 1), trace_id: mistral_20260120_054050_4fe106cd
+2026-01-20 05:40:54,125 - ai_tutor - INFO - Сгенерировано токенов: 142, trace_id: mistral_20260120_054050_4fe106cd
+2026-01-20 05:40:54,130 - ai_tutor - INFO - Метрики запроса trace_id=mistral_20260120_054050_4fe106cd: latency=3.74s, prompt_tokens=275, generated_tokens=142
+
+============================================================
+ПОЛУЧЕННАЯ ОЦЕНКА ОТ МОДЕЛИ:
+============================================================
+{
+  "lesson_score": "8",
+  "knowledge_gaps": [
+    "Pronunciation of -s endings for he/she/it in Present Simple",
+    "Constructing questions with auxiliary verbs (do/does)",
+    "Consistent use of third-person singular verb forms (he/she/it + -s)"
+  ],
+  "automated_feedback": "Отличная работа по большей части! Вы уверенно читаете и понимаете тексты, а также демонстрируете хорошее владение Present Simple в утвердительных предложениях. Основные моменты для улучшения: 1) **Произношение**: Внимательнее относитесь к окончанию **-s** у глаголов в 3-м лице (например, *plays* [пл**э**йз], а не [пл**а**йс]). 2) **Вопросы**: Тренируйте построение вопросов с *do/does* (например, *«Does she **play** games every day?»*, а не *«She plays games every day?»*). 3) **Тест**: Почти идеальный результат — молодец! Ошибка в одном вопросе некритична, но стоит повторить правило для закрепления.  **Рекомендация**: Выполните 10–15 минут упражнений на вопросы/отрицания в Present Simple и запишите себя на диктофон, произнося глаголы с -s. Это поможет закрепить материал.",
+  "additional_lesson": false
+}
+
+✓ Оценка урока сгенерирована
+  Оценка: 8/10
+  Пробелы: Pronunciation of -s endings for he/she/it in Present Simple, Constructing questions with auxiliary verbs (do/does), Consistent use of third-person singular verb forms (he/she/it + -s)
+  Обратная связь: Отличная работа по большей части! Вы уверенно читаете и понимаете тексты, а также демонстрируете хор...
+  Доп. урок нужен: False
+
+================================================================================
+ДЕМОНСТРАЦИЯ ЗАВЕРШЕНА
+================================================================================

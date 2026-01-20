@@ -1,0 +1,217 @@
+{
+  "timestamp": "2026-01-20T05:36:37.349408",
+  "config": {
+    "model": "mistral-medium",
+    "temperature": 0.7,
+    "max_tokens": 2000
+  },
+  "results": [
+    {
+      "test_id": "exp_1",
+      "name": "Входной тест - базовый английский",
+      "type": "entry_test",
+      "trace_id": "mistral_20260120_053528_f16ea1d6",
+      "timestamp": "2026-01-20T05:35:42.594456",
+      "metrics": {
+        "latency_seconds": 14.438,
+        "prompt_tokens": 475,
+        "completion_tokens": 559,
+        "total_tokens": 1034,
+        "cost_usd": 0.001291,
+        "tokens_per_second": 38.72,
+        "success": true
+      },
+      "prompt_preview": "Сгенерируй входной тест по английскому языку. Возвращай ТОЛЬКО JSON в указанном формате.\n\nИНФОРМАЦИЯ...",
+      "response_preview": "```json\n{\n  \"questions\": [\n    {\n      \"question_id\": \"1\",\n      \"type\": \"short_answer\",\n      \"ques..."
+    },
+    {
+      "test_id": "exp_2",
+      "name": "Входной тест - средний уровень",
+      "type": "entry_test",
+      "trace_id": "mistral_20260120_053542_a0164b7a",
+      "timestamp": "2026-01-20T05:35:52.971754",
+      "metrics": {
+        "latency_seconds": 10.239,
+        "prompt_tokens": 475,
+        "completion_tokens": 687,
+        "total_tokens": 1162,
+        "cost_usd": 0.001522,
+        "tokens_per_second": 67.09,
+        "success": true
+      },
+      "prompt_preview": "Сгенерируй входной тест по английскому языку. Возвращай ТОЛЬКО JSON в указанном формате.\n\nИНФОРМАЦИЯ...",
+      "response_preview": "```json\n{\n  \"questions\": [\n    {\n      \"question_id\": \"1\",\n      \"type\": \"short_answer\",\n      \"ques..."
+    },
+    {
+      "test_id": "exp_3",
+      "name": "Граф курса для геймера",
+      "type": "course_graph",
+      "trace_id": "mistral_20260120_053553_ce13c353",
+      "timestamp": "2026-01-20T05:35:58.082140",
+      "metrics": {
+        "latency_seconds": 4.971,
+        "prompt_tokens": 196,
+        "completion_tokens": 201,
+        "total_tokens": 397,
+        "cost_usd": 0.000479,
+        "tokens_per_second": 40.43,
+        "success": true
+      },
+      "prompt_preview": "Создай граф зависимостей тем курса. Возвращай ТОЛЬКО JSON в указанном формате.\n\nИНФОРМАЦИЯ О СТУДЕНТ...",
+      "response_preview": "```json\n{\n  \"nodes\": [\n    {\n      \"id\": \"1\",\n      \"label\": \"Present Simple\",\n      \"priority\": \"hi..."
+    },
+    {
+      "test_id": "exp_4",
+      "name": "Граф курса для бизнеса",
+      "type": "course_graph",
+      "trace_id": "mistral_20260120_053558_c931124a",
+      "timestamp": "2026-01-20T05:36:04.751797",
+      "metrics": {
+        "latency_seconds": 6.531,
+        "prompt_tokens": 193,
+        "completion_tokens": 171,
+        "total_tokens": 364,
+        "cost_usd": 0.000424,
+        "tokens_per_second": 26.18,
+        "success": true
+      },
+      "prompt_preview": "Создай граф зависимостей тем курса. Возвращай ТОЛЬКО JSON в указанном формате.\n\nИНФОРМАЦИЯ О СТУДЕНТ...",
+      "response_preview": "```json\n{\n  \"nodes\": [\n    {\n      \"id\": \"1\",\n      \"label\": \"Деловая переписка\"\n    },\n    {\n      ..."
+    },
+    {
+      "test_id": "exp_5",
+      "name": "Короткий промпт - приветствие",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053604_9a8ff2e8",
+      "timestamp": "2026-01-20T05:36:07.991491",
+      "metrics": {
+        "latency_seconds": 3.101,
+        "prompt_tokens": 8,
+        "completion_tokens": 110,
+        "total_tokens": 118,
+        "cost_usd": 0.000203,
+        "tokens_per_second": 35.47,
+        "success": true
+      },
+      "prompt_preview": "Напиши приветственное сообщение для нового студента английского языка.",
+      "response_preview": "Вот несколько вариантов приветственного сообщения для нового студента английского языка — от дружеск..."
+    },
+    {
+      "test_id": "exp_6",
+      "name": "Средний промпт - объяснение грамматики",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053608_c26311b9",
+      "timestamp": "2026-01-20T05:36:12.901746",
+      "metrics": {
+        "latency_seconds": 4.773,
+        "prompt_tokens": 17,
+        "completion_tokens": 226,
+        "total_tokens": 243,
+        "cost_usd": 0.000417,
+        "tokens_per_second": 47.35,
+        "success": true
+      },
+      "prompt_preview": "Объясни разницу между Present Simple и Present Continuous на русском языке. Приведи 3 примера для ка...",
+      "response_preview": "**Present Simple (Настоящее простое время)** и **Present Continuous (Настоящее длительное время)** в..."
+    },
+    {
+      "test_id": "exp_7",
+      "name": "Длинный промпт - план урока",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053613_9585acaa",
+      "timestamp": "2026-01-20T05:36:23.511060",
+      "metrics": {
+        "latency_seconds": 10.47,
+        "prompt_tokens": 50,
+        "completion_tokens": 367,
+        "total_tokens": 417,
+        "cost_usd": 0.000691,
+        "tokens_per_second": 35.05,
+        "success": true
+      },
+      "prompt_preview": "Создай подробный план урока по теме \"Present Perfect\" для студентов среднего уровня.\nУрок должен дли...",
+      "response_preview": "### **Подробный план урока по теме *Present Perfect* (60 минут, уровень *Pre-Intermediate/Intermedia..."
+    },
+    {
+      "test_id": "exp_8",
+      "name": "Сложный промпт - анализ ошибок",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053623_9077a707",
+      "timestamp": "2026-01-20T05:36:30.521084",
+      "metrics": {
+        "latency_seconds": 6.861,
+        "prompt_tokens": 53,
+        "completion_tokens": 304,
+        "total_tokens": 357,
+        "cost_usd": 0.000579,
+        "tokens_per_second": 44.31,
+        "success": true
+      },
+      "prompt_preview": "Проанализируй следующие ошибки студента и предложи упражнения для их исправления:\n\nОшибки:\n1. \"I hav...",
+      "response_preview": "Вот анализ ошибок и упражнения для их исправления:\n\n---\n\n### **1. \"I have see that movie yesterday.\"..."
+    },
+    {
+      "test_id": "exp_9",
+      "name": "JSON генерация - список тем",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053630_f6e84cf4",
+      "timestamp": "2026-01-20T05:36:34.600667",
+      "metrics": {
+        "latency_seconds": 3.931,
+        "prompt_tokens": 28,
+        "completion_tokens": 194,
+        "total_tokens": 222,
+        "cost_usd": 0.000366,
+        "tokens_per_second": 49.35,
+        "success": true
+      },
+      "prompt_preview": "Верни JSON с 5 темами для курса \"Английский для путешествий\".\nФормат:\n{\n  \"topics\": [\n    {\n      \"i...",
+      "response_preview": "```json\n{\n  \"topics\": [\n    {\n      \"id\": \"1\",\n      \"title\": \"Basic Travel Phrases & Greetings\",\n  ..."
+    },
+    {
+      "test_id": "exp_10",
+      "name": "Креативный промпт - диалог",
+      "type": "custom",
+      "trace_id": "mistral_20260120_053634_ef8eba35",
+      "timestamp": "2026-01-20T05:36:37.179653",
+      "metrics": {
+        "latency_seconds": 2.45,
+        "prompt_tokens": 36,
+        "completion_tokens": 131,
+        "total_tokens": 167,
+        "cost_usd": 0.000257,
+        "tokens_per_second": 53.48,
+        "success": true
+      },
+      "prompt_preview": "Напиши диалог на английском между учителем и студентом на тему \"Планы на выходные\".\nДиалог должен:\n-...",
+      "response_preview": "**Teacher:** Hey, Mark! Got any fun plans for the weekend?\n\n**Student:** Yeah, actually! My friends ..."
+    }
+  ],
+  "summary": {
+    "total_tests": 10,
+    "successful_tests": 10,
+    "success_rate": 100.0,
+    "latency": {
+      "mean": 6.7765,
+      "median": 5.7509999999999994,
+      "min": 2.45,
+      "max": 14.438,
+      "std": 3.8296425203056925
+    },
+    "tokens": {
+      "total_prompt": 1531,
+      "total_completion": 2950,
+      "avg_prompt": 153.1,
+      "avg_completion": 295,
+      "avg_total": 448.1
+    },
+    "cost": {
+      "total_usd": 0.006229,
+      "avg_per_test": 0.0006229,
+      "cost_per_1000_tokens": 0.0013900914974336086
+    },
+    "throughput": {
+      "avg_tokens_per_second": 43.743
+    }
+  }
+}
